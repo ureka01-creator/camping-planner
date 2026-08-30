@@ -1,4 +1,4 @@
-/* v0.4.6 — meal detail items, collapsible inline add/edit, progress, cost, date settings */
+/* v0.4.7 — meal detail items, collapsible inline add/edit, progress, cost, date settings */
 .meal-card { overflow:hidden; min-width:0; max-width:100%; }
 .meal-card-top { align-items:flex-start; }
 .meal-progress-block { min-width:0; max-width:100%; margin-top:14px; padding-top:13px; border-top:1px solid var(--line); }
@@ -66,6 +66,207 @@
 .meal-inline-cancel { border:1px solid #d9cebf; background:#fff; color:var(--muted); }
 .meal-inline-save { border:0; background:var(--ink); color:#fff; }
 .meal-inline-edit-actions button:disabled { opacity:.55; }
+
+/* 식단 화면 = 홈과 같은 밤 테마 */
+.home-theme #view-meals {
+  color:#ead9c4;
+}
+.home-theme #view-meals .view-heading {
+  padding-top:12px;
+}
+.home-theme #view-meals .section-kicker {
+  color:#c9895d;
+}
+.home-theme #view-meals .view-heading h2 {
+  color:#ead9c4;
+  font-family:inherit;
+  font-weight:760;
+}
+.home-theme #view-meals .primary-small {
+  border:1px solid rgba(216,160,113,.18);
+  background:#c9895d;
+  color:#111613;
+  box-shadow:0 8px 22px rgba(0,0,0,.12);
+}
+.home-theme #view-meals .date-tabs {
+  padding-bottom:14px;
+}
+.home-theme #view-meals .date-tab {
+  border-color:rgba(216,160,113,.16);
+  background:rgba(23,24,21,.72);
+  color:rgba(234,217,196,.66);
+  box-shadow:none;
+}
+.home-theme #view-meals .date-tab.active {
+  border-color:#c9895d;
+  background:#c9895d;
+  color:#111613;
+}
+.home-theme #view-meals .meal-card {
+  border:1px solid rgba(216,160,113,.14);
+  background:rgba(20,24,22,.86);
+  color:#ead9c4;
+  box-shadow:0 12px 30px rgba(0,0,0,.12);
+}
+.home-theme #view-meals .meal-type {
+  color:#c9895d;
+}
+.home-theme #view-meals .meal-menu {
+  color:#ead9c4;
+}
+.home-theme #view-meals .badge {
+  background:rgba(201,137,93,.10);
+  color:#dca77b;
+}
+.home-theme #view-meals .meal-note {
+  color:rgba(234,217,196,.55);
+}
+.home-theme #view-meals .more-btn {
+  background:rgba(234,217,196,.07);
+  color:rgba(234,217,196,.70);
+}
+.home-theme #view-meals .meal-progress-block {
+  border-top-color:rgba(216,160,113,.14);
+}
+.home-theme #view-meals .meal-progress-head {
+  color:rgba(234,217,196,.55);
+}
+.home-theme #view-meals .meal-progress-head strong {
+  color:#ead9c4;
+}
+.home-theme #view-meals .meal-detail-track {
+  background:rgba(234,217,196,.10);
+}
+.home-theme #view-meals .meal-detail-track > span {
+  background:#c9895d;
+}
+.home-theme #view-meals .meal-detail-item {
+  border-color:rgba(216,160,113,.12);
+  background:rgba(24,24,21,.72);
+}
+.home-theme #view-meals .meal-detail-check {
+  border-color:rgba(234,217,196,.24);
+  background:rgba(8,12,18,.44);
+  color:#ead9c4;
+}
+.home-theme #view-meals .meal-detail-item.done .meal-detail-check {
+  border-color:#c9895d;
+  background:#c9895d;
+  color:#111613;
+}
+.home-theme #view-meals .meal-detail-name {
+  color:#ead9c4;
+}
+.home-theme #view-meals .meal-detail-meta,
+.home-theme #view-meals .meal-cost-total {
+  color:rgba(234,217,196,.48);
+}
+.home-theme #view-meals .meal-detail-cost {
+  color:#dca77b;
+}
+.home-theme #view-meals .meal-detail-actions {
+  color:rgba(234,217,196,.52);
+}
+.home-theme #view-meals .meal-detail-empty {
+  border-color:rgba(216,160,113,.18);
+  color:rgba(234,217,196,.46);
+  background:rgba(24,24,21,.42);
+}
+.home-theme #view-meals .meal-inline-toggle {
+  border-color:rgba(216,160,113,.18);
+  background:rgba(201,137,93,.07);
+  color:#dca77b;
+}
+.home-theme #view-meals .meal-inline-form,
+.home-theme #view-meals .meal-inline-edit {
+  border-color:rgba(216,160,113,.15);
+  background:rgba(13,18,20,.82);
+}
+.home-theme #view-meals .meal-inline-form input,
+.home-theme #view-meals .meal-inline-form select,
+.home-theme #view-meals .meal-inline-edit input,
+.home-theme #view-meals .meal-inline-edit select,
+.home-theme #view-meals .meal-inline-edit textarea {
+  border-color:rgba(216,160,113,.16);
+  background:rgba(24,24,21,.88);
+  color:#ead9c4;
+}
+.home-theme #view-meals .meal-inline-form input::placeholder,
+.home-theme #view-meals .meal-inline-edit input::placeholder,
+.home-theme #view-meals .meal-inline-edit textarea::placeholder {
+  color:rgba(234,217,196,.34);
+}
+.home-theme #view-meals .cost-input-wrap::after {
+  color:rgba(234,217,196,.45);
+}
+.home-theme #view-meals .meal-inline-submit {
+  background:#c9895d;
+  color:#111613;
+}
+.home-theme #view-meals .meal-inline-edit-title {
+  color:#ead9c4;
+}
+.home-theme #view-meals .meal-inline-delete {
+  border-color:rgba(195,92,58,.30);
+  background:rgba(195,92,58,.10);
+  color:#e99b7c;
+}
+.home-theme #view-meals .meal-inline-cancel {
+  border-color:rgba(216,160,113,.16);
+  background:rgba(234,217,196,.06);
+  color:rgba(234,217,196,.62);
+}
+.home-theme #view-meals .meal-inline-save {
+  background:#c9895d;
+  color:#111613;
+}
+.home-theme #view-meals .empty-state {
+  border-color:rgba(216,160,113,.16);
+  color:rgba(234,217,196,.48);
+  background:rgba(23,24,21,.48);
+}
+
+/* 식단 추가/수정 모달도 현재 식단 테마와 연결 */
+body:has(#view-meals.active) .modal-backdrop {
+  background:rgba(0,0,0,.62);
+}
+body:has(#view-meals.active) .modal-sheet {
+  background:#141816;
+  color:#ead9c4;
+  border:1px solid rgba(216,160,113,.14);
+  border-bottom:0;
+}
+body:has(#view-meals.active) .modal-handle {
+  background:rgba(234,217,196,.20);
+}
+body:has(#view-meals.active) .modal-title h3,
+body:has(#view-meals.active) .form-grid label {
+  color:#ead9c4;
+}
+body:has(#view-meals.active) .modal-sheet input,
+body:has(#view-meals.active) .modal-sheet select,
+body:has(#view-meals.active) .modal-sheet textarea {
+  border-color:rgba(216,160,113,.16);
+  background:#1a1d1a;
+  color:#ead9c4;
+}
+body:has(#view-meals.active) .modal-sheet input::placeholder,
+body:has(#view-meals.active) .modal-sheet textarea::placeholder {
+  color:rgba(234,217,196,.34);
+}
+body:has(#view-meals.active) .modal-sheet .cancel-btn {
+  border-color:rgba(216,160,113,.16);
+  background:rgba(234,217,196,.06);
+  color:#ead9c4;
+}
+body:has(#view-meals.active) .modal-sheet .save-btn {
+  background:#c9895d;
+  color:#111613;
+}
+body:has(#view-meals.active) .modal-sheet .delete-btn {
+  background:rgba(195,92,58,.12);
+  color:#e99b7c;
+}
 
 @media (max-width:390px) {
   .meal-detail-item { grid-template-columns:30px minmax(0,1fr) 28px; gap:7px; padding-left:7px; padding-right:6px; }
