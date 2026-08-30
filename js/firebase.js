@@ -1,19 +1,19 @@
 // Firebase adapter.
-// 1) Fill FIREBASE_CONFIG below.
-// 2) Set useFirebase: true.
-// Without config, the app runs in local demo mode using localStorage + BroadcastChannel.
+// Firebase config is registered for the Camping Planner web app.
+// If Firebase is disabled, the app can still run in local demo mode using localStorage + BroadcastChannel.
 
 export const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyCdBMIYmhomv-B72pzEptpfRIoGiORZZWk",
+  authDomain: "camping-planner-4c2bd.firebaseapp.com",
+  projectId: "camping-planner-4c2bd",
+  storageBucket: "camping-planner-4c2bd.firebasestorage.app",
+  messagingSenderId: "852218628033",
+  appId: "1:852218628033:web:29a2e54a9c81397ae5d140",
+  measurementId: "G-HEZ3M975RX"
 };
 
 export const DATA_MODE = {
-  useFirebase: false,
+  useFirebase: true,
   tripId: new URLSearchParams(location.search).get('trip') || 'camp-2026-09-demo'
 };
 
