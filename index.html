@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f2e8" />
+  <title>Camp Together</title>
+  <link rel="stylesheet" href="./css/app.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CAMP TOGETHER</p>
+        <h1 id="tripTitle">9월 가족 캠핑</h1>
+        <p class="trip-meta"><span id="tripDates">9.11 — 9.13</span><span class="dot">•</span><span id="tripLocation">캠핑장 미정</span></p>
+      </div>
+      <button id="shareBtn" class="icon-btn" aria-label="공유">↗</button>
+    </header>
+
+    <main>
+      <section id="view-home" class="view active" data-view="home">
+        <div class="hero-card">
+          <div class="hero-row">
+            <div>
+              <p class="section-kicker">준비 현황</p>
+              <strong id="progressPercent" class="progress-number">0%</strong>
+            </div>
+            <div class="ring" id="progressRing" aria-hidden="true"><span>✓</span></div>
+          </div>
+          <div class="progress-track"><div id="progressBar" class="progress-fill"></div></div>
+          <p id="progressCaption" class="muted">준비물을 추가해봐.</p>
+        </div>
+
+        <section class="section-block">
+          <div class="section-head">
+            <div><p class="section-kicker">NEXT MEAL</p><h2>다음 식사</h2></div>
+            <button class="text-btn" data-go="meals">전체보기</button>
+          </div>
+          <div id="nextMealCard" class="meal-feature empty-card">아직 식단이 없어.</div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-head">
+            <div><p class="section-kicker">PEOPLE</p><h2>담당자별 준비율</h2></div>
+          </div>
+          <div id="memberProgress" class="member-progress"></div>
+        </section>
+
+        <section class="section-block compact-bottom">
+          <div class="section-head">
+            <div><p class="section-kicker">TO DO</p><h2>아직 안 챙긴 것</h2></div>
+            <button class="text-btn" data-go="items">준비물</button>
+          </div>
+          <div id="homeTodo" class="mini-list"></div>
+        </section>
+      </section>
+
+      <section id="view-meals" class="view" data-view="meals">
+        <div class="view-heading">
+          <div><p class="section-kicker">MEALS</p><h2>뭐 먹지?</h2></div>
+          <button class="primary-small" id="addMealBtn">+ 식단</button>
+        </div>
+        <div id="dateTabs" class="date-tabs" aria-label="날짜 선택"></div>
+        <div id="mealList" class="meal-list"></div>
+      </section>
+
+      <section id="view-items" class="view" data-view="items">
+        <div class="view-heading">
+          <div><p class="section-kicker">PACKING</p><h2>뭘 챙기지?</h2></div>
+          <button class="primary-small" id="addItemBtn">+ 준비물</button>
+        </div>
+        <div class="summary-strip"><span id="itemSummary">0개 중 0개 준비</span><strong id="itemPercent">0%</strong></div>
+        <div class="chips" id="itemFilters">
+          <button class="chip active" data-filter="all">전체</button>
+          <button class="chip" data-filter="todo">미완료</button>
+          <button class="chip" data-filter="mine">내 것</button>
+        </div>
+        <div id="assigneeFilters" class="chips secondary-chips"></div>
+        <div id="itemList" class="item-list"></div>
+      </section>
+
+      <section id="view-settings" class="view" data-view="settings">
+        <div class="view-heading"><div><p class="section-kicker">SETTINGS</p><h2>캠핑 설정</h2></div></div>
+        <div class="settings-card">
+          <label>내 표시 이름<input id="myNameInput" placeholder="예: 민지" /></label>
+          <button id="saveMyNameBtn" class="primary-wide">이 이름으로 사용</button>
+        </div>
+        <div class="settings-card">
+          <div class="settings-title"><div><strong>참여자 / 팀</strong><p>준비물과 식단 담당자로 지정해.</p></div><button id="addMemberBtn" class="round-add">+</button></div>
+          <div id="memberList" class="member-list"></div>
+        </div>
+        <div class="settings-card">
+          <strong>공유</strong>
+          <p class="muted">같은 링크로 들어오면 같은 캠핑을 볼 수 있어.</p>
+          <button id="copyLinkBtn" class="secondary-wide">공유 링크 복사</button>
+        </div>
+        <div class="settings-card dev-card">
+          <strong>데이터 연결</strong>
+          <p id="connectionText" class="muted">로컬 데모 모드</p>
+          <p class="tiny">Firebase 설정을 넣으면 여러 기기 실시간 동기화 모드로 전환돼.</p>
+        </div>
+        <p class="version">Camping Planner v0.1.0</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="주요 메뉴">
+      <button class="nav-item active" data-nav="home"><span>⌂</span><b>홈</b></button>
+      <button class="nav-item" data-nav="meals"><span>♨</span><b>식단</b></button>
+      <button class="nav-item" data-nav="items"><span>✓</span><b>준비물</b></button>
+      <button class="nav-item" data-nav="settings"><span>⚙</span><b>설정</b></button>
+    </nav>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-sheet" role="dialog" aria-modal="true">
+      <div class="modal-handle"></div>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
