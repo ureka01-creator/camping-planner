@@ -11,6 +11,7 @@
     linear-gradient(180deg, #080c12 0%, #0d1216 48%, #171713 78%, #211711 100%);
   background-size: 137px 137px, 181px 181px, 223px 223px, 257px 257px, 293px 293px, 100% 100%, 100% 100%;
   color: #ead9c4;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
 }
 
 .home-theme .topbar {
@@ -19,13 +20,19 @@
 }
 
 .home-theme .dday-title {
-  color: #d8a071;
-  font-family: "Iowan Old Style", Baskerville, "Times New Roman", serif;
-  font-size: clamp(64px, 18vw, 86px);
-  line-height: .88;
-  font-weight: 700;
-  letter-spacing: -.055em;
+  min-height: .88em;
+  color: #e2b181;
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-size: clamp(68px, 19vw, 90px);
+  line-height: .84;
+  font-weight: 600;
+  letter-spacing: -.045em;
+  font-variant-numeric: lining-nums;
   text-shadow: 0 1px 18px rgba(206,132,80,.10);
+}
+
+.home-theme .dday-title:empty::before {
+  content: ' ';
 }
 
 .home-theme .trip-meta {
@@ -33,11 +40,11 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0;
-  margin-top: 17px;
-  color: rgba(234,217,196,.72);
+  margin-top: 18px;
+  color: rgba(234,217,196,.74);
   font-size: 14px;
   font-weight: 500;
-  letter-spacing: .005em;
+  letter-spacing: -.01em;
 }
 
 .home-theme #tripLocation::before {
@@ -69,18 +76,20 @@
 .home-theme .home-label {
   margin: 0 0 9px;
   color: #c9895d;
-  font-family: "AppleMyungjo", "Nanum Myeongjo", serif;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: .035em;
+  letter-spacing: -.01em;
 }
 
 .home-theme .progress-number {
   color: #f0e1ce;
-  font-family: "Iowan Old Style", Baskerville, "Times New Roman", serif;
-  font-size: 57px;
-  font-weight: 700;
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-size: 60px;
+  line-height: .9;
+  font-weight: 600;
   letter-spacing: -.035em;
+  font-variant-numeric: lining-nums;
 }
 
 .home-theme .ring {
@@ -132,11 +141,11 @@
 }
 
 .home-theme .home-section h2 {
-  color: #e7d4bc;
-  font-family: "AppleMyungjo", "Nanum Myeongjo", serif;
+  color: #ead9c4;
+  font-family: inherit;
   font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -.018em;
+  font-weight: 760;
+  letter-spacing: -.035em;
 }
 
 .home-theme .text-btn {
@@ -162,10 +171,10 @@
 
 .home-theme .meal-feature .meal-name {
   color: #ead9c4;
-  font-family: "AppleMyungjo", "Nanum Myeongjo", serif;
+  font-family: inherit;
   font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -.015em;
+  font-weight: 760;
+  letter-spacing: -.025em;
 }
 
 .home-theme .meal-feature .meal-assignee,
@@ -237,6 +246,6 @@
 
 @media (max-width: 420px) {
   .home-theme .topbar { padding-top: 30px; }
-  .home-theme .dday-title { font-size: 66px; }
+  .home-theme .dday-title { font-size: 70px; }
   .home-theme .trip-meta { font-size: 13px; }
 }
