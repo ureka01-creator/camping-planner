@@ -38,10 +38,15 @@ jobs:
       - name: Run header smoke check
         run: node qa/run-header-smoke.mjs
 
-      - name: Upload smoke screenshot
+      - name: Run real app meal smoke check
+        run: node qa/run-app-smoke.mjs
+
+      - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: header-smoke-result
-          path: qa/header-smoke-result.png
+          name: ui-smoke-results
+          path: |
+            qa/header-smoke-result.png
+            qa/app-smoke-result.png
           if-no-files-found: ignore
