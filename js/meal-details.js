@@ -194,8 +194,13 @@ document.addEventListener('click',event=>{
     return;
   }
 
-  if(event.target.closest('[data-date]') || event.target.closest('[data-nav="meals"]') || event.target.closest('[data-go="meals"]')){
+  if(event.target.closest('[data-date]')){
     setTimeout(renderMealDetails,0);
+    return;
+  }
+
+  if(event.target.closest('[data-nav]') || event.target.closest('[data-go]')){
+    setTimeout(renderEnhancements,0);
   }
 });
 
