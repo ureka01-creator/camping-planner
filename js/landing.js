@@ -39,7 +39,7 @@ style.textContent = `
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(2, 6, 9, .10), rgba(2, 6, 9, .02) 58%, rgba(2, 6, 9, .58));
+    background: linear-gradient(to bottom, rgba(2, 6, 9, .10), rgba(2, 6, 9, .02) 58%, rgba(2, 6, 9, .50));
     pointer-events: none;
   }
 
@@ -67,23 +67,28 @@ style.textContent = `
     position: absolute;
     z-index: 2;
     left: 50%;
-    bottom: max(18px, calc(env(safe-area-inset-bottom) + 8px));
+    bottom: max(10px, calc(env(safe-area-inset-bottom) + 2px));
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
     transform: translateX(-50%);
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: rgba(8, 10, 12, .30);
-    backdrop-filter: blur(7px);
-    -webkit-backdrop-filter: blur(7px);
-    color: rgba(255, 241, 218, .88);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: .08em;
-    white-space: nowrap;
+    color: rgba(255, 241, 218, .54);
+    font-size: 19px;
+    font-weight: 300;
+    line-height: 1;
     opacity: 0;
-    transition: opacity .4s ease .2s;
+    transition: opacity .45s ease .3s;
+    animation: landingHint 1.8s ease-in-out infinite;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, .35);
   }
 
-  .camp-landing-hint.loaded { opacity: 1; }
+  .camp-landing-hint.loaded { opacity: .72; }
+
+  @keyframes landingHint {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, 3px); }
+  }
 
   .camp-landing.is-exiting {
     opacity: 0;
@@ -104,7 +109,7 @@ style.textContent = `
     .camp-landing,
     .camp-landing-bg,
     .camp-landing-poster,
-    .camp-landing-hint { transition: none !important; }
+    .camp-landing-hint { transition: none !important; animation: none !important; }
   }
 `;
 document.head.append(style);
@@ -118,7 +123,7 @@ overlay.setAttribute('aria-label', '캠핑 플래너 들어가기');
 overlay.innerHTML = `
   <span class="camp-landing-bg" aria-hidden="true"></span>
   <img class="camp-landing-poster" alt="두근두근 캠핑 로맨스, 리버앤캠프 9월 11일부터 13일까지" />
-  <span class="camp-landing-hint">화면을 터치해서 들어가기</span>
+  <span class="camp-landing-hint" aria-hidden="true">⌄</span>
 `;
 document.body.prepend(overlay);
 
