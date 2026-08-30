@@ -17,11 +17,15 @@ const $$=s=>[...document.querySelectorAll(s)];
 
 function memberName(id){ return state.data?.members.find(m=>m.id===id)?.name || '공용'; }
 function dateRange(start,end){
-  const arr=[]; const d=new Date(`${start}T00:00:00`); const e=new Date(`${end}T00:00:00`);
-  while(d<=e){ arr.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+  const arr=[];
+  const [sy,sm,sd]=start.split('-').map(Number);
+  const [ey,em,ed]=end.split('-').map(Number);
+  const d=new Date(Date.UTC(sy,sm-1,sd));
+  const e=new Date(Date.UTC(ey,em-1,ed));
+  while(d<=e){ arr.push(d.toISOString().slice(0,10)); d.setUTCDate(d.getUTCDate()+1); }
   return arr;
 }
-function formatShortDate(iso){ const d=new Date(`${iso}T00:00:00`); return `${d.getMonth()+1}/${d.getDate()}`; }
+function formatShortDate(iso){ const [,m,d]=iso.split('-').map(Number); return `${m}/${d}`; }
 function tripDateText(){
   const t=state.data.trip; return `${formatShortDate(t.startDate)} — ${formatShortDate(t.endDate)}`;
 }
