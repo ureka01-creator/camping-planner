@@ -134,7 +134,10 @@ const COVER_CACHE_KEY = 'camp:landingCover:v2';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
+    let settled = false;
     const done = () => {
+      if (settled) return;
+      settled = true;
       bg.style.backgroundImage = `url("${src}")`;
       requestAnimationFrame(() => {
         bg.classList.add('loaded');
@@ -154,6 +157,7 @@ function showCover(src) {
 
 function enterPlanner() {
   if (overlay.classList.contains('is-exiting')) return;
+  document.body.classList.remove('landing-boot');
   overlay.classList.add('is-exiting');
   document.body.classList.remove('landing-open');
   window.setTimeout(() => overlay.remove(), 320);
