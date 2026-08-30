@@ -41,6 +41,116 @@ body {
   color: #ead9c4;
 }
 
+/* Keep the same header on Home / Meals / Packing / Settings. */
+.unified-night-theme .topbar {
+  padding: 36px 4px 30px;
+  align-items: flex-start;
+}
+.unified-night-theme .trip-heading { min-width: 0; }
+.unified-night-theme .dday-title {
+  min-height: 0;
+  color: #e2b181;
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-size: clamp(68px, 19vw, 90px);
+  line-height: .72;
+  font-weight: 600;
+  letter-spacing: -.045em;
+  overflow: visible;
+  font-variant-numeric: lining-nums;
+  text-shadow: 0 1px 18px rgba(206,132,80,.10);
+}
+.unified-night-theme .dday-title.dday-composed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+.unified-night-theme .dday-title .dday-dash {
+  display: block;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 2px;
+  margin: 0 5px 0 4px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.unified-night-theme .trip-meta {
+  display: grid;
+  gap: 0;
+  margin-top: 12px;
+  color: rgba(234,217,196,.74);
+  font-size: 14px;
+  font-weight: 500;
+}
+.unified-night-theme .trip-dates {
+  display: block;
+  margin-bottom: 20px;
+  white-space: nowrap;
+  color: rgba(234,217,196,.82);
+  font-size: 14px;
+  font-weight: 600;
+}
+.unified-night-theme .trip-location-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin-bottom: 4px;
+}
+.unified-night-theme .trip-location {
+  margin: 0;
+  line-height: 1.35;
+  color: #ead9c4;
+  font-weight: 650;
+}
+.unified-night-theme .trip-location-icon {
+  position: relative;
+  display: block;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: #c9895d;
+  background:
+    linear-gradient(currentColor, currentColor) center / 18px 1px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1px 18px no-repeat;
+  opacity: .86;
+}
+.unified-night-theme .trip-location-icon::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.unified-night-theme .trip-address-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.unified-night-theme .trip-address {
+  min-width: 0;
+  color: rgba(234,217,196,.46);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.unified-night-theme .address-copy-btn {
+  flex: 0 0 auto;
+  min-height: 21px;
+  padding: 0 6px;
+  border: 1px solid rgba(201,137,93,.24);
+  border-radius: 7px;
+  background: rgba(201,137,93,.06);
+  color: rgba(226,177,129,.80);
+  font-size: 9px;
+  font-weight: 700;
+}
+.unified-night-theme .icon-btn {
+  border: 1px solid rgba(216,160,113,.20);
+  background: rgba(18,20,19,.72);
+  color: #d8a071;
+  box-shadow: 0 7px 22px rgba(0,0,0,.12);
+}
+
 /* Every view inherits the same visual language. */
 .view,
 #view-items,
@@ -208,6 +318,18 @@ textarea:focus {
 
 @media (max-width: 420px) {
   .app-shell { width: 100%; }
+  .unified-night-theme .topbar { padding-top: 30px; }
+  .unified-night-theme .dday-title { font-size: 70px; }
+  .unified-night-theme .trip-meta { font-size: 13px; }
+  .unified-night-theme .trip-dates { font-size: 13px; }
+  .unified-night-theme .trip-address { font-size: 10.5px; }
+  .unified-night-theme .trip-location-icon {
+    flex-basis: 17px;
+    width: 17px;
+    height: 17px;
+    background-size: 17px 1px, 1px 17px;
+  }
+  .unified-night-theme .trip-location-icon::after { inset: 4.5px; }
   .settings-card,
   .packing-item,
   .meal-card { max-width: 100%; min-width: 0; }
