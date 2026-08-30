@@ -142,9 +142,9 @@ overlay.addEventListener('click', enterPlanner);
 
 async function loadCover() {
   const urls = [
-    './assets/cover.part0',
-    './assets/cover.part1',
-    './assets/cover.part2'
+    './assets/cover-hq.part0',
+    './assets/cover-hq.part1',
+    './assets/cover-hq.part2'
   ];
 
   const parts = await Promise.all(urls.map(async url => {
