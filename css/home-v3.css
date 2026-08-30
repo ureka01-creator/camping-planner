@@ -1,28 +1,31 @@
 .app-shell.home-theme {
   position: relative;
-  background-color: #071018;
+  background-color: #090c10;
   background-image:
-    radial-gradient(circle at 11% 13%, rgba(255,255,255,.72) 0 1px, transparent 1.3px),
-    radial-gradient(circle at 77% 9%, rgba(255,244,220,.62) 0 1px, transparent 1.25px),
-    radial-gradient(circle at 42% 22%, rgba(255,255,255,.48) 0 1px, transparent 1.2px),
-    radial-gradient(circle at 87% 31%, rgba(255,255,255,.42) 0 1px, transparent 1.2px),
-    radial-gradient(circle at 22% 38%, rgba(255,239,210,.38) 0 1px, transparent 1.2px),
-    linear-gradient(180deg, #071018 0%, #0a171c 48%, #102019 100%);
-  background-size: 137px 137px, 181px 181px, 223px 223px, 257px 257px, 293px 293px, 100% 100%;
-  color: #f7f2e8;
+    radial-gradient(circle at 11% 13%, rgba(255,244,220,.68) 0 1px, transparent 1.3px),
+    radial-gradient(circle at 77% 9%, rgba(255,226,190,.50) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 42% 22%, rgba(255,255,255,.43) 0 1px, transparent 1.2px),
+    radial-gradient(circle at 87% 31%, rgba(255,244,222,.34) 0 1px, transparent 1.2px),
+    radial-gradient(circle at 22% 38%, rgba(255,222,180,.30) 0 1px, transparent 1.2px),
+    radial-gradient(ellipse at 50% 9%, rgba(161,97,55,.13), transparent 42%),
+    linear-gradient(180deg, #080c12 0%, #0d1216 48%, #171713 78%, #211711 100%);
+  background-size: 137px 137px, 181px 181px, 223px 223px, 257px 257px, 293px 293px, 100% 100%, 100% 100%;
+  color: #ead9c4;
 }
 
 .home-theme .topbar {
-  padding: 34px 4px 28px;
+  padding: 36px 4px 30px;
   align-items: flex-start;
 }
 
 .home-theme .dday-title {
-  color: #fffaf1;
-  font-size: clamp(60px, 17vw, 82px);
-  line-height: .92;
-  font-weight: 900;
-  letter-spacing: -.075em;
+  color: #d8a071;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", serif;
+  font-size: clamp(64px, 18vw, 86px);
+  line-height: .88;
+  font-weight: 700;
+  letter-spacing: -.055em;
+  text-shadow: 0 1px 18px rgba(206,132,80,.10);
 }
 
 .home-theme .trip-meta {
@@ -30,59 +33,64 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0;
-  margin-top: 16px;
-  color: rgba(247,242,232,.78);
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -.01em;
+  margin-top: 17px;
+  color: rgba(234,217,196,.72);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .005em;
 }
 
 .home-theme #tripLocation::before {
   content: '⌖';
-  margin-right: 5px;
-  color: #e47a45;
+  margin-right: 6px;
+  color: #c9895d;
 }
 
 .home-theme .icon-btn {
-  border: 1px solid rgba(255,255,255,.15);
-  background: rgba(255,255,255,.075);
-  color: #fffaf1;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: none;
+  border: 1px solid rgba(216,160,113,.20);
+  background: rgba(18,20,19,.72);
+  color: #d8a071;
+  box-shadow: 0 7px 22px rgba(0,0,0,.12);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .home-theme .hero-card {
-  padding: 22px;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 24px;
-  background: rgba(28, 50, 40, .68);
-  color: #fffaf1;
-  box-shadow: none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 23px 22px;
+  border: 1px solid rgba(216,160,113,.15);
+  border-radius: 19px;
+  background: rgba(20,24,22,.86);
+  color: #ead9c4;
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .home-theme .home-label {
-  margin: 0 0 8px;
-  color: #e9a37d;
+  margin: 0 0 9px;
+  color: #c9895d;
+  font-family: "AppleMyungjo", "Nanum Myeongjo", serif;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: .035em;
 }
 
 .home-theme .progress-number {
-  font-size: 54px;
-  font-weight: 850;
+  color: #f0e1ce;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", serif;
+  font-size: 57px;
+  font-weight: 700;
+  letter-spacing: -.035em;
 }
 
 .home-theme .ring {
   --progress: 0deg;
   position: relative;
-  width: 68px;
-  height: 68px;
-  background: conic-gradient(#e47a45 0 var(--progress), rgba(255,255,255,.11) var(--progress) 360deg);
-  color: #fffaf1;
-  font-size: 20px;
+  width: 66px;
+  height: 66px;
+  background: conic-gradient(#c9895d 0 var(--progress), rgba(234,217,196,.10) var(--progress) 360deg);
+  color: #ead9c4;
+  font-size: 19px;
   box-shadow: none;
 }
 
@@ -91,7 +99,7 @@
   position: absolute;
   inset: 7px;
   border-radius: 50%;
-  background: #193127;
+  background: #171b19;
 }
 
 .home-theme .ring span {
@@ -101,127 +109,134 @@
 
 .home-theme .progress-track {
   margin-top: 24px;
-  height: 5px;
-  background: rgba(255,255,255,.13);
+  height: 4px;
+  background: rgba(234,217,196,.11);
 }
 
 .home-theme .progress-fill {
-  background: #e47a45;
+  background: #c9895d;
 }
 
 .home-theme .hero-card .muted {
-  color: rgba(247,242,232,.62);
+  color: rgba(234,217,196,.58);
   font-size: 13px;
 }
 
 .home-theme .home-section {
-  margin-top: 26px;
+  margin-top: 30px;
 }
 
 .home-theme .home-section .section-head {
-  margin-bottom: 11px;
+  margin-bottom: 12px;
   padding: 0 2px;
 }
 
 .home-theme .home-section h2 {
-  color: #fffaf1;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -.035em;
+  color: #e7d4bc;
+  font-family: "AppleMyungjo", "Nanum Myeongjo", serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.018em;
 }
 
 .home-theme .text-btn {
-  color: rgba(247,242,232,.62);
+  color: rgba(216,160,113,.78);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .home-theme .meal-feature {
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 22px;
-  background: rgba(255,255,255,.065);
-  color: #fffaf1;
-  box-shadow: none;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(216,160,113,.12);
+  border-radius: 18px;
+  background: rgba(24,24,21,.78);
+  color: #ead9c4;
+  box-shadow: 0 8px 22px rgba(0,0,0,.09);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .home-theme .meal-feature .meal-day {
-  color: #e9a37d;
+  color: #c9895d;
+  font-weight: 700;
 }
 
 .home-theme .meal-feature .meal-name {
+  color: #ead9c4;
+  font-family: "AppleMyungjo", "Nanum Myeongjo", serif;
   font-size: 21px;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: -.015em;
 }
 
 .home-theme .meal-feature .meal-assignee,
 .home-theme .empty-card {
-  color: rgba(247,242,232,.58);
+  color: rgba(234,217,196,.54);
 }
 
 .home-theme .member-progress {
-  gap: 7px;
+  gap: 8px;
 }
 
 .home-theme .member-row {
-  border: 1px solid rgba(255,255,255,.075);
-  border-radius: 16px;
-  background: rgba(255,255,255,.05);
-  color: #f7f2e8;
+  border: 1px solid rgba(216,160,113,.10);
+  border-radius: 15px;
+  background: rgba(23,24,21,.72);
+  color: #e6d3bb;
   padding: 12px 14px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .home-theme .member-row-top {
   font-size: 13px;
+  font-weight: 650;
 }
 
 .home-theme .small-track {
   height: 4px;
-  background: rgba(255,255,255,.11);
+  background: rgba(234,217,196,.10);
 }
 
 .home-theme .small-track span {
-  background: #e47a45;
+  background: #b97850;
 }
 
 .home-theme .mini-item {
-  border: 1px solid rgba(255,255,255,.075);
-  border-radius: 16px;
-  background: rgba(255,255,255,.05);
-  color: #f7f2e8;
+  border: 1px solid rgba(216,160,113,.10);
+  border-radius: 15px;
+  background: rgba(23,24,21,.72);
+  color: #e6d3bb;
   box-shadow: none;
 }
 
 .home-theme .dot-status {
-  background: #e47a45;
+  background: #c9895d;
 }
 
 .home-theme .empty-state {
-  border-color: rgba(255,255,255,.12);
-  color: rgba(247,242,232,.56);
+  border-color: rgba(216,160,113,.14);
+  color: rgba(234,217,196,.52);
 }
 
 .home-theme .bottom-nav {
-  border-top: 1px solid rgba(255,255,255,.08);
-  background: rgba(7,16,24,.90);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(216,160,113,.10);
+  background: rgba(10,13,15,.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .home-theme .nav-item {
-  color: rgba(247,242,232,.48);
+  color: rgba(234,217,196,.42);
 }
 
 .home-theme .nav-item.active {
-  color: #e47a45;
-  background: rgba(255,255,255,.065);
+  color: #c9895d;
+  background: rgba(201,137,93,.08);
 }
 
 @media (max-width: 420px) {
-  .home-theme .topbar { padding-top: 28px; }
-  .home-theme .dday-title { font-size: 62px; }
-  .home-theme .trip-meta { font-size: 14px; }
+  .home-theme .topbar { padding-top: 30px; }
+  .home-theme .dday-title { font-size: 66px; }
+  .home-theme .trip-meta { font-size: 13px; }
 }
