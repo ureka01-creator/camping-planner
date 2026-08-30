@@ -22,7 +22,28 @@ try {
   const dates=await page.locator('#dateTabs .date-tab').allTextContents();
   const cards=await page.locator('#mealList .meal-card').count();
   const empty=await page.locator('#mealList .empty-state').count();
-  const inlineForms=cards ? await page.locator('#mealList .meal-inline-form').count() : 0;
+  const toggles=cards ? await page.locator('#mealList .meal-inline-toggle').count() : 0;
+  const visibleAddFormsBefore=cards ? await page.locator('#mealList .meal-inline-form:visible').count() : 0;
+  const overflowBefore=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+
+  let addToggleOk=true;
+  let inlineEditOk=true;
+  if(cards>0){
+    const firstToggle=page.locator('#mealList .meal-inline-toggle').first();
+    await firstToggle.click();
+    addToggleOk=(await firstToggle.getAttribute('aria-expanded'))==='true' && await page.locator('#mealList .meal-inline-form:visible').first().isVisible();
+    await firstToggle.click();
+
+    const editButtons=page.locator('#mealList [data-edit-meal-item]');
+    if(await editButtons.count()){
+      await editButtons.first().click();
+      inlineEditOk=await page.locator('#mealList .meal-inline-edit:visible').first().isVisible();
+      const modalVisible=await page.locator('#modalBackdrop:not(.hidden)').count();
+      inlineEditOk=inlineEditOk && modalVisible===0;
+    }
+  }
+
+  const overflowAfter=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   await page.locator('[data-nav="settings"]').click();
   await page.waitForFunction(() => {
@@ -46,12 +67,13 @@ try {
     min: document.querySelector('#tripEndDateInput').min
   }));
 
-  console.log(JSON.stringify({dates,cards,empty,inlineForms,initial,constrained,errors},null,2));
+  console.log(JSON.stringify({dates,cards,empty,toggles,visibleAddFormsBefore,addToggleOk,inlineEditOk,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
-  const mealScreenOk=dates.length>=1 && (cards>0 ? inlineForms===cards : empty>0);
+  const mealScreenOk=dates.length>=1 && (cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk : empty>0);
+  const widthOk=!overflowBefore && !overflowAfter;
   const dateConstraintOk=initial.min===initial.start && constrained.min===probeStart && constrained.end===probeStart;
-  if(errors.length || !mealScreenOk || !dateConstraintOk) process.exitCode=1;
+  if(errors.length || !mealScreenOk || !widthOk || !dateConstraintOk) process.exitCode=1;
 } catch(e){
   console.error('APP_SMOKE_FAILED', e);
   console.error(errors.join('\n'));
