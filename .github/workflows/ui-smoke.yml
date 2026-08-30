@@ -1,0 +1,47 @@
+name: UI Smoke Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'css/**'
+      - 'js/**'
+      - 'qa/**'
+      - '.github/workflows/ui-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  header-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 >/tmp/camping-qa-http.log 2>&1 &
+          echo $! > /tmp/camping-qa-http.pid
+          sleep 1
+
+      - name: Run header smoke check
+        run: node qa/run-header-smoke.mjs
+
+      - name: Upload smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: header-smoke-result
+          path: qa/header-smoke-result.png
+          if-no-files-found: ignore
