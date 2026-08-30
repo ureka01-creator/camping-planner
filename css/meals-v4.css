@@ -1,22 +1,23 @@
-/* v0.4.3 — meal detail items, inline add, progress, cost, date settings */
-.meal-card { overflow: hidden; }
-.meal-card-top { align-items: flex-start; }
-.meal-progress-block { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
+/* v0.4.6 — meal detail items, collapsible inline add/edit, progress, cost, date settings */
+.meal-card { overflow:hidden; min-width:0; max-width:100%; }
+.meal-card-top { align-items:flex-start; }
+.meal-progress-block { min-width:0; max-width:100%; margin-top:14px; padding-top:13px; border-top:1px solid var(--line); }
 .meal-progress-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; font-size:12px; color:var(--muted); }
 .meal-progress-head strong { color:var(--ink); font-size:13px; }
 .meal-detail-track { height:5px; border-radius:999px; overflow:hidden; background:#e7dfd3; }
 .meal-detail-track > span { display:block; height:100%; width:0; border-radius:inherit; background:var(--accent-2); transition:width .22s ease; }
-.meal-detail-list { display:grid; gap:7px; margin-top:12px; }
-.meal-detail-item { display:grid; grid-template-columns:34px minmax(0,1fr) auto; align-items:center; gap:9px; min-height:52px; padding:8px 8px 8px 9px; border:1px solid #ebe3d8; border-radius:15px; background:rgba(255,255,255,.56); }
+.meal-detail-list { display:grid; gap:7px; min-width:0; margin-top:12px; }
+.meal-detail-item { display:grid; grid-template-columns:34px minmax(0,1fr) 32px; align-items:center; gap:9px; min-width:0; max-width:100%; min-height:52px; padding:8px 8px 8px 9px; border:1px solid #ebe3d8; border-radius:15px; background:rgba(255,255,255,.56); }
+.meal-detail-item[hidden] { display:none; }
 .meal-detail-item.done { opacity:.58; }
 .meal-detail-check { width:32px; height:32px; border:1px solid #d9d1c4; border-radius:10px; background:#fff; color:#fff; font-size:15px; font-weight:900; }
 .meal-detail-item.done .meal-detail-check { border-color:var(--accent-2); background:var(--accent-2); }
 .meal-detail-item.done .meal-detail-name { text-decoration:line-through; }
-.meal-detail-main { min-width:0; }
+.meal-detail-main { min-width:0; overflow:hidden; }
 .meal-detail-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; font-weight:850; color:var(--ink); }
-.meal-detail-meta { display:flex; flex-wrap:wrap; gap:4px 7px; margin-top:4px; font-size:11px; line-height:1.35; color:var(--muted); }
+.meal-detail-meta { display:flex; flex-wrap:wrap; gap:4px 7px; min-width:0; margin-top:4px; font-size:11px; line-height:1.35; color:var(--muted); }
 .meal-detail-cost { color:#a15e3d; font-weight:800; }
-.meal-detail-actions { width:32px; height:32px; border:0; border-radius:50%; background:transparent; color:var(--muted); }
+.meal-detail-actions { width:32px; height:32px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--muted); }
 .meal-detail-empty { margin-top:11px; padding:11px 12px; border:1px dashed #d8cfc1; border-radius:14px; font-size:12px; line-height:1.5; color:var(--muted); text-align:center; }
 .meal-cost-total { margin-top:8px; font-size:11px; color:var(--muted); }
 .meal-feature .meal-feature-progress { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
@@ -25,26 +26,52 @@
 .form-row-2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:9px; }
 .form-row-2 > * { min-width:0; }
 
-/* iPhone native date input은 2열에서 글자가 겹치기 쉬워 설정 화면만 세로 배치한다. */
+/* iPhone native date input은 설정 화면에서 세로 배치 */
 #view-settings .form-row-2 { grid-template-columns:1fr; gap:10px; margin-top:12px; }
 #view-settings .form-row-2 label { min-width:0; }
 #view-settings input[type="date"] { min-width:0; width:100%; max-width:100%; }
 
-.cost-input-wrap { position:relative; min-width:0; }
-.cost-input-wrap input { padding-right:34px; }
+.cost-input-wrap { position:relative; min-width:0; width:100%; max-width:100%; }
+.cost-input-wrap input { width:100%; max-width:100%; padding-right:34px; }
 .cost-input-wrap::after { content:'원'; position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:12px; pointer-events:none; }
 
-/* 준비 항목은 모달 없이 카드 안에서 바로 입력 */
-.meal-inline-form { display:grid; gap:8px; margin-top:10px; padding:10px; border:1px solid #ded3c4; border-radius:15px; background:#faf6ef; }
+/* 준비 항목 추가: 기본 접힘, 카드 안에서만 펼침 */
+.meal-inline-control { width:100%; max-width:100%; min-width:0; margin-top:10px; }
+.meal-inline-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:100%; min-height:42px; padding:0 13px; border:1px solid #d9cebf; border-radius:13px; background:#faf5ed; color:var(--accent-2); font-size:12px; font-weight:900; }
+.meal-inline-chevron { display:inline-block; font-size:16px; transition:transform .18s ease; }
+.meal-inline-toggle[aria-expanded="true"] .meal-inline-chevron { transform:rotate(180deg); }
+.meal-inline-panel { width:100%; max-width:100%; min-width:0; }
+.meal-inline-panel[hidden] { display:none; }
+.meal-inline-form,
+.meal-inline-edit { display:grid; gap:8px; width:100%; max-width:100%; min-width:0; margin-top:8px; padding:10px; border:1px solid #ded3c4; border-radius:15px; background:#faf6ef; overflow:hidden; }
+.meal-inline-form *,
+.meal-inline-edit * { min-width:0; }
 .meal-inline-form input,
-.meal-inline-form select { min-width:0; min-height:40px; padding:8px 10px; border-radius:11px; font-size:12px; background:#fffdf9; }
-.meal-inline-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:7px; }
-.meal-inline-bottom { grid-template-columns:minmax(0,1fr) auto; }
-.meal-inline-submit { min-width:78px; min-height:40px; border:0; border-radius:11px; padding:0 13px; background:var(--accent-2); color:#fff; font-size:12px; font-weight:900; }
+.meal-inline-form select,
+.meal-inline-edit input,
+.meal-inline-edit select,
+.meal-inline-edit textarea { width:100%; max-width:100%; min-width:0; min-height:40px; padding:8px 10px; border-radius:11px; background:#fffdf9; }
+.meal-inline-edit textarea { min-height:72px; resize:vertical; }
+.meal-inline-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:7px; width:100%; min-width:0; }
+.meal-inline-bottom { grid-template-columns:minmax(0,1fr) 82px; }
+.meal-inline-submit { width:82px; min-width:0; min-height:40px; border:0; border-radius:11px; padding:0 8px; background:var(--accent-2); color:#fff; font-size:12px; font-weight:900; }
 .meal-inline-submit:disabled { opacity:.55; }
 
+/* 기존 항목 수정/삭제도 모달 없이 현재 카드 안에서 처리 */
+.meal-inline-edit { margin-top:7px; }
+.meal-inline-edit-title { font-size:12px; font-weight:900; color:var(--ink); }
+.meal-inline-edit-actions { display:grid; grid-template-columns:72px minmax(0,1fr) minmax(0,1fr); gap:7px; width:100%; }
+.meal-inline-edit-actions button { min-width:0; min-height:40px; border-radius:11px; font-size:12px; font-weight:900; }
+.meal-inline-delete { border:1px solid #efc9bb; background:#fff3ee; color:#b64d2d; }
+.meal-inline-cancel { border:1px solid #d9cebf; background:#fff; color:var(--muted); }
+.meal-inline-save { border:0; background:var(--ink); color:#fff; }
+.meal-inline-edit-actions button:disabled { opacity:.55; }
+
 @media (max-width:390px) {
-  .meal-detail-item { grid-template-columns:32px minmax(0,1fr) 28px; gap:7px; padding-left:7px; padding-right:6px; }
+  .meal-detail-item { grid-template-columns:30px minmax(0,1fr) 28px; gap:7px; padding-left:7px; padding-right:6px; }
   .meal-detail-check { width:30px; height:30px; }
-  .meal-inline-row { grid-template-columns:1fr 1fr; }
+  .meal-inline-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .meal-inline-bottom { grid-template-columns:minmax(0,1fr) 78px; }
+  .meal-inline-submit { width:78px; }
+  .meal-inline-edit-actions { grid-template-columns:68px minmax(0,1fr) minmax(0,1fr); gap:6px; }
 }
