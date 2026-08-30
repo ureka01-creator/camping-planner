@@ -33,7 +33,7 @@ function weekdayText(iso){
 }
 function tripDateText(){
   const t=state.data.trip;
-  return `${formatShortDate(t.startDate)} ${weekdayText(t.startDate)} — ${formatShortDate(t.endDate)} ${weekdayText(t.endDate)}`;
+  return `${formatShortDate(t.startDate)} ${weekdayText(t.startDate)} - ${formatShortDate(t.endDate)} ${weekdayText(t.endDate)}`;
 }
 function ddayText(iso){
   const [y,m,d]=iso.split('-').map(Number);
@@ -41,7 +41,7 @@ function ddayText(iso){
   const today=new Date();
   today.setHours(0,0,0,0);
   const diff=Math.round((target-today)/86400000);
-  if(diff>0) return `D–${diff}`;
+  if(diff>0) return `D-${diff}`;
   if(diff===0) return 'D-DAY';
   return `D+${Math.abs(diff)}`;
 }
