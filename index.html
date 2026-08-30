@@ -21,12 +21,19 @@
 <body class="landing-boot">
   <div id="app" class="app-shell">
     <header class="topbar">
-      <div>
+      <div class="trip-heading">
         <h1 id="tripTitle" class="dday-title" aria-live="polite"></h1>
-        <p class="trip-meta">
-          <span id="tripDates" class="trip-dates">9/11 — 9/13</span>
+        <div class="trip-meta">
+          <div class="trip-schedule">
+            <span id="tripDates" class="trip-dates">9/11 — 9/13</span>
+            <span class="trip-weekdays" aria-label="금요일부터 일요일">FRI — SUN</span>
+          </div>
           <span id="tripLocation" class="trip-location">리버앤캠프</span>
-        </p>
+          <div class="trip-address-row">
+            <span id="tripAddress" class="trip-address">경기 연천군 청산면 백궁길 27 1층</span>
+            <button id="copyAddressBtn" class="address-copy-btn" type="button" aria-label="캠핑장 주소 복사">복사</button>
+          </div>
+        </div>
       </div>
       <button id="shareBtn" class="icon-btn" aria-label="공유">↗</button>
     </header>
@@ -111,7 +118,7 @@
           <p id="connectionText" class="muted">로컬 데모 모드</p>
           <p class="tiny">Firebase 설정을 넣으면 여러 기기 실시간 동기화 모드로 전환돼.</p>
         </div>
-        <p class="version">Camping Planner v0.3.2</p>
+        <p class="version">Camping Planner v0.3.3</p>
       </section>
     </main>
 
@@ -133,5 +140,27 @@
 
   <script type="module" src="./js/landing.js"></script>
   <script type="module" src="./js/app.js"></script>
+  <script>
+    (() => {
+      const button = document.getElementById('copyAddressBtn');
+      const address = document.getElementById('tripAddress');
+      if (!button || !address) return;
+      button.addEventListener('click', async () => {
+        const text = address.textContent.trim();
+        try {
+          await navigator.clipboard.writeText(text);
+          const before = button.textContent;
+          button.textContent = '복사됨';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.textContent = before;
+            button.classList.remove('copied');
+          }, 1400);
+        } catch (_) {
+          window.prompt('주소를 복사해줘.', text);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
