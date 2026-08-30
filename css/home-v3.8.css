@@ -1,0 +1,63 @@
+/* v0.3.8 — verified header geometry */
+
+/* Cormorant의 큰 line box 때문에 날짜가 멀어 보이는 문제를 제거한다. */
+.home-theme .dday-title {
+  min-height: 0;
+  line-height: .72;
+  overflow: visible;
+}
+
+/* D, separator, number를 독립 요소로 두어 separator가 폰트 글리프 영향을 받지 않게 한다. */
+.home-theme .dday-title.dday-composed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.home-theme .dday-title .dday-dash {
+  display: block;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 2px;
+  margin: 0 5px 0 4px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: none;
+}
+
+/* D-day와 일정은 한 정보 묶음. */
+.home-theme .trip-meta {
+  margin-top: 12px;
+  gap: 0;
+}
+
+/* 일정과 장소는 서로 다른 정보 묶음. */
+.home-theme .trip-dates {
+  margin-bottom: 20px;
+  white-space: nowrap;
+}
+
+.home-theme .trip-location {
+  margin-bottom: 4px;
+}
+
+.home-theme .trip-address-row {
+  gap: 6px;
+}
+
+.home-theme .address-copy-btn {
+  min-height: 21px;
+  padding: 0 6px;
+  border-radius: 7px;
+  font-size: 9px;
+}
+
+@media (max-width: 420px) {
+  .home-theme .dday-title {
+    line-height: .70;
+  }
+
+  .home-theme .trip-meta {
+    margin-top: 10px;
+  }
+}
