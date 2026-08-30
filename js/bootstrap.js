@@ -50,3 +50,4 @@ try {
 await import('./app.js?v=045');
 await import('./inline-meal-add.js?v=046');
 await import('./trip-settings.js?v=045');
+await import('./home-meal-progress.js?v=050');
