@@ -130,7 +130,7 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
-const COVER_CACHE_KEY = 'camp:landingCover:v2';
+const COVER_CACHE_KEY = 'camp:landingCover:v3';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
@@ -155,6 +155,15 @@ function showCover(src) {
   });
 }
 
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
 function enterPlanner() {
   if (overlay.classList.contains('is-exiting')) return;
   document.body.classList.remove('landing-boot');
@@ -164,6 +173,39 @@ function enterPlanner() {
 }
 
 overlay.addEventListener('click', enterPlanner);
+
+async function applyVerifiedDateFix(baseSrc) {
+  const response = await fetch('./assets/date-fix-v1.b64?v=1', { cache: 'force-cache' });
+  if (!response.ok) throw new Error('date patch load failed');
+  const patchBase64 = (await response.text()).trim();
+
+  const [baseImage, patchImage] = await Promise.all([
+    loadImage(baseSrc),
+    loadImage(`data:image/png;base64,${patchBase64}`)
+  ]);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = baseImage.naturalWidth;
+  canvas.height = baseImage.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas unavailable');
+
+  ctx.drawImage(baseImage, 0, 0);
+
+  // Verified edit region from the 1024x1536 source poster.
+  // This patch changes only the first date/weekday line; 9.13 SUN and every other pixel stay untouched.
+  const scaleX = canvas.width / 1024;
+  const scaleY = canvas.height / 1536;
+  ctx.drawImage(
+    patchImage,
+    718 * scaleX,
+    696 * scaleY,
+    134 * scaleX,
+    35 * scaleY
+  );
+
+  return canvas.toDataURL('image/webp', 0.96);
+}
 
 async function fetchCover() {
   const urls = [
@@ -182,7 +224,8 @@ async function fetchCover() {
     return response.text();
   }));
 
-  const src = `data:image/webp;base64,${parts.join('')}`;
+  const baseSrc = `data:image/webp;base64,${parts.join('')}`;
+  const src = await applyVerifiedDateFix(baseSrc);
   try { localStorage.setItem(COVER_CACHE_KEY, src); } catch (_) {}
   return src;
 }
