@@ -16,6 +16,7 @@
 .home-theme .trip-location-row .trip-location {
   margin: 0;
   line-height: 1.35;
+  color: #fff;
 }
 
 /* crosshair를 폰트 글리프가 아니라 CSS로 그려 iOS에서도 중심선이 흔들리지 않게 한다. */
