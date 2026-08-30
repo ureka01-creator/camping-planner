@@ -17,13 +17,15 @@
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="./css/app.css" />
   <link rel="stylesheet" href="./css/home-v3.css" />
-  <link rel="stylesheet" href="./css/home-v3.7.css?v=037" />
+  <link rel="stylesheet" href="./css/home-v3.8.css?v=038" />
 </head>
 <body class="landing-boot">
   <div id="app" class="app-shell">
     <header class="topbar">
       <div class="trip-heading">
-        <h1 id="tripTitle" class="dday-title" aria-live="polite"></h1>
+        <h1 id="tripTitle" class="dday-title dday-composed" data-start-date="2026-09-11" aria-live="polite" aria-label="">
+          <span>D</span><span class="dday-dash" aria-hidden="true"></span><span class="dday-number"></span>
+        </h1>
         <div class="trip-meta">
           <span id="tripDates" class="trip-dates">9/11 FRI - 9/13 SUN</span>
           <span id="tripLocation" class="trip-location">리버앤캠프</span>
@@ -116,7 +118,7 @@
           <p id="connectionText" class="muted">로컬 데모 모드</p>
           <p class="tiny">Firebase 설정을 넣으면 여러 기기 실시간 동기화 모드로 전환돼.</p>
         </div>
-        <p class="version">Camping Planner v0.3.7</p>
+        <p class="version">Camping Planner v0.3.8</p>
       </section>
     </main>
 
@@ -142,17 +144,34 @@
     (() => {
       const title = document.getElementById('tripTitle');
       if (title) {
+        const buildDday = (text) => {
+          const match = /^D-(\d+)$/.exec(text);
+          title.setAttribute('aria-label', text);
+          if (!match) {
+            title.classList.remove('dday-composed');
+            title.textContent = text;
+            return;
+          }
+          title.classList.add('dday-composed');
+          title.innerHTML = `<span>D</span><span class="dday-dash" aria-hidden="true"></span><span class="dday-number">${match[1]}</span>`;
+        };
+
+        const start = title.dataset.startDate;
+        if (start) {
+          const [y,m,d] = start.split('-').map(Number);
+          const target = new Date(y,m-1,d);
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          const diff = Math.round((target-today)/86400000);
+          buildDday(diff > 0 ? `D-${diff}` : diff === 0 ? 'D-DAY' : `D+${Math.abs(diff)}`);
+        }
+
         const composeDday = () => {
           if (title.querySelector('.dday-dash')) return;
           const text = title.textContent.trim();
-          const match = /^D-(\d+)$/.exec(text);
-          if (!match) return;
-          title.classList.add('dday-composed');
-          title.setAttribute('aria-label', text);
-          title.innerHTML = `<span>D</span><span class="dday-dash" aria-hidden="true"></span><span>${match[1]}</span>`;
+          if (/^D-(\d+)$/.test(text)) buildDday(text);
         };
         new MutationObserver(composeDday).observe(title, { childList: true, characterData: true, subtree: true });
-        composeDday();
       }
 
       const button = document.getElementById('copyAddressBtn');
