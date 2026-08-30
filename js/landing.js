@@ -142,13 +142,17 @@ overlay.addEventListener('click', enterPlanner);
 
 async function loadCover() {
   const urls = [
-    './assets/cover-hq.part0',
-    './assets/cover-hq.part1',
-    './assets/cover-hq.part2'
+    './assets/cover-v2.part0?v=2',
+    './assets/cover-v2.part1?v=2',
+    './assets/cover-v2.part2?v=2',
+    './assets/cover-v2.part3?v=2',
+    './assets/cover-v2.part4?v=2',
+    './assets/cover-v2.part5?v=2',
+    './assets/cover-v2.part6?v=2'
   ];
 
   const parts = await Promise.all(urls.map(async url => {
-    const response = await fetch(url, { cache: 'force-cache' });
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`cover load failed: ${url}`);
     return response.text();
   }));
@@ -157,7 +161,9 @@ async function loadCover() {
   poster.src = src;
   bg.style.backgroundImage = `url("${src}")`;
 
-  await poster.decode().catch(() => {});
+  await poster.decode();
+  if (!poster.naturalWidth) throw new Error('cover decode failed');
+
   requestAnimationFrame(() => {
     bg.classList.add('loaded');
     poster.classList.add('loaded');
