@@ -1,0 +1,6 @@
+/* v0.3.10 — campground title color */
+
+/* 장소명은 헤더 정보에서 더 또렷하게 읽히도록 흰색으로 고정한다. */
+.home-theme .trip-location-row .trip-location {
+  color: #fff;
+}
