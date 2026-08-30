@@ -1,6 +1,6 @@
 .home-theme .trip-meta {
   gap: 0;
-  margin-top: 18px;
+  margin-top: 7px;
 }
 
 .home-theme .trip-dates {
@@ -29,4 +29,22 @@
   border-radius: 8px;
   font-size: 9px;
   font-weight: 700;
+}
+
+/* D-day의 하이픈은 폰트 글리프 대신 수평선을 직접 그려 항상 반듯하게 보이게 한다. */
+.home-theme .dday-title.dday-composed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.home-theme .dday-title .dday-dash {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: .34em;
+  height: .035em;
+  margin: 0 .055em;
+  border-radius: 99px;
+  background: currentColor;
+  transform: translateY(.025em);
 }
