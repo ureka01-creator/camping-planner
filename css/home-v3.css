@@ -19,6 +19,10 @@
   align-items: flex-start;
 }
 
+.home-theme .trip-heading {
+  min-width: 0;
+}
+
 .home-theme .dday-title {
   min-height: .88em;
   color: #e2b181;
@@ -37,7 +41,7 @@
 
 .home-theme .trip-meta {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   margin-top: 18px;
   color: rgba(234,217,196,.74);
   font-size: 14px;
@@ -50,14 +54,54 @@
   display: block;
 }
 
+.home-theme .trip-dates {
+  white-space: nowrap;
+  color: rgba(234,217,196,.82);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .005em;
+}
+
 .home-theme .trip-location {
-  color: rgba(234,217,196,.64);
+  color: rgba(234,217,196,.68);
+  font-weight: 650;
 }
 
 .home-theme #tripLocation::before {
   content: '⌖';
   margin-right: 6px;
   color: #c9895d;
+}
+
+.home-theme .trip-address-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.home-theme .trip-address {
+  min-width: 0;
+  color: rgba(234,217,196,.46);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.home-theme .address-copy-btn {
+  flex: 0 0 auto;
+  min-height: 27px;
+  padding: 0 9px;
+  border: 1px solid rgba(201,137,93,.24);
+  border-radius: 99px;
+  background: rgba(201,137,93,.06);
+  color: rgba(226,177,129,.80);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.home-theme .address-copy-btn.copied {
+  background: rgba(201,137,93,.14);
+  color: #e2b181;
 }
 
 .home-theme .icon-btn {
@@ -255,4 +299,6 @@
   .home-theme .topbar { padding-top: 30px; }
   .home-theme .dday-title { font-size: 70px; }
   .home-theme .trip-meta { font-size: 13px; }
+  .home-theme .trip-dates { font-size: 13px; }
+  .home-theme .trip-address { font-size: 10.5px; }
 }
