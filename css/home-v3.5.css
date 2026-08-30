@@ -1,0 +1,32 @@
+.home-theme .trip-meta {
+  gap: 0;
+  margin-top: 18px;
+}
+
+.home-theme .trip-dates {
+  margin-bottom: 22px;
+  white-space: nowrap;
+}
+
+.home-theme .trip-location {
+  margin-bottom: 4px;
+  color: rgba(234,217,196,.72);
+}
+
+.home-theme .trip-address-row {
+  gap: 6px;
+}
+
+.home-theme .trip-address {
+  color: rgba(234,217,196,.48);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.home-theme .address-copy-btn {
+  min-height: 22px;
+  padding: 0 7px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+}
