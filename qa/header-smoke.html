@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../css/app.css" />
   <link rel="stylesheet" href="../css/home-v3.css" />
   <link rel="stylesheet" href="../css/home-v3.8.css" />
+  <link rel="stylesheet" href="../css/home-v3.9.css" />
   <style>
     body { margin:0; }
     #qaResult { position:fixed; z-index:999; left:8px; right:8px; bottom:8px; margin:0; padding:10px; border-radius:10px; background:#fff; color:#111; font:12px/1.45 monospace; white-space:pre-wrap; }
@@ -25,7 +26,10 @@
         </h1>
         <div class="trip-meta">
           <span id="tripDates" class="trip-dates">9/11 FRI - 9/13 SUN</span>
-          <span id="tripLocation" class="trip-location">리버앤캠프</span>
+          <div class="trip-location-row">
+            <span class="trip-location-icon" aria-hidden="true"></span>
+            <span id="tripLocation" class="trip-location">리버앤캠프</span>
+          </div>
           <div class="trip-address-row">
             <span id="tripAddress" class="trip-address">경기 연천군 청산면 백궁길 27 1층</span>
             <button class="address-copy-btn" type="button">복사</button>
@@ -44,12 +48,18 @@
         const title = rect('#tripTitle');
         const dash = rect('.dday-dash');
         const dates = rect('#tripDates');
+        const locationRow = rect('.trip-location-row');
         const location = rect('#tripLocation');
+        const locationIcon = rect('.trip-location-icon');
         const address = rect('#tripAddress');
         const copy = rect('.address-copy-btn');
         const dateGap = Math.round(dates.top - title.bottom);
-        const placeGap = Math.round(location.top - dates.bottom);
-        const addressGap = Math.round(address.top - location.bottom);
+        const placeGap = Math.round(locationRow.top - dates.bottom);
+        const addressGap = Math.round(address.top - locationRow.bottom);
+        const iconCenter = locationIcon.top + locationIcon.height / 2;
+        const textCenter = location.top + location.height / 2;
+        const iconTextCenterDiff = Math.abs(iconCenter - textCenter);
+        const iconTextGap = Math.round(location.left - locationIcon.right);
         const checks = {
           ddayVisible: title.width > 80 && title.height > 30,
           dashWidth14: dash.width >= 13 && dash.width <= 15,
@@ -57,10 +67,24 @@
           ddayDateGap: dateGap >= 0 && dateGap <= 24,
           datePlaceGap: placeGap >= 12 && placeGap <= 36,
           placeAddressGap: addressGap >= 0 && addressGap <= 10,
-          copyButtonSmall: copy.height <= 26
+          copyButtonSmall: copy.height <= 26,
+          locationIconVisible: locationIcon.width >= 16 && locationIcon.height >= 16,
+          locationIconCentered: iconTextCenterDiff <= 2,
+          locationIconGap: iconTextGap >= 3 && iconTextGap <= 7
         };
         const pass = Object.values(checks).every(Boolean);
-        const metrics = { dateGap, placeGap, addressGap, dashWidth: Math.round(dash.width), dashHeight: Math.round(dash.height), copyHeight: Math.round(copy.height) };
+        const metrics = {
+          dateGap,
+          placeGap,
+          addressGap,
+          dashWidth: Math.round(dash.width),
+          dashHeight: Math.round(dash.height),
+          copyHeight: Math.round(copy.height),
+          iconWidth: Math.round(locationIcon.width),
+          iconHeight: Math.round(locationIcon.height),
+          iconTextCenterDiff: Math.round(iconTextCenterDiff * 10) / 10,
+          iconTextGap
+        };
         document.body.dataset.qa = pass ? 'PASS' : 'FAIL';
         document.getElementById('qaResult').textContent = `${pass ? 'PASS' : 'FAIL'}\n${JSON.stringify(checks, null, 2)}\n${JSON.stringify(metrics, null, 2)}`;
       }));
