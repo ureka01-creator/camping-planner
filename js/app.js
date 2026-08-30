@@ -35,7 +35,7 @@ function ddayText(iso){
   const today=new Date();
   today.setHours(0,0,0,0);
   const diff=Math.round((target-today)/86400000);
-  if(diff>0) return `D-${diff}`;
+  if(diff>0) return `D–${diff}`;
   if(diff===0) return 'D-DAY';
   return `D+${Math.abs(diff)}`;
 }
