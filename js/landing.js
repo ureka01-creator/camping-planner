@@ -130,7 +130,7 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
-const COVER_CACHE_KEY = 'camp:landingCover:v5';
+const COVER_CACHE_KEY = 'camp:landingCover:v6';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
@@ -175,7 +175,7 @@ function enterPlanner() {
 overlay.addEventListener('click', enterPlanner);
 
 async function applyVerifiedDateFix(baseSrc) {
-  const response = await fetch('./assets/date-fix-v2.b64?v=3', { cache: 'force-cache' });
+  const response = await fetch('./assets/date-fix-v2.b64?v=4', { cache: 'force-cache' });
   if (!response.ok) throw new Error('date patch load failed');
   const patchBase64 = (await response.text()).trim();
 
