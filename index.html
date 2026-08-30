@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#071018" />
+  <meta name="theme-color" content="#080c12" />
   <title>Camping Planner</title>
   <style>
     body.landing-boot { background:#070b0f; }
@@ -11,6 +11,10 @@
     body.landing-boot #modalBackdrop,
     body.landing-boot #toast { visibility:hidden; }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="./css/app.css" />
   <link rel="stylesheet" href="./css/home-v3.css" />
 </head>
@@ -18,7 +22,7 @@
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <h1 id="tripTitle" class="dday-title">D-14</h1>
+        <h1 id="tripTitle" class="dday-title" aria-live="polite"></h1>
         <p class="trip-meta"><span id="tripDates">9/11 — 9/13</span><span class="dot">•</span><span id="tripLocation">리버앤캠프</span></p>
       </div>
       <button id="shareBtn" class="icon-btn" aria-label="공유">↗</button>
@@ -104,7 +108,7 @@
           <p id="connectionText" class="muted">로컬 데모 모드</p>
           <p class="tiny">Firebase 설정을 넣으면 여러 기기 실시간 동기화 모드로 전환돼.</p>
         </div>
-        <p class="version">Camping Planner v0.3.0</p>
+        <p class="version">Camping Planner v0.3.1</p>
       </section>
     </main>
 
