@@ -12,6 +12,7 @@ const state = {
 
 const mealLabels={breakfast:'아침',lunch:'점심',dinner:'저녁',snack:'간식'};
 const mealOrder={breakfast:1,lunch:2,dinner:3,snack:4};
+const weekdayLabels=['SUN','MON','TUE','WED','THU','FRI','SAT'];
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 
@@ -26,8 +27,13 @@ function dateRange(start,end){
   return arr;
 }
 function formatShortDate(iso){ const [,m,d]=iso.split('-').map(Number); return `${m}/${d}`; }
+function weekdayText(iso){
+  const [y,m,d]=iso.split('-').map(Number);
+  return weekdayLabels[new Date(Date.UTC(y,m-1,d)).getUTCDay()];
+}
 function tripDateText(){
-  const t=state.data.trip; return `${formatShortDate(t.startDate)} — ${formatShortDate(t.endDate)}`;
+  const t=state.data.trip;
+  return `${formatShortDate(t.startDate)} ${weekdayText(t.startDate)} — ${formatShortDate(t.endDate)} ${weekdayText(t.endDate)}`;
 }
 function ddayText(iso){
   const [y,m,d]=iso.split('-').map(Number);
