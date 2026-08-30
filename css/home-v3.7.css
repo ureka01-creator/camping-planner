@@ -1,0 +1,57 @@
+/* v0.3.7 header spacing / D-day separator fixes */
+.home-theme .dday-title.dday-composed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.home-theme .dday-title .dday-dash {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: .20em;
+  height: 2px;
+  margin: 0 .055em;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateY(.035em);
+}
+
+/* D-day 바로 아래에 일정이 붙도록 간격을 줄인다. */
+.home-theme .trip-meta {
+  margin-top: -10px;
+  gap: 0;
+}
+
+/* 일정과 장소는 서로 다른 정보 묶음이므로 여백을 유지한다. */
+.home-theme .trip-dates {
+  margin-bottom: 20px;
+  white-space: nowrap;
+}
+
+.home-theme .trip-location {
+  margin-bottom: 4px;
+}
+
+.home-theme .trip-address-row {
+  gap: 6px;
+}
+
+.home-theme .address-copy-btn {
+  min-height: 21px;
+  padding: 0 6px;
+  border-radius: 7px;
+  font-size: 9px;
+}
+
+@media (max-width: 420px) {
+  .home-theme .dday-title .dday-dash {
+    width: 14px;
+    height: 2px;
+    margin: 0 4px;
+    transform: translateY(2px);
+  }
+
+  .home-theme .trip-meta {
+    margin-top: -12px;
+  }
+}
