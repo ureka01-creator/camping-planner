@@ -135,7 +135,7 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
-const COVER_CACHE_KEY = 'camp:landingCover:v8';
+const COVER_CACHE_KEY = 'camp:landingCover:v9';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
@@ -179,6 +179,54 @@ function enterPlanner() {
 
 overlay.addEventListener('click', enterPlanner);
 
+function averageWarmText(imageData) {
+  const data = imageData.data;
+  let rSum = 0, gSum = 0, bSum = 0, count = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    const lum = (r + g + b) / 3;
+    if (a > 220 && lum > 115 && r > g + 2 && g > b + 2 && r - b < 90) {
+      rSum += r; gSum += g; bSum += b; count++;
+    }
+  }
+  return count ? [rSum / count, gSum / count, bSum / count] : null;
+}
+
+function matchPatchToneToSecondLine(patchImage, baseCtx, scaleX, scaleY) {
+  const patchCanvas = document.createElement('canvas');
+  patchCanvas.width = patchImage.naturalWidth;
+  patchCanvas.height = patchImage.naturalHeight;
+  const patchCtx = patchCanvas.getContext('2d', { willReadFrequently: true });
+  if (!patchCtx) return patchImage;
+  patchCtx.drawImage(patchImage, 0, 0);
+
+  const patchData = patchCtx.getImageData(0, 0, patchCanvas.width, patchCanvas.height);
+  const sourceTone = averageWarmText(patchData);
+
+  const targetX = Math.round(717 * scaleX);
+  const targetY = Math.round(735 * scaleY);
+  const targetW = Math.max(1, Math.round(135 * scaleX));
+  const targetH = Math.max(1, Math.round(31 * scaleY));
+  const targetData = baseCtx.getImageData(targetX, targetY, targetW, targetH);
+  const targetTone = averageWarmText(targetData);
+
+  if (!sourceTone || !targetTone) return patchCanvas;
+
+  const ratio = targetTone.map((v, index) => Math.max(.88, Math.min(1.18, v / sourceTone[index])));
+  const data = patchData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    const lum = (r + g + b) / 3;
+    const isWarmGlyph = a > 220 && lum > 105 && r > g + 3 && g > b + 2 && r - b < 105;
+    if (!isWarmGlyph) continue;
+    data[i] = Math.min(255, Math.round(r * ratio[0]));
+    data[i + 1] = Math.min(255, Math.round(g * ratio[1]));
+    data[i + 2] = Math.min(255, Math.round(b * ratio[2]));
+  }
+  patchCtx.putImageData(patchData, 0, 0);
+  return patchCanvas;
+}
+
 async function applyVerifiedDateFix(baseSrc) {
   const response = await fetch('./assets/date-fix-v2.b64?v=6', { cache: 'force-cache' });
   if (!response.ok) throw new Error('date patch load failed');
@@ -192,17 +240,18 @@ async function applyVerifiedDateFix(baseSrc) {
   const canvas = document.createElement('canvas');
   canvas.width = baseImage.naturalWidth;
   canvas.height = baseImage.naturalHeight;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('canvas unavailable');
 
   ctx.drawImage(baseImage, 0, 0);
 
-  // Final approved poster edit. The patch contains only the verified 9.11 / FRI alignment area.
-  // 9.13 SUN, time, location, artwork, and every other region remain from the original high-resolution cover.
+  // 정렬은 승인된 패치를 그대로 쓰고, 글자색만 원본의 9.13 SUN 톤을 샘플링해 보정한다.
+  // 패치 전체에 필터를 씌우지 않으므로 배경/위치/크기와 2:00 PM, 9.13 줄은 그대로 유지된다.
   const scaleX = canvas.width / 1024;
   const scaleY = canvas.height / 1536;
+  const toneMatchedPatch = matchPatchToneToSecondLine(patchImage, ctx, scaleX, scaleY);
   ctx.drawImage(
-    patchImage,
+    toneMatchedPatch,
     717 * scaleX,
     697 * scaleY,
     135 * scaleX,
