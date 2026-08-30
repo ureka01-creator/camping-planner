@@ -80,7 +80,7 @@ style.textContent = `
     opacity: 0;
     transition: opacity .25s ease .1s;
     animation: landingHint 1.8s ease-in-out infinite;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, .35);
+    text-shadow: 0 1px 8px rgba(0, 0, 0,.35);
   }
 
   .camp-landing-hint.loaded { opacity: .72; }
@@ -95,6 +95,11 @@ style.textContent = `
     transform: scale(1.012);
     transition: opacity .30s ease, transform .30s ease;
     pointer-events: none;
+  }
+
+  /* 홈 장소명은 '다음 식사' 제목과 동일한 크림색으로 고정한다. */
+  .home-theme .trip-location-row .trip-location {
+    color: #ead9c4 !important;
   }
 
   @media (min-aspect-ratio: 2/3) {
@@ -130,7 +135,7 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
-const COVER_CACHE_KEY = 'camp:landingCover:v6';
+const COVER_CACHE_KEY = 'camp:landingCover:v7';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
@@ -175,7 +180,7 @@ function enterPlanner() {
 overlay.addEventListener('click', enterPlanner);
 
 async function applyVerifiedDateFix(baseSrc) {
-  const response = await fetch('./assets/date-fix-v2.b64?v=4', { cache: 'force-cache' });
+  const response = await fetch('./assets/date-fix-v2.b64?v=5', { cache: 'force-cache' });
   if (!response.ok) throw new Error('date patch load failed');
   const patchBase64 = (await response.text()).trim();
 
