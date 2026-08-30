@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Header Smoke Check</title>
+  <link rel="stylesheet" href="../css/app.css" />
+  <link rel="stylesheet" href="../css/home-v3.css" />
+  <link rel="stylesheet" href="../css/home-v3.8.css" />
+  <style>
+    body { margin:0; }
+    #qaResult { position:fixed; z-index:999; left:8px; right:8px; bottom:8px; margin:0; padding:10px; border-radius:10px; background:#fff; color:#111; font:12px/1.45 monospace; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="app-shell home-theme" id="app">
+    <header class="topbar">
+      <div class="trip-heading">
+        <h1 id="tripTitle" class="dday-title dday-composed" aria-label="D-12">
+          <span>D</span><span class="dday-dash" aria-hidden="true"></span><span class="dday-number">12</span>
+        </h1>
+        <div class="trip-meta">
+          <span id="tripDates" class="trip-dates">9/11 FRI - 9/13 SUN</span>
+          <span id="tripLocation" class="trip-location">리버앤캠프</span>
+          <div class="trip-address-row">
+            <span id="tripAddress" class="trip-address">경기 연천군 청산면 백궁길 27 1층</span>
+            <button class="address-copy-btn" type="button">복사</button>
+          </div>
+        </div>
+      </div>
+      <button class="icon-btn" aria-label="공유">↗</button>
+    </header>
+  </div>
+  <pre id="qaResult">checking…</pre>
+  <script>
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const rect = sel => document.querySelector(sel).getBoundingClientRect();
+      const title = rect('#tripTitle');
+      const dash = rect('.dday-dash');
+      const dates = rect('#tripDates');
+      const location = rect('#tripLocation');
+      const address = rect('#tripAddress');
+      const copy = rect('.address-copy-btn');
+      const dateGap = Math.round(dates.top - title.bottom);
+      const placeGap = Math.round(location.top - dates.bottom);
+      const addressGap = Math.round(address.top - location.bottom);
+      const checks = {
+        ddayVisible: title.width > 80 && title.height > 30,
+        dashWidth14: dash.width >= 13 && dash.width <= 15,
+        dashHorizontal: dash.height <= 3,
+        ddayDateGap: dateGap >= 0 && dateGap <= 24,
+        datePlaceGap: placeGap >= 12 && placeGap <= 36,
+        placeAddressGap: addressGap >= 0 && addressGap <= 10,
+        copyButtonSmall: copy.height <= 26
+      };
+      const pass = Object.values(checks).every(Boolean);
+      const metrics = { dateGap, placeGap, addressGap, dashWidth: Math.round(dash.width), dashHeight: Math.round(dash.height), copyHeight: Math.round(copy.height) };
+      document.body.dataset.qa = pass ? 'PASS' : 'FAIL';
+      document.getElementById('qaResult').textContent = `${pass ? 'PASS' : 'FAIL'}\n${JSON.stringify(checks, null, 2)}\n${JSON.stringify(metrics, null, 2)}`;
+    }));
+  </script>
+</body>
+</html>
