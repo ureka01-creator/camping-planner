@@ -130,7 +130,7 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
-const COVER_CACHE_KEY = 'camp:landingCover:v3';
+const COVER_CACHE_KEY = 'camp:landingCover:v4';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
@@ -175,7 +175,7 @@ function enterPlanner() {
 overlay.addEventListener('click', enterPlanner);
 
 async function applyVerifiedDateFix(baseSrc) {
-  const response = await fetch('./assets/date-fix-v1.b64?v=1', { cache: 'force-cache' });
+  const response = await fetch('./assets/date-fix-v2.b64?v=2', { cache: 'force-cache' });
   if (!response.ok) throw new Error('date patch load failed');
   const patchBase64 = (await response.text()).trim();
 
@@ -192,8 +192,8 @@ async function applyVerifiedDateFix(baseSrc) {
 
   ctx.drawImage(baseImage, 0, 0);
 
-  // Verified edit region from the 1024x1536 source poster.
-  // This patch changes only the first date/weekday line; 9.13 SUN and every other pixel stay untouched.
+  // Final verified edit from the 1024x1536 source poster.
+  // Only 9.11 / FRI alignment is replaced; 9.13 SUN and every other region remain on the original cover.
   const scaleX = canvas.width / 1024;
   const scaleY = canvas.height / 1536;
   ctx.drawImage(
