@@ -41,6 +41,9 @@ jobs:
       - name: Run real app meal smoke check
         run: node qa/run-app-smoke.mjs
 
+      - name: Run Android responsive smoke check
+        run: node qa/run-responsive-smoke.mjs
+
       - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4
