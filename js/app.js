@@ -29,11 +29,24 @@ function formatShortDate(iso){ const [,m,d]=iso.split('-').map(Number); return `
 function tripDateText(){
   const t=state.data.trip; return `${formatShortDate(t.startDate)} — ${formatShortDate(t.endDate)}`;
 }
+function ddayText(iso){
+  const [y,m,d]=iso.split('-').map(Number);
+  const target=new Date(y,m-1,d);
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const diff=Math.round((target-today)/86400000);
+  if(diff>0) return `D-${diff}`;
+  if(diff===0) return 'D-DAY';
+  return `D+${Math.abs(diff)}`;
+}
 
 function setView(view){
   state.view=view; localStorage.setItem('camp:lastView',view);
   $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===view));
   $$('.nav-item').forEach(v=>v.classList.toggle('active',v.dataset.nav===view));
+  $('#app').classList.toggle('home-theme',view==='home');
+  const theme=document.querySelector('meta[name="theme-color"]');
+  if(theme) theme.content=view==='home'?'#071018':'#f7f2e8';
   window.scrollTo({top:0,behavior:'instant'});
   render();
 }
@@ -41,15 +54,18 @@ function setView(view){
 function render(){
   if(!state.data) return;
   const t=state.data.trip;
-  $('#tripTitle').textContent=t.title;
+  $('#tripTitle').textContent=ddayText(t.startDate);
   $('#tripDates').textContent=tripDateText();
-  $('#tripLocation').textContent=t.location || '장소 미정';
+  $('#tripLocation').textContent=(!t.location || t.location.includes('미정'))?'리버앤캠프':t.location;
   renderHome(); renderMeals(); renderItems(); renderSettings();
 }
 
 function renderHome(){
   const items=state.data.items; const done=items.filter(i=>i.isDone).length; const pct=items.length?Math.round(done/items.length*100):0;
-  $('#progressPercent').textContent=`${pct}%`; $('#progressBar').style.width=`${pct}%`; $('#progressCaption').textContent=items.length?`${items.length}개 중 ${done}개 준비 완료`:'준비물을 추가해봐.';
+  $('#progressPercent').textContent=`${pct}%`;
+  $('#progressBar').style.width=`${pct}%`;
+  $('#progressRing').style.setProperty('--progress',`${pct*3.6}deg`);
+  $('#progressCaption').textContent=items.length?`${items.length}개 중 ${done}개 준비 완료`:'준비물을 추가해봐.';
 
   const meals=[...state.data.meals].sort((a,b)=>a.date.localeCompare(b.date)||mealOrder[a.mealType]-mealOrder[b.mealType]);
   const next=meals[0];
