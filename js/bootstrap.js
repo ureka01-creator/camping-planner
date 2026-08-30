@@ -1,5 +1,8 @@
 import { dataAdapter, seedData } from './firebase.js';
 
+// Every fresh app entry starts from Home. Do not restore the previously opened tab.
+localStorage.setItem('camp:lastView', 'home');
+
 function isIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
   const [y,m,d] = value.split('-').map(Number);
