@@ -130,7 +130,7 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
-const COVER_CACHE_KEY = 'camp:landingCover:v4';
+const COVER_CACHE_KEY = 'camp:landingCover:v5';
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
@@ -175,13 +175,13 @@ function enterPlanner() {
 overlay.addEventListener('click', enterPlanner);
 
 async function applyVerifiedDateFix(baseSrc) {
-  const response = await fetch('./assets/date-fix-v2.b64?v=2', { cache: 'force-cache' });
+  const response = await fetch('./assets/date-fix-v2.b64?v=3', { cache: 'force-cache' });
   if (!response.ok) throw new Error('date patch load failed');
   const patchBase64 = (await response.text()).trim();
 
   const [baseImage, patchImage] = await Promise.all([
     loadImage(baseSrc),
-    loadImage(`data:image/png;base64,${patchBase64}`)
+    loadImage(`data:image/webp;base64,${patchBase64}`)
   ]);
 
   const canvas = document.createElement('canvas');
@@ -192,16 +192,16 @@ async function applyVerifiedDateFix(baseSrc) {
 
   ctx.drawImage(baseImage, 0, 0);
 
-  // Final verified edit from the 1024x1536 source poster.
-  // Only 9.11 / FRI alignment is replaced; 9.13 SUN and every other region remain on the original cover.
+  // Final approved poster edit. The patch contains only the verified 9.11 / FRI alignment area.
+  // 9.13 SUN, time, location, artwork, and every other region remain from the original high-resolution cover.
   const scaleX = canvas.width / 1024;
   const scaleY = canvas.height / 1536;
   ctx.drawImage(
     patchImage,
-    718 * scaleX,
-    696 * scaleY,
-    134 * scaleX,
-    35 * scaleY
+    717 * scaleX,
+    697 * scaleY,
+    135 * scaleX,
+    33 * scaleY
   );
 
   return canvas.toDataURL('image/webp', 0.96);
