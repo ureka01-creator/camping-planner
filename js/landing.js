@@ -30,7 +30,7 @@ style.textContent = `
     filter: blur(24px) brightness(.40) saturate(.85);
     transform: scale(1.10);
     opacity: 0;
-    transition: opacity .35s ease;
+    transition: opacity .18s ease;
   }
 
   .camp-landing-bg.loaded { opacity: 1; }
@@ -53,8 +53,8 @@ style.textContent = `
     height: auto;
     object-fit: contain;
     opacity: 0;
-    transform: scale(.992);
-    transition: opacity .35s ease, transform .45s ease;
+    transform: scale(.996);
+    transition: opacity .18s ease, transform .24s ease;
     box-shadow: 0 18px 70px rgba(0, 0, 0, .30);
   }
 
@@ -78,7 +78,7 @@ style.textContent = `
     font-weight: 300;
     line-height: 1;
     opacity: 0;
-    transition: opacity .45s ease .3s;
+    transition: opacity .25s ease .1s;
     animation: landingHint 1.8s ease-in-out infinite;
     text-shadow: 0 1px 8px rgba(0, 0, 0, .35);
   }
@@ -130,6 +130,27 @@ document.body.prepend(overlay);
 const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
+const COVER_CACHE_KEY = 'camp:landingCover:v2';
+
+function showCover(src) {
+  return new Promise((resolve, reject) => {
+    const done = () => {
+      bg.style.backgroundImage = `url("${src}")`;
+      requestAnimationFrame(() => {
+        bg.classList.add('loaded');
+        poster.classList.add('loaded');
+        hint.classList.add('loaded');
+      });
+      resolve();
+    };
+
+    poster.onload = done;
+    poster.onerror = reject;
+    poster.src = src;
+
+    if (poster.complete && poster.naturalWidth) done();
+  });
+}
 
 function enterPlanner() {
   if (overlay.classList.contains('is-exiting')) return;
@@ -140,7 +161,7 @@ function enterPlanner() {
 
 overlay.addEventListener('click', enterPlanner);
 
-async function loadCover() {
+async function fetchCover() {
   const urls = [
     './assets/cover-v2.part0?v=2',
     './assets/cover-v2.part1?v=2',
@@ -152,23 +173,31 @@ async function loadCover() {
   ];
 
   const parts = await Promise.all(urls.map(async url => {
-    const response = await fetch(url, { cache: 'no-store' });
+    const response = await fetch(url, { cache: 'force-cache' });
     if (!response.ok) throw new Error(`cover load failed: ${url}`);
     return response.text();
   }));
 
   const src = `data:image/webp;base64,${parts.join('')}`;
-  poster.src = src;
-  bg.style.backgroundImage = `url("${src}")`;
+  try { localStorage.setItem(COVER_CACHE_KEY, src); } catch (_) {}
+  return src;
+}
 
-  await poster.decode();
-  if (!poster.naturalWidth) throw new Error('cover decode failed');
+async function loadCover() {
+  let cached = null;
+  try { cached = localStorage.getItem(COVER_CACHE_KEY); } catch (_) {}
 
-  requestAnimationFrame(() => {
-    bg.classList.add('loaded');
-    poster.classList.add('loaded');
-    hint.classList.add('loaded');
-  });
+  if (cached) {
+    try {
+      await showCover(cached);
+      return;
+    } catch (_) {
+      try { localStorage.removeItem(COVER_CACHE_KEY); } catch (_) {}
+    }
+  }
+
+  const src = await fetchCover();
+  await showCover(src);
 }
 
 loadCover().catch(error => {
