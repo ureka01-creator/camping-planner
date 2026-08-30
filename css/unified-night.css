@@ -1,0 +1,214 @@
+/* Unified night theme — applies to every planner page and future views. */
+:root {
+  --bg: #080c12;
+  --paper: #141816;
+  --ink: #ead9c4;
+  --muted: rgba(234,217,196,.56);
+  --line: rgba(216,160,113,.14);
+  --accent: #c9895d;
+  --accent-2: #c9895d;
+  --soft: rgba(234,217,196,.07);
+  --shadow: 0 12px 30px rgba(0,0,0,.12);
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #080c12 !important;
+  color: #ead9c4;
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100dvh;
+  background-color: #090c10;
+  background-image:
+    radial-gradient(circle at 11% 13%, rgba(255,244,220,.68) 0 1px, transparent 1.3px),
+    radial-gradient(circle at 77% 9%, rgba(255,226,190,.50) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 42% 22%, rgba(255,255,255,.43) 0 1px, transparent 1.2px),
+    radial-gradient(circle at 87% 31%, rgba(255,244,222,.34) 0 1px, transparent 1.2px),
+    radial-gradient(circle at 22% 38%, rgba(255,222,180,.30) 0 1px, transparent 1.2px),
+    radial-gradient(ellipse at 50% 9%, rgba(161,97,55,.13), transparent 42%),
+    linear-gradient(180deg, #080c12 0%, #0d1216 48%, #171713 78%, #211711 100%);
+  background-size: 137px 137px, 181px 181px, 223px 223px, 257px 257px, 293px 293px, 100% 100%, 100% 100%;
+  color: #ead9c4;
+}
+
+/* Every view inherits the same visual language. */
+.view,
+#view-items,
+#view-settings {
+  color: #ead9c4;
+}
+
+.view-heading h2,
+.settings-card strong,
+.settings-card label,
+.item-name,
+.member-card strong {
+  color: #ead9c4;
+}
+
+.section-kicker {
+  color: #c9895d;
+}
+
+.muted,
+.tiny,
+.item-meta,
+.member-card button,
+.version {
+  color: rgba(234,217,196,.50);
+}
+
+/* Packing */
+.summary-strip {
+  border: 1px solid rgba(216,160,113,.14);
+  background: rgba(20,24,22,.86);
+  color: #ead9c4;
+  box-shadow: 0 10px 26px rgba(0,0,0,.10);
+}
+.summary-strip strong { color: #c9895d; }
+
+.chip,
+.date-tab {
+  border-color: rgba(216,160,113,.16);
+  background: rgba(23,24,21,.72);
+  color: rgba(234,217,196,.66);
+}
+.chip.active,
+.date-tab.active {
+  border-color: #c9895d;
+  background: #c9895d;
+  color: #111613;
+}
+
+.packing-item,
+.member-card {
+  border-color: rgba(216,160,113,.12);
+  background: rgba(20,24,22,.82);
+  color: #ead9c4;
+  box-shadow: 0 8px 22px rgba(0,0,0,.08);
+}
+
+.check-btn {
+  border-color: rgba(234,217,196,.24);
+  background: rgba(8,12,18,.44);
+  color: #ead9c4;
+}
+.packing-item.done .check-btn {
+  border-color: #c9895d;
+  background: #c9895d;
+  color: #111613;
+}
+
+.item-actions {
+  color: rgba(234,217,196,.55);
+}
+
+/* Settings */
+.settings-card {
+  border-color: rgba(216,160,113,.14);
+  background: rgba(20,24,22,.86);
+  color: #ead9c4;
+  box-shadow: 0 10px 26px rgba(0,0,0,.09);
+}
+.settings-title p {
+  color: rgba(234,217,196,.48);
+}
+
+input,
+select,
+textarea {
+  border-color: rgba(216,160,113,.16);
+  background: rgba(24,24,21,.90);
+  color: #ead9c4;
+  caret-color: #c9895d;
+}
+input::placeholder,
+textarea::placeholder {
+  color: rgba(234,217,196,.32);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(201,137,93,.68);
+  box-shadow: 0 0 0 3px rgba(201,137,93,.10);
+}
+
+.primary-wide,
+.save-btn,
+.primary-small {
+  border-color: rgba(216,160,113,.18);
+  background: #c9895d;
+  color: #111613;
+}
+.secondary-wide,
+.cancel-btn {
+  border-color: rgba(216,160,113,.16);
+  background: rgba(234,217,196,.06);
+  color: #ead9c4;
+}
+.round-add,
+.more-btn {
+  background: rgba(234,217,196,.07);
+  color: #dca77b;
+}
+.dev-card { border-color: rgba(216,160,113,.18); }
+
+/* All modals use the same night theme, regardless of active page. */
+.modal-backdrop {
+  background: rgba(0,0,0,.62);
+}
+.modal-sheet {
+  border: 1px solid rgba(216,160,113,.14);
+  border-bottom: 0;
+  background: #141816;
+  color: #ead9c4;
+}
+.modal-handle { background: rgba(234,217,196,.20); }
+.modal-title h3,
+.form-grid label { color: #ead9c4; }
+.delete-btn {
+  background: rgba(195,92,58,.12);
+  color: #e99b7c;
+}
+
+/* Bottom navigation and safe-area backdrop never turn light. */
+.bottom-nav {
+  border-top-color: rgba(216,160,113,.10);
+  background: rgba(10,13,15,.96);
+  color: #ead9c4;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.nav-item { color: rgba(234,217,196,.42); }
+.nav-item.active {
+  color: #c9895d;
+  background: rgba(201,137,93,.08);
+}
+
+.empty-state {
+  border-color: rgba(216,160,113,.16);
+  background: rgba(23,24,21,.48);
+  color: rgba(234,217,196,.48);
+}
+
+/* Prevent any light canvas from peeking through during overscroll or viewport resizing. */
+@supports (height: 100svh) {
+  html, body, .app-shell { min-height: 100svh; }
+}
+
+@media (max-width: 420px) {
+  .app-shell { width: 100%; }
+  .settings-card,
+  .packing-item,
+  .meal-card { max-width: 100%; min-width: 0; }
+}
