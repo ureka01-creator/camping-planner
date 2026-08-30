@@ -2,7 +2,7 @@ const DARK = '#071018';
 
 function applyUnifiedNightTheme() {
   const app = document.getElementById('app');
-  if (app) app.classList.add('home-theme', 'unified-night-theme');
+  if (app) app.classList.add('unified-night-theme');
 
   const theme = document.querySelector('meta[name="theme-color"]');
   if (theme) theme.content = DARK;
@@ -15,8 +15,10 @@ applyUnifiedNightTheme();
 queueMicrotask(applyUnifiedNightTheme);
 window.addEventListener('pageshow', applyUnifiedNightTheme);
 
-const main = document.querySelector('main');
-if (main) {
-  new MutationObserver(() => queueMicrotask(applyUnifiedNightTheme))
-    .observe(main, { attributes: true, subtree: true, attributeFilter: ['class'] });
-}
+// app.js may still switch the legacy home-theme class by page.
+// Keep browser chrome/background dark after those interactions without observing class mutations.
+document.addEventListener('click', event => {
+  if (event.target.closest('[data-nav], [data-go]')) {
+    queueMicrotask(applyUnifiedNightTheme);
+  }
+});
