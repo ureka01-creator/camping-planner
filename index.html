@@ -25,11 +25,9 @@
   <div id="app" class="app-shell">
     <header class="topbar">
       <div class="trip-heading">
-        <h1 id="tripTitle" class="dday-title dday-composed" data-start-date="2026-09-11" aria-live="polite" aria-label="">
-          <span>D</span><span class="dday-dash" aria-hidden="true"></span><span class="dday-number"></span>
-        </h1>
+        <h1 id="tripTitle" class="dday-title" aria-live="polite" aria-label=""></h1>
         <div class="trip-meta">
-          <span id="tripDates" class="trip-dates">9/11 FRI - 9/13 SUN</span>
+          <span id="tripDates" class="trip-dates"></span>
           <div class="trip-location-row">
             <span class="trip-location-icon" aria-hidden="true"></span>
             <span id="tripLocation" class="trip-location">리버앤캠프</span>
@@ -106,6 +104,15 @@
       <section id="view-settings" class="view" data-view="settings">
         <div class="view-heading"><div><p class="section-kicker">SETTINGS</p><h2>캠핑 설정</h2></div></div>
         <div class="settings-card">
+          <strong>캠핑 일정</strong>
+          <p class="muted">기간을 바꾸면 D-day와 식단 날짜도 자동으로 바뀌어.</p>
+          <div class="form-row-2">
+            <label>시작일<input id="tripStartDateInput" type="date" /></label>
+            <label>종료일<input id="tripEndDateInput" type="date" /></label>
+          </div>
+          <button id="saveTripDatesBtn" class="primary-wide">일정 저장</button>
+        </div>
+        <div class="settings-card">
           <label>내 표시 이름<input id="myNameInput" placeholder="예: 민지" /></label>
           <button id="saveMyNameBtn" class="primary-wide">이 이름으로 사용</button>
         </div>
@@ -123,7 +130,7 @@
           <p id="connectionText" class="muted">로컬 데모 모드</p>
           <p class="tiny">Firebase 설정을 넣으면 여러 기기 실시간 동기화 모드로 전환돼.</p>
         </div>
-        <p class="version">Camping Planner v0.4.1</p>
+        <p class="version">Camping Planner v0.4.2</p>
       </section>
     </main>
 
@@ -145,6 +152,7 @@
 
   <script type="module" src="./js/landing.js?v=9"></script>
   <script type="module" src="./js/app.js?v=041"></script>
+  <script type="module" src="./js/trip-settings.js?v=042"></script>
   <script>
     (() => {
       const title = document.getElementById('tripTitle');
@@ -160,16 +168,6 @@
           title.classList.add('dday-composed');
           title.innerHTML = `<span>D</span><span class="dday-dash" aria-hidden="true"></span><span class="dday-number">${match[1]}</span>`;
         };
-
-        const start = title.dataset.startDate;
-        if (start) {
-          const [y,m,d] = start.split('-').map(Number);
-          const target = new Date(y,m-1,d);
-          const today = new Date();
-          today.setHours(0,0,0,0);
-          const diff = Math.round((target-today)/86400000);
-          buildDday(diff > 0 ? `D-${diff}` : diff === 0 ? 'D-DAY' : `D+${Math.abs(diff)}`);
-        }
 
         const composeDday = () => {
           if (title.querySelector('.dday-dash')) return;
