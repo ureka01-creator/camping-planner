@@ -1,7 +1,7 @@
 import { dataAdapter, seedData } from './firebase.js';
 
-// Every fresh app entry starts from Home. Do not restore the previously opened tab.
-localStorage.setItem('camp:lastView', 'home');
+// Every fresh app entry starts from Home. Storage failures must never block boot.
+try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
 
 function isIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
@@ -50,7 +50,7 @@ try {
   console.error('Trip date repair failed; continuing with app boot.', error);
 }
 
-await import('./app.js?v=045');
-await import('./inline-meal-add.js?v=046');
-await import('./trip-settings.js?v=045');
-await import('./home-meal-progress.js?v=050');
+await import('./app.js?v=053');
+await import('./inline-meal-add.js?v=053');
+await import('./trip-settings.js?v=053');
+await import('./home-meal-progress.js?v=053');
