@@ -13,16 +13,18 @@ function addDay(iso){
 }
 
 try {
-  await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout:30000 });
   const landing=page.locator('.camp-landing');
   if(await landing.count()){
     await landing.click();
     await landing.waitFor({state:'detached', timeout:5000});
   }
 
+  await page.waitForFunction(() => Boolean(document.querySelector('#tripDates')?.textContent.trim()), null, { timeout:15000 });
+
   await page.locator('[data-nav="meals"]').click();
   await page.locator('#view-meals.active').waitFor({state:'visible', timeout:5000});
-  await page.waitForFunction(() => document.querySelectorAll('#dateTabs .date-tab').length >= 1, null, { timeout: 15000 });
+  await page.waitForFunction(() => document.querySelectorAll('#dateTabs .date-tab').length >= 1, null, { timeout:15000 });
   const dates=await page.locator('#dateTabs .date-tab').allTextContents();
   const cards=await page.locator('#mealList .meal-card').count();
   const empty=await page.locator('#mealList .empty-state').count();
@@ -34,13 +36,16 @@ try {
   let inlineEditOk=true;
   if(cards>0){
     const firstToggle=page.locator('#mealList .meal-inline-toggle:visible').first();
+    await firstToggle.scrollIntoViewIfNeeded();
     await firstToggle.click();
     addToggleOk=(await firstToggle.getAttribute('aria-expanded'))==='true' && await page.locator('#mealList .meal-inline-form:visible').first().isVisible();
     await firstToggle.click();
 
     const editButtons=page.locator('#mealList [data-edit-meal-item]:visible');
     if(await editButtons.count()){
-      await editButtons.first().click();
+      const firstEdit=editButtons.first();
+      await firstEdit.scrollIntoViewIfNeeded();
+      await firstEdit.click();
       inlineEditOk=await page.locator('#mealList .meal-inline-edit:visible').first().isVisible();
       const modalVisible=await page.locator('#modalBackdrop:not(.hidden)').count();
       inlineEditOk=inlineEditOk && modalVisible===0;
@@ -56,7 +61,7 @@ try {
     const start=document.querySelector('#tripStartDateInput');
     const end=document.querySelector('#tripEndDateInput');
     return Boolean(start?.value && end?.value);
-  }, null, { timeout: 15000 });
+  }, null, { timeout:15000 });
 
   const initial=await page.evaluate(() => ({
     start: document.querySelector('#tripStartDateInput').value,
