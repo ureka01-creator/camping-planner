@@ -23,6 +23,7 @@ for (const c of cases) {
     }
 
     await page.locator('#view-home.active').waitFor({ state: 'visible', timeout: 15000 });
+    await page.waitForFunction(() => Boolean(document.querySelector('#tripDates')?.textContent.trim()), null, { timeout: 15000 });
 
     const check = async label => {
       const result = await page.evaluate(() => ({
