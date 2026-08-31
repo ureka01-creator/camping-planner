@@ -1,14 +1,14 @@
 # PM / Implementation Status
 
 - Project: Camping Planner WebApp
-- Version: v0.5.1
+- Version: v0.5.2
 - Previous phase: Planning v1.0 DONE
-- Current mode: 첫 진입 UX 구현 + QA 완료 → PM 모드 복귀
-- Current implementation status: LIVE FIREBASE MVP + PREPARATION HUB + SETTLEMENT MVP + FIRST ENTRY UX + AUTOMATED REGRESSION PASS
+- Current mode: 홈 정보 구조 개선 + QA 완료 → PM 모드 복귀
+- Current implementation status: LIVE FIREBASE MVP + PREPARATION HUB + SETTLEMENT MVP + FIRST ENTRY UX + HOME DASHBOARD V2 + AUTOMATED REGRESSION PASS
 - Firebase realtime mode: ENABLED
 - Two-client realtime sync: AUTOMATED QA PASS
 - GitHub Pages deployment: PASS
-- Next recommended mode: 실사용 데이터 점검 → 모바일 실기기 UX 리뷰 → 최종 안정화
+- Next recommended mode: 모바일 실기기 홈 UX 리뷰 → 실제 캠핑 데이터 점검 → 최종 안정화
 
 ## 완료된 것
 1. 모바일 앱 셸 / 하단 4탭
@@ -45,6 +45,14 @@
 32. `내 준비` 카드에서 준비물 화면의 해당 팀 필터로 바로 이동
 33. 기존 사용자의 저장된 팀 이름을 새 팀 ID 방식으로 자동 연결
 34. 팀 선택 없이도 `그냥 둘러보기` 가능
+35. 홈의 `아직 안 챙긴 것` 섹션을 화면에서 제거하고 상세 미완료 목록은 준비물 탭에 집중
+36. 홈 준비 정보 순서를 `전체 준비 현황 → 내 준비 → 담당자별 준비율`로 묶어 정보 흐름 통합
+37. `다음 식사`를 준비 정보 뒤의 독립 섹션으로 분리해 시각적 단절 대신 명확한 영역 전환 적용
+38. 다음 식사 카드에 날짜/식사 타입/담당자/준비율/남은 준비항목 표시
+39. 같은 날짜의 다음 식사가 있으면 `1차 → 2차`로 연속 표시, 없으면 다음 식사를 `다음 일정`으로 표시
+40. 기존 홈 렌더러가 다음 식사 카드를 다시 그려도 강화 카드가 최종 상태를 유지하도록 렌더 경쟁 방어
+41. Home dashboard 전용 자동 smoke test 추가
+42. Preparation Hub QA를 Firebase 초기 동기화 완료 후 검증하도록 안정화
 
 ## 정산 MVP 규칙
 - 준비물/식단 준비항목의 `결제자`는 입력 부담을 줄이기 위해 기본적으로 `담당자`를 자동으로 따라간다.
@@ -55,18 +63,21 @@
 - `공용` 같은 placeholder 팀은 실제 결제자/정산 인원에서 제외한다.
 - 1원 단위 나눗셈 오차는 팀 순서대로 1원씩 배분해 합계가 정확히 맞도록 계산한다.
 
-## 첫 진입 UX 규칙
+## 첫 진입 / 홈 UX 규칙
 - `trip` 공유 링크로 들어왔고 아직 팀을 정하지 않은 기기에서만 팀 선택 화면을 보여준다.
 - 여러 장의 온보딩 대신 한 화면에서 팀 하나만 고르게 한다.
 - 기존 팀 선택 정보가 있으면 온보딩 없이 바로 홈으로 진입한다.
 - 선택한 팀 기준의 일반 준비물 + 식단 준비항목을 합쳐 `내 준비` 현황을 보여준다.
-- 홈의 기존 `다음 식사` 영역은 바로 아래에 유지해 `내가 챙길 것`과 `다음에 먹을 것`을 첫 화면에서 빠르게 파악하게 한다.
+- 홈은 준비 관련 정보를 먼저 하나의 흐름으로 끝낸 뒤 식사 정보로 넘어간다.
+- 미완료 준비물 개별 목록은 홈에서 반복하지 않고 준비물 탭에서 확인한다.
+- 다음 식사 카드에는 1차뿐 아니라 같은 날 이어지는 2차 정보까지 함께 보여준다.
 - 선택 화면은 모바일에서 내부 스크롤이 가능하고 배경만 고정한다.
 
 ## 현재 자동 QA
 - Header smoke: PASS
 - Responsive smoke: PASS
 - First entry smoke: PASS
+- Home dashboard smoke: PASS
 - Preparation Hub smoke: PASS
 - Packing cost smoke: PASS
 - Settlement / payer smoke: PASS
@@ -75,11 +86,11 @@
 - GitHub Pages build/deploy: PASS
 
 ## 현재 남은 핵심 검증
-자동 QA는 통과했다. 실제 공유 링크를 새 브라우저 또는 다른 iPhone/iPad에서 열어 실제 팀 이름이 보이는지, 팀 선택 → 홈 `내 준비` → 담당 준비물 이동 흐름의 터치 감각을 한 번 확인한다. 그 뒤 네트워크 전환/백그라운드 복귀까지 포함한 실기기 최종 QA를 진행한다.
+자동 QA와 Pages 배포는 통과했다. 실제 iPhone 화면에서 `전체 준비 현황 → 내 준비 → 담당자별 준비율 → 다음 식사`의 스크롤 리듬과 1차/2차 카드 정보 밀도를 직접 확인한다. 이후 실제 캠핑 데이터의 담당자/금액을 최종 점검하고 네트워크 전환·백그라운드 복귀까지 포함한 실기기 QA를 진행한다.
 
 ## 다음 스프린트 후보
-1. 실제 공유 링크 첫 진입 실기기 확인
+1. 실제 iPhone에서 홈 v2 시각/스크롤 리뷰
 2. 실제 캠핑 데이터 최종 입력 / 담당자 / 금액 점검
-3. 첫 진입 뒤 홈 정보 밀도와 `내 준비` 카드 UI 미세조정
+3. 다음 식사 1차/2차 카드 정보 밀도 미세조정
 4. 오프라인/재연결 UX 점검
 5. 2026-09-11~13 실사용 전 최종 안정화
