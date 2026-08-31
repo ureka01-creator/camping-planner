@@ -27,10 +27,15 @@ try {
   const combinedSummary=/^전체 \d+개 중 \d+개 준비$/.test(summary);
 
   await page.locator('#itemCategoryFilters [data-item-category="주류"]').click();
-  await page.waitForTimeout(80);
-  const visibleLiquor=await page.locator('#itemList .packing-item:visible').count();
-  const liquorTexts=await page.locator('#itemList .packing-item:visible .item-meta').allTextContents();
-  const liquorFilterOk=visibleLiquor > 0 && liquorTexts.every(text => text.includes('주류'));
+  await page.waitForFunction(() => {
+    const cards=[...document.querySelectorAll('#itemList > .packing-item')];
+    const visible=cards.filter(card => getComputedStyle(card).display !== 'none' && !card.hidden);
+    return visible.length > 0 && visible.every(card => card.querySelector('.item-meta span')?.textContent?.trim() === '주류');
+  }, null, { timeout:5000 });
+
+  const visibleLiquor=await page.locator('#itemList > .packing-item:visible').count();
+  const liquorCategories=await page.locator('#itemList > .packing-item:visible .item-meta span:first-child').allTextContents();
+  const liquorFilterOk=visibleLiquor > 0 && liquorCategories.every(text => text.trim()==='주류');
 
   await page.locator('#addItemBtn').click();
   await page.locator('#itemForm').waitFor({ state:'visible', timeout:5000 });
@@ -39,7 +44,7 @@ try {
   await page.locator('#itemForm [data-close], #modalContent [data-close]').first().click();
 
   const overflow=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-  console.log(JSON.stringify({liquorCategory,mealPrepCount,memberCards,combinedSummary,summary,liquorFilterOk,visibleLiquor,liquorModalOption,overflow,errors},null,2));
+  console.log(JSON.stringify({liquorCategory,mealPrepCount,memberCards,combinedSummary,summary,liquorFilterOk,visibleLiquor,liquorCategories,liquorModalOption,overflow,errors},null,2));
 
   if(errors.length || !liquorCategory || mealPrepCount<1 || memberCards<1 || !combinedSummary || !liquorFilterOk || !liquorModalOption || overflow) process.exitCode=1;
 } catch(error) {
