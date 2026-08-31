@@ -67,7 +67,7 @@ function ensureCostField() {
   row.appendChild(quantityLabel);
 
   const costLabel = document.createElement('label');
-  costLabel.innerHTML = '금액<div class="cost-input-wrap"><input name="cost" type="number" inputmode="numeric" min="0" step="100" placeholder="예: 20000"></div>';
+  costLabel.innerHTML = '금액<div class="cost-input-wrap"><input name="cost" type="number" inputmode="numeric" min="0" step="1" placeholder="예: 20000"></div>';
   row.appendChild(costLabel);
 
   const item = pendingItemId ? (latestData?.items || []).find(entry => entry.id === pendingItemId) : null;
