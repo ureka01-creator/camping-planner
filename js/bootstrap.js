@@ -57,6 +57,7 @@ await import('./trip-settings.js?v=064');
 await import('./home-meal-progress.js?v=065');
 await import('./meal-reorder.js?v=065');
 await import('./meal-edit-focus.js?v=066');
+await import('./items-hub.js?v=067');
 
 repairTripDatesIfNeeded().catch(error => {
   console.warn('Trip date repair skipped.', error);
