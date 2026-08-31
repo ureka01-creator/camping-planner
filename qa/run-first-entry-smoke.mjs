@@ -4,8 +4,14 @@ const browser = await chromium.launch({ headless:true });
 const context = await browser.newContext({ viewport:{ width:390, height:844 }, deviceScaleFactor:2 });
 const page = await context.newPage();
 const errors=[];
+const networkWarnings=[];
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-page.on('console', msg => { if (msg.type()==='error') errors.push(`console: ${msg.text()}`); });
+page.on('console', msg => {
+  if(msg.type()!=='error') return;
+  const text=msg.text();
+  if(text.startsWith('Failed to load resource:')) networkWarnings.push(`console: ${text}`);
+  else errors.push(`console: ${text}`);
+});
 
 const url='http://127.0.0.1:4173/?trip=qa-first-entry-smoke-v1';
 
@@ -60,7 +66,7 @@ try {
   const retainedCardText=(await page.locator('#myPrepQuickCard').textContent()) || '';
   const retained=retainedCardText.includes(firstName);
 
-  const result={teamCount,commonHidden,firstName,stored,cardHasTeam,myPrepAction,assigneeFilterActive,pickerAfterReload,retained,errors};
+  const result={teamCount,commonHidden,firstName,stored,cardHasTeam,myPrepAction,assigneeFilterActive,pickerAfterReload,retained,errors,networkWarnings};
   console.log(JSON.stringify(result,null,2));
   await page.screenshot({ path:'qa/first-entry-smoke-result.png', fullPage:true });
 
