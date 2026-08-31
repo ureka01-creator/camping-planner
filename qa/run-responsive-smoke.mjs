@@ -45,7 +45,11 @@ for (const c of cases) {
     await page.locator('#view-items.active').waitFor({ state: 'visible', timeout: 5000 });
     await check('items');
 
-    await page.locator('[data-nav="settings"]').click();
+    await page.locator('[data-nav="settlement"]').click();
+    await page.locator('#view-settlement.active').waitFor({ state: 'visible', timeout: 5000 });
+    await check('settlement');
+
+    await page.locator('#settingsShortcut').click();
     await page.locator('#view-settings.active').waitFor({ state: 'visible', timeout: 5000 });
     await check('settings');
 
