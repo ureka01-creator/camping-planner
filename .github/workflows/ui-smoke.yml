@@ -41,6 +41,9 @@ jobs:
       - name: Run Android responsive smoke check
         run: node qa/run-responsive-smoke.mjs
 
+      - name: Run first entry smoke check
+        run: timeout 120s node qa/run-first-entry-smoke.mjs
+
       - name: Run preparation hub smoke check
         run: timeout 90s node qa/run-items-hub-smoke.mjs
 
@@ -63,5 +66,6 @@ jobs:
           name: ui-smoke-results
           path: |
             qa/header-smoke-result.png
+            qa/first-entry-smoke-result.png
             qa/app-smoke-result.png
           if-no-files-found: ignore
