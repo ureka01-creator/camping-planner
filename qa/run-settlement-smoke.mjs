@@ -9,6 +9,15 @@ page.on('console', msg => { if (msg.type()==='error') errors.push(`console: ${ms
 const packingName = `QA 정산 준비물 ${Date.now()}`;
 const expenseName = `QA 현장 지출 ${Date.now()}`;
 
+async function dismissFirstEntryIfShown() {
+  await page.waitForTimeout(80);
+  const picker=page.locator('#firstEntryBackdrop');
+  if(await picker.count()) {
+    await picker.locator('[data-first-entry-later]').click();
+    await picker.waitFor({ state:'detached', timeout:5000 });
+  }
+}
+
 try {
   await page.goto('http://127.0.0.1:4173/?trip=qa-settlement-smoke', { waitUntil:'domcontentloaded', timeout:30000 });
   const landing=page.locator('.camp-landing');
@@ -18,6 +27,7 @@ try {
   }
 
   await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  await dismissFirstEntryIfShown();
 
   await page.locator('[data-nav="items"]').click();
   await page.locator('#view-items.active').waitFor({ state:'visible', timeout:5000 });
