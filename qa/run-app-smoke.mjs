@@ -86,7 +86,7 @@ try {
   const drinkNames=['소주','맥주','화와','레와','사케','고량주'];
   const drinksInPacking=drinkNames.every(name => packingText.includes(name));
 
-  await page.locator('[data-nav="settings"]').click();
+  await page.locator('#settingsShortcut').click();
   await page.locator('#view-settings.active').waitFor({state:'visible', timeout:5000});
   await page.waitForFunction(() => {
     const start=document.querySelector('#tripStartDateInput');
