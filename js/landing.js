@@ -97,7 +97,6 @@ style.textContent = `
     pointer-events: none;
   }
 
-  /* 홈 장소명은 '다음 식사' 제목과 동일한 크림색으로 고정한다. */
   .home-theme .trip-location-row .trip-location {
     color: #ead9c4 !important;
   }
@@ -136,13 +135,39 @@ const bg = overlay.querySelector('.camp-landing-bg');
 const poster = overlay.querySelector('.camp-landing-poster');
 const hint = overlay.querySelector('.camp-landing-hint');
 const COVER_CACHE_KEY = 'camp:landingCover:v9';
+let entered = false;
+let landingWatchdog = null;
+
+function enterPlanner() {
+  if (entered) return;
+  entered = true;
+  if (landingWatchdog) window.clearTimeout(landingWatchdog);
+  document.body.classList.remove('landing-boot');
+  overlay.classList.add('is-exiting');
+  document.body.classList.remove('landing-open');
+  window.setTimeout(() => overlay.remove(), 320);
+}
+
+// iOS Safari can occasionally stall while decoding a cached data URL without firing
+// either load or error. Never let that leave the app behind a blank landing screen.
+landingWatchdog = window.setTimeout(() => {
+  if (!poster.classList.contains('loaded')) enterPlanner();
+}, 2500);
+
+overlay.addEventListener('click', enterPlanner);
 
 function showCover(src) {
   return new Promise((resolve, reject) => {
     let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error('landing poster decode timeout'));
+    }, 1800);
     const done = () => {
       if (settled) return;
       settled = true;
+      window.clearTimeout(timer);
       bg.style.backgroundImage = `url("${src}")`;
       requestAnimationFrame(() => {
         bg.classList.add('loaded');
@@ -151,9 +176,15 @@ function showCover(src) {
       });
       resolve();
     };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      reject(new Error('landing poster decode failed'));
+    };
 
     poster.onload = done;
-    poster.onerror = reject;
+    poster.onerror = fail;
     poster.src = src;
 
     if (poster.complete && poster.naturalWidth) done();
@@ -168,16 +199,6 @@ function loadImage(src) {
     image.src = src;
   });
 }
-
-function enterPlanner() {
-  if (overlay.classList.contains('is-exiting')) return;
-  document.body.classList.remove('landing-boot');
-  overlay.classList.add('is-exiting');
-  document.body.classList.remove('landing-open');
-  window.setTimeout(() => overlay.remove(), 320);
-}
-
-overlay.addEventListener('click', enterPlanner);
 
 function averageWarmText(imageData) {
   const data = imageData.data;
@@ -245,8 +266,6 @@ async function applyVerifiedDateFix(baseSrc) {
 
   ctx.drawImage(baseImage, 0, 0);
 
-  // 정렬은 승인된 패치를 그대로 쓰고, 글자색만 원본의 9.13 SUN 톤을 샘플링해 보정한다.
-  // 패치 전체에 필터를 씌우지 않으므로 배경/위치/크기와 2:00 PM, 9.13 줄은 그대로 유지된다.
   const scaleX = canvas.width / 1024;
   const scaleY = canvas.height / 1536;
   const toneMatchedPatch = matchPatchToneToSecondLine(patchImage, ctx, scaleX, scaleY);
