@@ -86,12 +86,13 @@ for (const path of [
   './items-hub.js?v=089',
   './item-edit-fix.js?v=082',
   './edit-icons.js?v=081',
-  './admin-access.js?v=083',
+  './admin-access.js?v=084',
   // Load home controls early so the cover/lock buttons cannot be blocked by
   // a later memo or decoration feature.
   './home-order.js?v=096',
   './name-home-redirect.js?v=097',
   './home-memo.js?v=098',
+  './admin-board-delete.js?v=099',
   './home-board-paging.js?v=094',
   './meal-item-notes.js?v=091',
   './packing-item-notes.js?v=096'
@@ -100,7 +101,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.7.3';
+if (version) version.textContent = 'Camping Planner v0.7.4';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
