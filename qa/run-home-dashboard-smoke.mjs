@@ -145,13 +145,14 @@ try {
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
   console.log(JSON.stringify({tripId,layout,food,visual,todoHidden,prepMetric,heroCaption,overflow,errors,networkWarnings},null,2));
 
-  const foodOk = food.kicker==='FOOD PLAN'
+  const foodOk = food.kicker===''
     && food.title==='식사 일정'
     && food.marks[0]==='1차'
     && food.marks[1]==='2차'
     && food.menus[0]==='QA 해산물 파티'
     && food.menus[1]==='QA 닭발 & 계란찜'
-    && food.nextText.includes('NEXT')
+    && food.nextText.includes('다음 식사')
+    && !food.nextText.includes('NEXT')
     && food.nextText.includes('QA 다음 아침')
     && food.firstStatus.includes('준비 완료')
     && food.secondStatus.includes('1개 남음')
