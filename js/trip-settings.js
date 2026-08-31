@@ -1,4 +1,4 @@
-import { dataAdapter } from './firebase.js';
+import { dataAdapter } from './firebase.js?v=064';
 import { toast } from './ui.js';
 
 const startInput = document.getElementById('tripStartDateInput');
