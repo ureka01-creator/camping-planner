@@ -24,8 +24,18 @@ try {
 
   await page.locator('[data-nav="meals"]').click();
   await page.locator('#view-meals.active').waitFor({state:'visible', timeout:5000});
-  await page.waitForFunction(() => document.querySelectorAll('#dateTabs .date-tab').length >= 1, null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelectorAll('#dateTabs .date-tab').length >= 2, null, { timeout:15000 });
+
   const dates=await page.locator('#dateTabs .date-tab').allTextContents();
+  const allDefault=await page.locator('#dateTabs [data-meal-scope="all"].active').count()===1;
+  const overviewDays=await page.locator('#mealList .meal-overview-day').count();
+  const overviewRows=await page.locator('#mealList .meal-overview-row').count();
+
+  // Detailed meal-item behavior is checked after explicitly opening a date.
+  const firstDateTab=page.locator('#dateTabs [data-date]').first();
+  await firstDateTab.click();
+  await page.waitForTimeout(100);
+
   const cards=await page.locator('#mealList .meal-card').count();
   const empty=await page.locator('#mealList .empty-state').count();
   const toggles=cards ? await page.locator('#mealList .meal-inline-toggle').count() : 0;
@@ -55,6 +65,12 @@ try {
 
   const overflowAfter=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
+  // Leave Meals and re-enter: it must reset to All every time.
+  await page.locator('[data-nav="home"]').click();
+  await page.locator('[data-nav="meals"]').click();
+  await page.waitForTimeout(100);
+  const allAfterReentry=await page.locator('#dateTabs [data-meal-scope="all"].active').count()===1;
+
   await page.locator('[data-nav="settings"]').click();
   await page.locator('#view-settings.active').waitFor({state:'visible', timeout:5000});
   await page.waitForFunction(() => {
@@ -78,13 +94,14 @@ try {
     min: document.querySelector('#tripEndDateInput').min
   }));
 
-  console.log(JSON.stringify({dates,cards,empty,toggles,visibleAddFormsBefore,addToggleOk,inlineEditOk,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
+  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,cards,empty,toggles,visibleAddFormsBefore,addToggleOk,inlineEditOk,allAfterReentry,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
-  const mealScreenOk=dates.length>=1 && (cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk : empty>0);
+  const allViewOk=dates[0]==='전체' && allDefault && allAfterReentry && overviewDays>=1;
+  const detailScreenOk=cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk : empty>0;
   const widthOk=!overflowBefore && !overflowAfter;
   const dateConstraintOk=initial.min===initial.start && constrained.min===probeStart && constrained.end===probeStart;
-  if(errors.length || !mealScreenOk || !widthOk || !dateConstraintOk) process.exitCode=1;
+  if(errors.length || !allViewOk || !detailScreenOk || !widthOk || !dateConstraintOk) process.exitCode=1;
 } catch(e){
   console.error('APP_SMOKE_FAILED', e);
   console.error(errors.join('\n'));
