@@ -1,3 +1,7 @@
+.home-theme .home-todo-hidden {
+  display: none !important;
+}
+
 .home-theme .home-prep-member-section {
   margin-top: 18px;
 }
