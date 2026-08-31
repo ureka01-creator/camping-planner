@@ -74,7 +74,7 @@ await import('./items-hub.js?v=067');
 await import('./item-edit-fix.js?v=082');
 await import('./edit-icons.js?v=081');
 await import('./admin-access.js?v=083');
-await import('./home-order.js?v=086');
+await import('./home-order.js?v=087');
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
