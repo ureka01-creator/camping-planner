@@ -1,14 +1,14 @@
 # PM / Implementation Status
 
 - Project: Camping Planner WebApp
-- Version: v0.5.4
+- Version: v0.5.7
 - Previous phase: Planning v1.0 DONE
-- Current mode: FOOD PLAN 홈 음식 영역 개편 + QA 완료 → PM 모드 복귀
-- Current implementation status: LIVE FIREBASE MVP + PREPARATION HUB + SETTLEMENT MVP + FIRST ENTRY UX + HOME DASHBOARD V4 + AUTOMATED REGRESSION PASS
+- Current mode: 관리자 권한 / 홈 식사 영역 정리 + QA 완료 → PM 모드 복귀
+- Current implementation status: LIVE FIREBASE MVP + PREPARATION HUB + SETTLEMENT MVP + FIRST ENTRY UX + ADMIN UI GUARD + AUTOMATED REGRESSION PASS
 - Firebase realtime mode: ENABLED
 - Two-client realtime sync: AUTOMATED QA PASS
 - GitHub Pages deployment: PASS
-- Next recommended mode: 실제 iPhone FOOD PLAN 시각 리뷰 → 실제 캠핑 데이터 점검 → 최종 안정화
+- Next recommended mode: 실제 iPhone 시각 리뷰 → 실제 캠핑 데이터 점검 → 최종 안정화
 
 ## 완료된 것
 1. 모바일 앱 셸 / 하단 4탭
@@ -54,14 +54,22 @@
 41. 홈 `준비 현황`, `내 준비`, `담당자별 준비율` 계산 기준을 모두 `일반 준비물 + 식단 준비항목` 통합 기준으로 통일
 42. 담당자별 준비율과 `내 준비` 카드가 동일한 완료수/전체수를 표시하는지 자동 QA 추가
 43. 음식 카드에서 준비율 퍼센트와 상세 준비물 나열을 제거해 준비 영역과 역할 분리
-44. 홈 음식 영역을 `FOOD PLAN / 첫날 먹을 것` 구조로 재설계
-45. 첫날 같은 날짜의 첫 두 식사를 `1차 / 2차` 메뉴 중심으로 크게 표시
+44. 홈 음식 영역을 메뉴 중심 식사 일정 구조로 재설계
+45. 첫날 같은 날짜의 첫 두 식사를 `1차 / 2차` 메뉴 중심으로 표시
 46. 각 식사에는 담당 팀과 `준비 완료 / N개 남음 / 준비 항목 없음`만 보조 정보로 표시
-47. 다음 날짜의 첫 식사를 `NEXT · 날짜 · 식사 타입` 한 줄 미리보기로 표시
-48. FOOD PLAN의 식사/다음 식사를 누르면 해당 날짜 식단 화면으로 바로 이동
-49. FOOD PLAN 자동 QA에서 1차/2차/NEXT/퍼센트 미표시/가로 overflow를 검증
+47. 다음 날짜의 첫 식사를 `다음 식사` 미리보기로 표시
+48. 식사/다음 식사를 누르면 해당 날짜 식단 화면으로 바로 이동
+49. Home dashboard 자동 QA에서 1차/2차/다음 식사/퍼센트 미표시/가로 overflow를 검증
 50. Home dashboard QA는 매 실행마다 독립 trip을 사용해 과거 QA 데이터 잔존 영향을 차단
 51. 외부 리소스의 일시적 400/404는 QA 경고로 기록하되 실제 JS/page error만 실패 처리하도록 first-entry/home QA 안정화
+52. 준비물/식단 편집 `•••`를 연필 SVG 아이콘으로 통일
+53. 준비물 수정 시 `주류` 카테고리가 `식재료`로 덮이는 문제 수정
+54. 준비물 수정 모달은 항상 맨 위 `준비물 수정`부터 열리도록 스크롤 초기화
+55. 홈 우측 상단 공유 버튼 제거, 설정의 공유 링크 복사만 유지
+56. 일반 사용자는 캠핑 일정과 참여자/팀을 읽기 전용으로 표시
+57. 관리자 인증 후에만 캠핑 일정과 참여자/팀 추가·수정·삭제 가능
+58. 앱 내부 `dataAdapter.mutate` 경로에서도 일반 사용자의 일정/참여자 변경 차단
+59. 관리자 권한 자동 smoke test 추가
 
 ## 정산 MVP 규칙
 - 준비물/식단 준비항목의 `결제자`는 입력 부담을 줄이기 위해 기본적으로 `담당자`를 자동으로 따라간다.
@@ -78,31 +86,42 @@
 - 기존 팀 선택 정보가 있으면 온보딩 없이 바로 홈으로 진입한다.
 - 선택한 팀 기준의 일반 준비물 + 식단 준비항목을 합쳐 `내 준비` 현황을 보여준다.
 - 홈의 전체 준비율과 담당자별 준비율도 같은 통합 준비항목 기준을 사용한다.
-- 홈은 `전체 준비 현황 → 내 준비 → 담당자별 준비율`로 준비 관련 정보를 먼저 끝낸 뒤 FOOD PLAN으로 넘어간다.
+- 홈은 `전체 준비 현황 → 내 준비 → 담당자별 준비율`로 준비 관련 정보를 먼저 끝낸 뒤 식사 일정으로 넘어간다.
 - 미완료 준비물 개별 목록은 홈에서 반복하지 않고 준비물 탭에서 확인한다.
-- FOOD PLAN은 준비 진행률을 설명하는 카드가 아니라 `무엇을 먹는지`를 가장 먼저 보여준다.
-- 같은 날 식사는 `1차 / 2차`로 보여주고, 다음 날짜의 첫 식사는 작은 NEXT 미리보기로 이어준다.
+- 식사 일정은 준비 진행률을 설명하는 카드가 아니라 `무엇을 먹는지`를 가장 먼저 보여준다.
+- 같은 날 식사는 `1차 / 2차`로 보여주고, 다음 날짜의 첫 식사는 작은 `다음 식사` 미리보기로 이어준다.
 - 음식 카드 안에는 준비 퍼센트를 중복 표시하지 않는다.
 - 선택 화면은 모바일에서 내부 스크롤이 가능하고 배경만 고정한다.
+
+## 관리자 / 권한 규칙
+- 일반 사용자는 준비물, 식단, 정산 등 실제 캠핑 운영 데이터는 기존처럼 사용할 수 있다.
+- 캠핑 일정과 참여자/팀 추가·수정·삭제만 관리자 전용이다.
+- 우측 상단 공유 버튼은 제거하고 설정의 공유 링크 복사 기능만 유지한다.
+- 현재 관리자 보호는 앱 UI와 앱 내부 데이터 변경 경로 기준이다.
+- Firebase 서버 규칙/관리자 계정까지 강화하는 보안 작업은 **미정 / 보류** 상태다.
+- 지인 중심 실사용에서 필요성이 생길 때만 서버 규칙 기반 권한 분리를 추가 검토한다.
 
 ## 현재 자동 QA
 - Header smoke: PASS
 - Responsive smoke: PASS
 - First entry smoke: PASS
-- Home dashboard / FOOD PLAN smoke: PASS
+- Home dashboard smoke: PASS
+- Admin access smoke: PASS
 - Preparation Hub smoke: PASS
 - Packing cost smoke: PASS
 - Settlement / payer smoke: PASS
 - Two-client realtime sync smoke: PASS
 - Real app meal smoke: PASS
+- Edit icon smoke: PASS
 - GitHub Pages build/deploy: PASS
 
 ## 현재 남은 핵심 검증
-자동 QA와 Pages 배포는 통과했다. 실제 iPhone 화면에서 기존 준비 영역은 그대로 유지되는지 확인하고, FOOD PLAN의 `1차 / 2차 / NEXT` 정보 밀도와 메뉴 가독성을 직접 리뷰한다. 이후 실제 캠핑 데이터의 담당자/금액을 최종 점검하고 네트워크 전환·백그라운드 복귀까지 포함한 실기기 QA를 진행한다.
+자동 QA와 Pages 배포는 통과했다. 실제 iPhone에서 홈/식단/준비물/정산 및 관리자 읽기 전용 화면을 확인하고 실제 캠핑 데이터의 담당자/금액을 최종 점검한다. 이후 네트워크 전환·백그라운드 복귀까지 포함한 실기기 QA를 진행한다.
 
 ## 다음 스프린트 후보
-1. 실제 iPhone에서 FOOD PLAN 시각 리뷰
+1. 실제 iPhone 전체 시각 리뷰
 2. 실제 캠핑 데이터 최종 입력 / 담당자 / 금액 점검
-3. FOOD PLAN 메뉴 표현 / 간격 미세조정
+3. 홈 식사 일정 표현 / 간격 미세조정
 4. 오프라인/재연결 UX 점검
-5. 2026-09-11~13 실사용 전 최종 안정화
+5. Firebase 서버 규칙 기반 관리자 권한 강화 — 미정 / 보류
+6. 2026-09-11~13 실사용 전 최종 안정화
