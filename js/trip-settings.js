@@ -1,6 +1,5 @@
 import { dataAdapter } from './firebase.js';
 import { toast } from './ui.js';
-import './inline-meal-add.js?v=043';
 
 const startInput = document.getElementById('tripStartDateInput');
 const endInput = document.getElementById('tripEndDateInput');
