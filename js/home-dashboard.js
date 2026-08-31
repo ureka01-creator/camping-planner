@@ -50,20 +50,29 @@ function renderCombinedPrep() {
   const bar = document.getElementById('progressBar');
   const ring = document.getElementById('progressRing');
   const caption = document.getElementById('progressCaption');
-  if (percent) percent.textContent = `${progress.pct}%`;
-  if (bar) bar.style.width = `${progress.pct}%`;
-  if (ring) ring.style.setProperty('--progress', `${progress.pct * 3.6}deg`);
-  if (caption) caption.textContent = progress.total
+  const percentText = `${progress.pct}%`;
+  const captionText = progress.total
     ? `전체 준비 ${progress.total}개 중 ${progress.done}개 완료`
     : '준비 항목을 추가해봐.';
 
+  if (percent && percent.textContent !== percentText) percent.textContent = percentText;
+  if (bar && bar.style.width !== percentText) bar.style.width = percentText;
+  if (ring && ring.style.getPropertyValue('--progress') !== `${progress.pct * 3.6}deg`) {
+    ring.style.setProperty('--progress', `${progress.pct * 3.6}deg`);
+  }
+  if (caption && caption.textContent !== captionText) caption.textContent = captionText;
+
   const host = document.getElementById('memberProgress');
   if (!host) return;
-  host.innerHTML = (latestData.members || []).map(member => {
+  const html = (latestData.members || []).map(member => {
     const mine = all.filter(item => item?.assigneeId === member.id);
     const p = progressOfItems(mine);
     return `<div class="member-row" data-home-member-progress="${esc(member.id)}"><div class="member-row-top"><span>${esc(member.name)}</span><span>${p.pct}%</span></div><div class="small-track"><span style="width:${p.pct}%"></span></div><div class="tiny">${p.total ? `${p.done}/${p.total}개 준비` : '담당 항목 없음'}</div></div>`;
   }).join('') || '<div class="empty-state">참여자를 추가해봐.</div>';
+  if (!host.querySelector('[data-home-member-progress]') || host.dataset.homeCombinedHtml !== html) {
+    host.innerHTML = html;
+    host.dataset.homeCombinedHtml = html;
+  }
 }
 
 function renderMealStage(meal, label) {
@@ -106,12 +115,15 @@ function renderNextMeals() {
   const sameDayNext = meals.slice(1).find(meal => meal.date === first.date) || null;
   const secondary = sameDayNext || meals[1] || null;
   const secondaryLabel = sameDayNext ? '2차' : secondary ? '다음 일정' : '';
-
-  card.innerHTML = `
+  const html = `
     <div class="home-meal-flow">
       ${renderMealStage(first, '1차')}
       ${secondary ? `<div class="home-meal-divider"></div>${renderMealStage(secondary, secondaryLabel)}` : ''}
     </div>`;
+  if (!card.querySelector('.home-meal-flow') || card.dataset.homeMealHtml !== html) {
+    card.innerHTML = html;
+    card.dataset.homeMealHtml = html;
+  }
 }
 
 function arrangeHome() {
@@ -156,6 +168,17 @@ if (nextMealCard) {
     if (!nextMealCard.querySelector('.home-meal-flow')) queueMicrotask(renderNextMeals);
   }).observe(nextMealCard, { childList:true, subtree:true, characterData:true });
 }
+
+const prepHero = document.querySelector('#view-home .hero-card');
+const memberProgress = document.getElementById('memberProgress');
+const keepCombinedPrep = () => {
+  if (!latestData) return;
+  const captionOk = document.getElementById('progressCaption')?.textContent.startsWith('전체 준비 ') || false;
+  const memberOk = memberProgress?.querySelector('[data-home-member-progress]') || false;
+  if (!captionOk || !memberOk) queueMicrotask(renderCombinedPrep);
+};
+if (prepHero) new MutationObserver(keepCombinedPrep).observe(prepHero, { childList:true, subtree:true, characterData:true });
+if (memberProgress) new MutationObserver(keepCombinedPrep).observe(memberProgress, { childList:true, subtree:true, characterData:true });
 
 document.addEventListener('click', event => {
   const target = event.target instanceof Element ? event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later], [data-toggle-item], [data-toggle-meal-prep], [data-toggle-meal-item]') : null;
