@@ -86,6 +86,7 @@ class FirebaseAdapter {
     this.unsubscribe = null;
     this.retryTimer = null;
     this.connecting = false;
+    this.authPersistence = null;
     this.cachedData = this.readServerCache();
     this.ready = this.connect();
     // Keep the rejected promise observed; subscribers/writes will trigger a reconnect.
@@ -165,6 +166,29 @@ class FirebaseAdapter {
     }
   }
 
+  async configureAuthPersistence(authMod){
+    const strategies = [
+      ['local', authMod.browserLocalPersistence],
+      ['session', authMod.browserSessionPersistence],
+      ['memory', authMod.inMemoryPersistence]
+    ];
+    let lastError = null;
+
+    for (const [name, persistence] of strategies) {
+      if (!persistence) continue;
+      try {
+        await authMod.setPersistence(this.auth, persistence);
+        this.authPersistence = name;
+        return name;
+      } catch (error) {
+        lastError = error;
+        console.warn(`Firebase auth ${name} persistence unavailable.`, error);
+      }
+    }
+
+    throw lastError || new Error('Firebase auth persistence unavailable');
+  }
+
   async initOnce(){
     const [appMod, authMod, firestore] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
@@ -176,12 +200,20 @@ class FirebaseAdapter {
     this.app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(FIREBASE_CONFIG);
     this.auth = authMod.getAuth(this.app);
 
-    // We only need an authenticated UID for Firestore rules. In-memory auth avoids
-    // Safari/Private Browsing storage edge cases while preserving anonymous access.
-    await authMod.setPersistence(this.auth, authMod.inMemoryPersistence);
+    // Reuse one anonymous account across normal reloads. This avoids creating a new
+    // Firebase anonymous user on every refresh, which can hit per-IP signup limits.
+    // iOS private/restricted storage falls back to session and then memory persistence.
+    await this.configureAuthPersistence(authMod);
+    if (typeof this.auth.authStateReady === 'function') await this.auth.authStateReady();
     if (!this.auth.currentUser) await authMod.signInAnonymously(this.auth);
 
-    this.db = firestore.getFirestore(this.app);
+    // Auto-detect long polling helps Safari/iOS networks where Firestore's default
+    // streaming transport can be interrupted. Reconnect retries reuse this instance.
+    try {
+      this.db = firestore.initializeFirestore(this.app, { experimentalAutoDetectLongPolling:true });
+    } catch (_) {
+      this.db = firestore.getFirestore(this.app);
+    }
     this.tripRef = firestore.doc(this.db, 'trips', DATA_MODE.tripId);
 
     const snapshot = await firestore.getDoc(this.tripRef);
