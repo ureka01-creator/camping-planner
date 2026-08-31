@@ -10,6 +10,37 @@ function memberOptions(selected='') {
   ).join('');
 }
 
+function payerMembers() {
+  return (latestData?.members || []).filter(member => {
+    const name = String(member?.name || '').trim();
+    return name && !name.startsWith('공용');
+  });
+}
+
+function payerOptions(selected='') {
+  return `<option value="">결제자 미정</option>` + payerMembers().map(member =>
+    `<option value="${member.id}" ${member.id===selected?'selected':''}>${esc(member.name)}</option>`
+  ).join('');
+}
+
+function defaultPayerForAssignee(assigneeId) {
+  return payerMembers().some(member => member.id === assigneeId) ? assigneeId : '';
+}
+
+function bindPayerSync(form, explicitOverride=false) {
+  const assignee = form.querySelector('select[name="assigneeId"]');
+  const payer = form.querySelector('select[name="payerId"]');
+  if (!assignee || !payer) return;
+  payer.dataset.overridden = explicitOverride ? '1' : '0';
+  assignee.addEventListener('change', () => {
+    if (payer.dataset.overridden !== '1') payer.value = defaultPayerForAssignee(assignee.value);
+  });
+  payer.addEventListener('change', () => {
+    const defaultPayer = defaultPayerForAssignee(assignee.value);
+    payer.dataset.overridden = payer.value && payer.value !== defaultPayer ? '1' : '0';
+  });
+}
+
 function numberValue(value) {
   const n = Number(String(value ?? '').replace(/[^0-9.-]/g,''));
   return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
@@ -19,16 +50,24 @@ function buildAddForm(meal, onDone) {
   const form = document.createElement('form');
   form.className = 'meal-inline-form';
   form.dataset.mealInlineForm = meal.id;
+  const assigneeId = meal.assigneeId || '';
+  const payerId = defaultPayerForAssignee(assigneeId);
   form.innerHTML = `
     <input class="meal-inline-name" name="name" placeholder="준비 항목 (예: 돼지고기)" autocomplete="off" required />
     <div class="meal-inline-row">
       <input name="quantity" placeholder="수량 (예: 4근)" autocomplete="off" />
-      <div class="cost-input-wrap"><input name="cost" type="number" inputmode="numeric" min="0" step="100" placeholder="금액" /></div>
+      <div class="cost-input-wrap"><input name="cost" type="number" inputmode="numeric" min="0" step="1" placeholder="금액" /></div>
+    </div>
+    <div class="meal-inline-row">
+      <select name="assigneeId" aria-label="준비 담당자">${memberOptions(assigneeId)}</select>
+      <select name="payerId" aria-label="결제자">${payerOptions(payerId)}</select>
     </div>
     <div class="meal-inline-row meal-inline-bottom">
-      <select name="assigneeId" aria-label="준비 담당자">${memberOptions(meal.assigneeId || '')}</select>
+      <span class="meal-inline-payer-note">결제자는 담당자를 자동으로 따라가.</span>
       <button class="meal-inline-submit" type="submit">+ 추가</button>
     </div>`;
+
+  bindPayerSync(form, false);
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -49,6 +88,12 @@ function buildAddForm(meal, onDone) {
       });
       toast(`${values.name} 추가 완료`);
       form.reset();
+      const assignee = form.querySelector('select[name="assigneeId"]');
+      const payer = form.querySelector('select[name="payerId"]');
+      if (assignee && payer) {
+        payer.dataset.overridden = '0';
+        payer.value = defaultPayerForAssignee(assignee.value);
+      }
       onDone?.();
     } catch (error) {
       console.error(error);
@@ -102,20 +147,30 @@ function buildEditForm(meal, item, row) {
   const form = document.createElement('form');
   form.className = 'meal-inline-edit';
   form.dataset.mealItemEdit = `${meal.id}:${item.id}`;
+  const assigneeId = item.assigneeId || meal.assigneeId || '';
+  const savedPayer = payerMembers().some(member => member.id === item.payerId) ? item.payerId : '';
+  const payerId = savedPayer || defaultPayerForAssignee(assigneeId);
+  const payerOverride = Boolean(savedPayer && savedPayer !== defaultPayerForAssignee(assigneeId));
   form.innerHTML = `
     <div class="meal-inline-edit-title">준비 항목 수정</div>
     <input name="name" value="${esc(item.name || '')}" placeholder="준비 항목" autocomplete="off" required />
     <div class="meal-inline-row">
       <input name="quantity" value="${esc(item.quantity || '')}" placeholder="수량" autocomplete="off" />
-      <div class="cost-input-wrap"><input name="cost" type="number" inputmode="numeric" min="0" step="100" value="${numberValue(item.cost) || ''}" placeholder="금액" /></div>
+      <div class="cost-input-wrap"><input name="cost" type="number" inputmode="numeric" min="0" step="1" value="${numberValue(item.cost) || ''}" placeholder="금액" /></div>
     </div>
-    <select name="assigneeId" aria-label="준비 담당자">${memberOptions(item.assigneeId || meal.assigneeId || '')}</select>
+    <div class="meal-inline-row">
+      <select name="assigneeId" aria-label="준비 담당자">${memberOptions(assigneeId)}</select>
+      <select name="payerId" aria-label="결제자">${payerOptions(payerId)}</select>
+    </div>
+    <div class="meal-inline-payer-note">결제자는 담당자와 같으면 따로 바꿀 필요 없어.</div>
     <textarea name="note" placeholder="구매처, 브랜드, 추가 메모 등">${esc(item.note || '')}</textarea>
     <div class="meal-inline-edit-actions">
       <button type="button" class="meal-inline-delete">삭제</button>
       <button type="button" class="meal-inline-cancel">취소</button>
       <button type="submit" class="meal-inline-save">저장</button>
     </div>`;
+
+  bindPayerSync(form, payerOverride);
 
   const close = () => {
     row.hidden = false;
@@ -213,3 +268,9 @@ if (mealList) {
   });
   queueMicrotask(enhanceMealCards);
 }
+
+const style = document.createElement('style');
+style.textContent = `
+  .meal-inline-payer-note { align-self:center; color:rgba(234,217,196,.40); font-size:9px; line-height:1.45; }
+`;
+document.head.appendChild(style);
