@@ -89,7 +89,7 @@ function renderFoodStage(meal, roundLabel) {
   if (!meal) return '';
   const note = String(meal.note || '').trim();
   return `
-    <button type="button" class="home-food-stage" data-food-date="${esc(meal.date || '')}">
+    <button type="button" class="home-food-stage" data-food-meal-id="${esc(meal.id || '')}" data-food-date="${esc(meal.date || '')}">
       <div class="home-food-stage-mark">
         <span>${esc(roundLabel)}</span>
         <small>${esc(mealLabels[meal.mealType] || '식사')}</small>
@@ -106,7 +106,7 @@ function renderFoodStage(meal, roundLabel) {
 function renderNextPreview(meal) {
   if (!meal) return '';
   return `
-    <button type="button" class="home-food-next" data-food-date="${esc(meal.date || '')}">
+    <button type="button" class="home-food-next" data-food-meal-id="${esc(meal.id || '')}" data-food-date="${esc(meal.date || '')}">
       <span>다음 식사 · ${esc(formatShortDate(meal.date))} ${esc(weekdayText(meal.date))} · ${esc(mealLabels[meal.mealType] || '식사')}</span>
       <div><strong>${esc(meal.menu || '메뉴 미정')}</strong><b aria-hidden="true">→</b></div>
     </button>`;
@@ -194,6 +194,11 @@ function openMealDate(date) {
   }, 80);
 }
 
+function openExactMeal(mealId, date) {
+  if (mealId && window.CampingMealFocus?.open?.(mealId, date)) return;
+  openMealDate(date);
+}
+
 function apply() {
   arrangeHome();
   renderCombinedPrep();
@@ -229,7 +234,8 @@ document.addEventListener('click', event => {
 
   const foodTarget = event.target.closest('[data-food-date]');
   if (foodTarget) {
-    openMealDate(foodTarget.dataset.foodDate || '');
+    event.preventDefault();
+    openExactMeal(foodTarget.dataset.foodMealId || '', foodTarget.dataset.foodDate || '');
     return;
   }
 
