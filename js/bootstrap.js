@@ -54,10 +54,10 @@ async function repairTripDatesIfNeeded() {
 
 // Critical path: attach all UI/navigation handlers immediately.
 // Never wait for Firestore before the app becomes interactive.
-await import('./app.js?v=056');
-await import('./inline-meal-add.js?v=056');
-await import('./trip-settings.js?v=056');
-await import('./home-meal-progress.js?v=056');
+await import('./app.js?v=057');
+await import('./inline-meal-add.js?v=057');
+await import('./trip-settings.js?v=057');
+await import('./home-meal-progress.js?v=057');
 
 // Non-critical data repair runs after the UI is already interactive.
 repairTripDatesIfNeeded().catch(error => {
