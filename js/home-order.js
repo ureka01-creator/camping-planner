@@ -144,6 +144,17 @@ function sortableCards() {
   return orderedKeysFromDom().map(key => map[key]).filter(Boolean);
 }
 
+function autoScrollFor(clientY) {
+  const edge = Math.min(120, window.innerHeight * .2);
+  let delta = 0;
+  if (clientY < edge) {
+    delta = -Math.max(7, Math.ceil((edge - clientY) / edge * 30));
+  } else if (clientY > window.innerHeight - edge) {
+    delta = Math.max(7, Math.ceil((clientY - (window.innerHeight - edge)) / edge * 30));
+  }
+  if (delta) window.scrollBy(0, delta);
+}
+
 function insertDraggedCard(clientY) {
   if (!dragState) return;
   const home = document.getElementById('view-home');
@@ -184,12 +195,12 @@ function startDrag(event) {
   };
   card.classList.add('home-order-dragging');
   document.body.classList.add('home-order-dragging-active');
-  try { card.setPointerCapture(event.pointerId); } catch (_) {}
 }
 
 function moveDrag(event) {
   if (!dragState || event.pointerId !== dragState.pointerId) return;
   event.preventDefault();
+  autoScrollFor(event.clientY);
   insertDraggedCard(event.clientY);
 }
 
@@ -197,8 +208,7 @@ function finishDrag(event, cancelled = false) {
   if (!dragState) return;
   if (event && event.pointerId !== dragState.pointerId) return;
 
-  const { card, moved, pointerId } = dragState;
-  try { card.releasePointerCapture(pointerId); } catch (_) {}
+  const { card, moved } = dragState;
   card.classList.remove('home-order-dragging');
   document.body.classList.remove('home-order-dragging-active');
   dragState = null;
@@ -309,14 +319,15 @@ window.CampingHomeOrder = {
 const home = document.getElementById('view-home');
 if (home) {
   home.addEventListener('pointerdown', startDrag, { passive:false });
-  home.addEventListener('pointermove', moveDrag, { passive:false });
-  home.addEventListener('pointerup', event => finishDrag(event));
-  home.addEventListener('pointercancel', event => finishDrag(event, true));
   new MutationObserver(() => {
     decorateCards();
     if (!applying && !dragState) queueMicrotask(applyHomeOrder);
   }).observe(home, { childList:true });
 }
+
+document.addEventListener('pointermove', moveDrag, { passive:false, capture:true });
+document.addEventListener('pointerup', event => finishDrag(event), true);
+document.addEventListener('pointercancel', event => finishDrag(event, true), true);
 
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
