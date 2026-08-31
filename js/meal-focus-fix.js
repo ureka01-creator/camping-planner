@@ -49,11 +49,21 @@ function weekday(iso) {
 function progress(items) {
   const list = Array.isArray(items) ? items : [];
   const done = list.filter(item => item?.isDone).length;
-  return { done, total:list.length, pct:list.length ? Math.round(done / list.length * 100) : 0 };
+  return { done, total:list.length, pct:list.length ? Math.round(done / list.length * 100) : 100 };
 }
 
 function memberName(id) {
   return latestData?.members?.find(member => member.id === id)?.name || '공용';
+}
+
+function orderValue(meal) {
+  const explicit = Number(meal?.sortOrder);
+  if (Number.isFinite(explicit)) return explicit;
+  return 1000 + (mealOrder[meal?.mealType] || 99) * 100;
+}
+
+function compareMeals(a, b) {
+  return a.date.localeCompare(b.date) || orderValue(a) - orderValue(b);
 }
 
 function ensureAllTab() {
@@ -79,7 +89,8 @@ function ensureAllTab() {
 
 function mealOverviewRow(meal) {
   const p = progress(meal.items);
-  return `<button type="button" class="meal-overview-row" data-open-meal-date="${meal.date}">
+  return `<button type="button" class="meal-overview-row" data-open-meal-date="${meal.date}" data-meal-id="${meal.id}" data-meal-date="${meal.date}">
+    <span class="meal-drag-handle meal-overview-drag" aria-label="식단 순서 변경" title="끌어서 순서 변경">≡</span>
     <span class="meal-overview-main">
       <span class="meal-overview-type">${mealLabels[meal.mealType] || '식사'}</span>
       <strong>${esc(meal.menu || '메뉴 미정')}</strong>
@@ -96,10 +107,10 @@ function renderAllMeals() {
   const daySet = new Set(days);
   const meals = [...(latestData.meals || [])]
     .filter(meal => daySet.has(meal.date))
-    .sort((a, b) => a.date.localeCompare(b.date) || (mealOrder[a.mealType] || 99) - (mealOrder[b.mealType] || 99));
+    .sort(compareMeals);
   const allItems = meals.flatMap(meal => Array.isArray(meal.items) ? meal.items : []);
-  const totalProgress = progress(allItems);
-  const summary = `<div class="meal-total-summary"><span>전체 일정</span><strong>${meals.length}식 · 준비 ${totalProgress.done}/${totalProgress.total}</strong></div>`;
+  const doneItems = allItems.filter(item => item?.isDone).length;
+  const summary = `<div class="meal-total-summary"><span>전체 일정</span><strong>${meals.length}식 · 준비 ${doneItems}/${allItems.length}</strong></div>`;
   const schedule = days.map(day => {
     const dayMeals = meals.filter(meal => meal.date === day);
     return `<section class="meal-overview-day">
@@ -137,6 +148,7 @@ document.addEventListener('click', event => {
 }, true);
 
 mealList?.addEventListener('click', event => {
+  if (event.target.closest('.meal-drag-handle')) return;
   const toggle = event.target.closest('.meal-inline-toggle');
   if (toggle) {
     requestAnimationFrame(() => centerFocusedInput(toggle));
@@ -177,7 +189,7 @@ style.textContent = `
   .meal-overview-day-head small { margin-left:3px; font-size:10px; font-weight:800; opacity:.62; }
   .meal-overview-day-head > span { font-size:10px; color:var(--muted); }
   .meal-overview-list { display:grid; gap:7px; }
-  .meal-overview-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; width:100%; min-width:0; padding:12px 13px; border:1px solid var(--line); border-radius:16px; background:var(--paper); text-align:left; }
+  .meal-overview-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; width:100%; min-width:0; padding:12px 13px; border:1px solid var(--line); border-radius:16px; background:var(--paper); text-align:left; }
   .meal-overview-main { display:grid; gap:3px; min-width:0; }
   .meal-overview-type { font-size:10px; font-weight:900; color:var(--accent); }
   .meal-overview-main strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px; }
