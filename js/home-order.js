@@ -1,14 +1,16 @@
 import { DATA_MODE } from './firebase.js?v=064';
 import { toast } from './ui.js';
 
-const DEFAULT_ORDER = ['prep', 'mine', 'members', 'meals'];
+const DEFAULT_ORDER = ['prep', 'mine', 'members', 'meals', 'memo'];
 const LABELS = {
   prep: '준비 현황',
   mine: '내 준비',
   members: '담당자별 준비율',
-  meals: '식사 일정'
+  meals: '식사 일정',
+  memo: '한줄 메모'
 };
 const STORAGE_KEY = `camp:homeOrder:${DATA_MODE.tripId}`;
+const COVER_CACHE_KEY = 'camp:landingCover:v9';
 let applying = false;
 let locked = true;
 let dragState = null;
@@ -39,7 +41,8 @@ function nodes() {
     prep: document.querySelector('#view-home > .hero-card'),
     mine: document.getElementById('myPrepQuickCard'),
     members: document.getElementById('memberProgress')?.closest('.home-section') || null,
-    meals: document.getElementById('nextMealCard')?.closest('.home-section') || null
+    meals: document.getElementById('nextMealCard')?.closest('.home-section') || null,
+    memo: document.getElementById('homeMemoCard')
   };
 }
 
@@ -109,6 +112,49 @@ function lockSvg(isLocked) {
     : `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10" width="13" height="10" rx="2.5"></rect><path d="M15.5 10V7.4A3.5 3.5 0 0 0 12 4a3.5 3.5 0 0 0-3.5 3.4"></path></svg>`;
 }
 
+function coverSvg() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 18.5 9.2 11l3.2 4 2.1-2.6 6 6.1"></path><path d="M3.5 20h17"></path><circle cx="17.2" cy="6.8" r="2.3"></circle></svg>`;
+}
+
+function closeLanding(overlay) {
+  if (!(overlay instanceof HTMLElement) || overlay.classList.contains('is-exiting')) return;
+  overlay.classList.add('is-exiting');
+  document.body.classList.remove('landing-open');
+  window.setTimeout(() => overlay.remove(), 320);
+}
+
+function openLandingCover() {
+  const existing = document.querySelector('.camp-landing');
+  if (existing instanceof HTMLElement) {
+    existing.classList.remove('is-exiting');
+    document.body.classList.add('landing-open');
+    return;
+  }
+
+  let src = '';
+  try { src = localStorage.getItem(COVER_CACHE_KEY) || ''; } catch (_) {}
+  if (!src) {
+    window.location.reload();
+    return;
+  }
+
+  const overlay = document.createElement('button');
+  overlay.type = 'button';
+  overlay.className = 'camp-landing';
+  overlay.setAttribute('aria-label', '캠핑 플래너로 돌아가기');
+  overlay.innerHTML = `
+    <span class="camp-landing-bg loaded" aria-hidden="true"></span>
+    <img class="camp-landing-poster loaded" alt="캠핑 메인 이미지" />
+    <span class="camp-landing-hint loaded" aria-hidden="true">⌄</span>`;
+  const bg = overlay.querySelector('.camp-landing-bg');
+  const poster = overlay.querySelector('.camp-landing-poster');
+  if (bg instanceof HTMLElement) bg.style.backgroundImage = `url("${src}")`;
+  if (poster instanceof HTMLImageElement) poster.src = src;
+  overlay.addEventListener('click', () => closeLanding(overlay));
+  document.body.prepend(overlay);
+  document.body.classList.add('landing-open');
+}
+
 function ensureLockButton() {
   const actions = document.querySelector('.topbar-actions');
   if (!actions) return null;
@@ -124,13 +170,36 @@ function ensureLockButton() {
   return button;
 }
 
+function ensureCoverButton() {
+  const actions = document.querySelector('.topbar-actions');
+  if (!actions) return null;
+  const lockButton = ensureLockButton();
+  let button = document.getElementById('landingShortcutBtn');
+  if (!button) {
+    button = document.createElement('button');
+    button.id = 'landingShortcutBtn';
+    button.type = 'button';
+    button.className = 'icon-btn landing-shortcut-btn';
+    button.setAttribute('aria-label', '캠핑 메인 이미지 보기');
+    button.innerHTML = coverSvg();
+    actions.insertBefore(button, lockButton || document.getElementById('settingsShortcut') || actions.firstChild);
+    button.addEventListener('click', () => {
+      if (!locked) setLocked(true);
+      openLandingCover();
+    });
+  }
+  return button;
+}
+
 function syncLockUi() {
   const home = document.getElementById('view-home');
   const button = ensureLockButton();
+  const coverButton = ensureCoverButton();
   if (!home || !button) return;
 
   const homeActive = home.classList.contains('active');
   button.hidden = !homeActive;
+  if (coverButton) coverButton.hidden = !homeActive;
   button.classList.toggle('unlocked', !locked);
   button.setAttribute('aria-pressed', String(!locked));
   button.setAttribute('aria-label', locked ? '홈 카드 순서 잠금 해제' : '홈 카드 순서 잠그기');
@@ -238,14 +307,17 @@ function removeLegacySettingsControl() {
 
 const style = document.createElement('style');
 style.textContent = `
-  .home-order-lock-btn { flex:none; }
-  .home-order-lock-btn svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .home-order-lock-btn,
+  .landing-shortcut-btn { flex:none; }
+  .home-order-lock-btn svg,
+  .landing-shortcut-btn svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   .home-order-lock-btn.unlocked { color:#d99a6a; border-color:rgba(217,154,106,.45); background:rgba(217,154,106,.09); }
 
   .home-theme #view-home.active { display:grid; gap:16px; }
   .home-theme #view-home > .hero-card,
   .home-theme #view-home > .my-prep-quick-card,
-  .home-theme #view-home > .home-section { margin:0 !important; }
+  .home-theme #view-home > .home-section,
+  .home-theme #view-home > .home-memo-card { margin:0 !important; }
   .home-theme #view-home > [data-home-order-card] { position:relative; }
 
   .home-theme .home-prep-member-section {
@@ -347,7 +419,8 @@ document.addEventListener('click', event => {
 removeLegacySettingsControl();
 removeExternalCardHeaders();
 ensureLockButton();
+ensureCoverButton();
 applyHomeOrder();
 syncLockUi();
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.5.9';
+if (version) version.textContent = 'Camping Planner v0.6.2';
