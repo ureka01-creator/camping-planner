@@ -99,7 +99,8 @@ function arrangeHome() {
   const home = document.getElementById('view-home');
   if (!home) return;
 
-  document.getElementById('homeTodo')?.closest('.home-section')?.remove();
+  const todoSection = document.getElementById('homeTodo')?.closest('.home-section');
+  todoSection?.classList.add('home-todo-hidden');
 
   const memberSection = document.getElementById('memberProgress')?.closest('.home-section');
   const mealSection = document.getElementById('nextMealCard')?.closest('.home-section');
