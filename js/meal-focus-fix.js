@@ -168,12 +168,14 @@ mealList?.addEventListener('click', event => {
   targetTab?.click();
 });
 
+// Capture before app.js handles the date button so the All renderer cannot
+// overwrite the date-specific cards during the same navigation event.
 dateTabs?.addEventListener('click', event => {
   const dateButton = event.target.closest('[data-date]');
   if (!dateButton) return;
   allActive = false;
   localStorage.setItem('camp:mealScope', 'date');
-});
+}, true);
 
 if (dateTabs) {
   new MutationObserver(queueAllSync).observe(dateTabs, { childList:true });
