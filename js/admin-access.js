@@ -61,6 +61,10 @@ if (!dataAdapter.__adminGuardInstalled) {
   dataAdapter.__adminGuardInstalled = true;
 }
 
+function setText(element, value) {
+  if (element && element.textContent !== value) element.textContent = value;
+}
+
 function ensureAdminCard() {
   const settings = document.getElementById('view-settings');
   if (!settings || settings.querySelector('#adminAccessCard')) return;
@@ -116,26 +120,21 @@ function applyAdminUi() {
   const saveDates = document.getElementById('saveTripDatesBtn');
   const addMember = document.getElementById('addMemberBtn');
 
-  if (startInput) startInput.disabled = !admin;
-  if (endInput) endInput.disabled = !admin;
-  if (saveDates) saveDates.hidden = !admin;
-  if (addMember) addMember.hidden = !admin;
+  if (startInput && startInput.disabled === admin) startInput.disabled = !admin;
+  if (endInput && endInput.disabled === admin) endInput.disabled = !admin;
+  if (saveDates && saveDates.hidden === admin) saveDates.hidden = !admin;
+  if (addMember && addMember.hidden === admin) addMember.hidden = !admin;
 
   document.querySelectorAll('[data-edit-member]').forEach(button => {
-    button.hidden = !admin;
+    if (button.hidden === admin) button.hidden = !admin;
   });
 
-  const status = document.getElementById('adminAccessStatus');
-  const badge = document.getElementById('adminAccessBadge');
-  const button = document.getElementById('adminAccessBtn');
-  if (status) status.textContent = admin
+  setText(document.getElementById('adminAccessStatus'), admin
     ? '캠핑 일정과 참여자/팀을 수정할 수 있어.'
-    : '일반 사용자는 일정과 참여자/팀을 조회만 할 수 있어.';
-  if (badge) badge.textContent = admin ? '관리자' : '읽기 전용';
-  if (button) button.textContent = admin ? '관리자 모드 종료' : '관리자 인증';
-
-  const version = document.querySelector('#view-settings .version');
-  if (version) version.textContent = 'Camping Planner v0.5.7';
+    : '일반 사용자는 일정과 참여자/팀을 조회만 할 수 있어.');
+  setText(document.getElementById('adminAccessBadge'), admin ? '관리자' : '읽기 전용');
+  setText(document.getElementById('adminAccessBtn'), admin ? '관리자 모드 종료' : '관리자 인증');
+  setText(document.querySelector('#view-settings .version'), 'Camping Planner v0.5.7');
 }
 
 const style = document.createElement('style');
@@ -150,7 +149,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Block protected actions at the UI boundary as well as in dataAdapter.mutate.
 document.addEventListener('click', event => {
   if (isAdmin() || !(event.target instanceof Element)) return;
   const protectedControl = event.target.closest('#saveTripDatesBtn, #addMemberBtn, [data-edit-member], #deleteMemberBtn');
@@ -160,9 +158,9 @@ document.addEventListener('click', event => {
   toast('관리자만 수정할 수 있어.');
 }, true);
 
-const settings = document.getElementById('view-settings');
-if (settings) {
-  new MutationObserver(() => applyAdminUi()).observe(settings, { childList:true, subtree:true });
+const memberList = document.getElementById('memberList');
+if (memberList) {
+  new MutationObserver(() => queueMicrotask(applyAdminUi)).observe(memberList, { childList:true });
 }
 
 applyAdminUi();
