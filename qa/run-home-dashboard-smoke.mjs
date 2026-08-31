@@ -3,11 +3,12 @@ import { chromium } from 'playwright';
 const browser = await chromium.launch({ headless:true });
 const page = await browser.newPage({ viewport:{ width:390, height:844 }, deviceScaleFactor:2 });
 const errors=[];
+const tripId=`qa-home-dashboard-${Date.now()}`;
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 page.on('console', msg => { if (msg.type()==='error') errors.push(`console: ${msg.text()}`); });
 
 try {
-  await page.goto('http://127.0.0.1:4173/?trip=qa-home-dashboard-smoke', { waitUntil:'domcontentloaded', timeout:30000 });
+  await page.goto(`http://127.0.0.1:4173/?trip=${tripId}`, { waitUntil:'domcontentloaded', timeout:30000 });
 
   const landing=page.locator('.camp-landing');
   if(await landing.count()) {
@@ -115,7 +116,7 @@ try {
   const overflow=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
-  console.log(JSON.stringify({layout,food,todoHidden,prepMetric,heroCaption,overflow,errors},null,2));
+  console.log(JSON.stringify({tripId,layout,food,todoHidden,prepMetric,heroCaption,overflow,errors},null,2));
 
   const foodOk = food.kicker==='FOOD PLAN'
     && food.title==='첫날 먹을 것'
