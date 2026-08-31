@@ -47,6 +47,9 @@ jobs:
       - name: Run home dashboard smoke check
         run: timeout 120s node qa/run-home-dashboard-smoke.mjs
 
+      - name: Run admin access smoke check
+        run: timeout 120s node qa/run-admin-access-smoke.mjs
+
       - name: Run preparation hub smoke check
         run: timeout 90s node qa/run-items-hub-smoke.mjs
 
@@ -74,6 +77,7 @@ jobs:
             qa/header-smoke-result.png
             qa/first-entry-smoke-result.png
             qa/home-dashboard-smoke-result.png
+            qa/admin-access-smoke-result.png
             qa/app-smoke-result.png
             qa/edit-icons-smoke-result.png
           if-no-files-found: ignore
