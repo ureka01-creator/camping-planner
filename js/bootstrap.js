@@ -70,11 +70,14 @@ await import('./trip-settings.js?v=064');
 await import('./home-meal-progress.js?v=065');
 await import('./meal-reorder.js?v=065');
 await import('./meal-edit-focus.js?v=066');
-await import('./items-hub.js?v=067');
+await import('./items-hub.js?v=089');
 await import('./item-edit-fix.js?v=082');
 await import('./edit-icons.js?v=081');
 await import('./admin-access.js?v=083');
 await import('./home-order.js?v=088');
+
+const version = document.querySelector('#view-settings .version');
+if (version) version.textContent = 'Camping Planner v0.6.0';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
