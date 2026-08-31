@@ -78,8 +78,11 @@ function renderNextMeals() {
   const meals = sortedMeals();
   const first = meals[0];
   if (!first) {
-    card.classList.add('empty-card');
-    card.innerHTML = '아직 식단이 없어.';
+    const emptyText = '아직 식단이 없어.';
+    if (card.textContent.trim() !== emptyText || !card.classList.contains('empty-card')) {
+      card.classList.add('empty-card');
+      card.textContent = emptyText;
+    }
     return;
   }
 
@@ -128,6 +131,14 @@ dataAdapter.subscribe(data => {
   latestData = data;
   queueMicrotask(apply);
 });
+
+const nextMealCard = document.getElementById('nextMealCard');
+if (nextMealCard) {
+  new MutationObserver(() => {
+    if (!latestData || !sortedMeals().length) return;
+    if (!nextMealCard.querySelector('.home-meal-flow')) queueMicrotask(renderNextMeals);
+  }).observe(nextMealCard, { childList:true, subtree:true, characterData:true });
+}
 
 document.addEventListener('click', event => {
   const target = event.target instanceof Element ? event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later]') : null;
