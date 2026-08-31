@@ -85,14 +85,11 @@ try {
   });
 
   const food=await page.evaluate(() => {
-    const section=document.querySelector('#nextMealCard')?.closest('.home-section');
     const stages=[...document.querySelectorAll('#nextMealCard .home-food-stage')];
     const marks=stages.map(stage => stage.querySelector('.home-food-stage-mark span')?.textContent.trim() || '');
     const menus=stages.map(stage => stage.querySelector('.home-food-stage-copy strong')?.textContent.trim() || '');
     const cardText=document.querySelector('#nextMealCard')?.textContent || '';
     return {
-      kicker:section?.querySelector('.home-food-heading > span')?.textContent.trim() || '',
-      title:section?.querySelector('.home-food-heading h2')?.textContent.trim() || '',
       marks,
       menus,
       nextText:document.querySelector('#nextMealCard .home-food-next')?.textContent.replace(/\s+/g,' ').trim() || '',
@@ -104,19 +101,22 @@ try {
 
   const visual=await page.evaluate(() => {
     const foodSection=document.querySelector('#nextMealCard')?.closest('.home-section');
-    const foodTitle=foodSection?.querySelector('.home-food-heading h2');
-    const memberTitle=document.querySelector('.home-prep-member-section h2');
+    const memberSection=document.querySelector('#memberProgress')?.closest('.home-section');
     const foodCard=document.querySelector('#nextMealCard');
     const next=document.querySelector('#nextMealCard .home-food-next');
-    if(!foodSection || !foodTitle || !memberTitle || !foodCard || !next) return null;
+    if(!foodSection || !memberSection || !foodCard || !next) return null;
     const sectionStyle=getComputedStyle(foodSection);
-    const foodTitleStyle=getComputedStyle(foodTitle);
-    const memberTitleStyle=getComputedStyle(memberTitle);
     const cardStyle=getComputedStyle(foodCard);
     const nextStyle=getComputedStyle(next);
+    const foodLabelStyle=getComputedStyle(foodCard,'::before');
+    const memberLabelStyle=getComputedStyle(memberSection,'::before');
     return {
       noSectionDivider: sectionStyle.borderTopWidth === '0px',
-      titleSizeAligned: foodTitleStyle.fontSize === memberTitleStyle.fontSize,
+      noExternalFoodHead: !foodSection.querySelector(':scope > .section-head'),
+      noExternalMemberHead: !memberSection.querySelector(':scope > .section-head'),
+      foodInternalLabel: foodLabelStyle.content.replace(/["']/g,'') === '식사 일정',
+      memberInternalLabel: memberLabelStyle.content.replace(/["']/g,'') === '담당자별 준비율',
+      labelSizeAligned: foodLabelStyle.fontSize === memberLabelStyle.fontSize,
       cardRadius: cardStyle.borderRadius,
       cardBorder: cardStyle.borderTopWidth,
       nextFlat: nextStyle.backgroundColor === 'rgba(0, 0, 0, 0)' && nextStyle.borderRadius === '0px'
@@ -145,9 +145,7 @@ try {
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
   console.log(JSON.stringify({tripId,layout,food,visual,todoHidden,prepMetric,heroCaption,overflow,errors,networkWarnings},null,2));
 
-  const foodOk = food.kicker===''
-    && food.title==='식사 일정'
-    && food.marks[0]==='1차'
+  const foodOk = food.marks[0]==='1차'
     && food.marks[1]==='2차'
     && food.menus[0]==='QA 해산물 파티'
     && food.menus[1]==='QA 닭발 & 계란찜'
@@ -157,7 +155,16 @@ try {
     && food.firstStatus.includes('준비 완료')
     && food.secondStatus.includes('1개 남음')
     && !food.hasPercent;
-  const visualOk=Boolean(visual?.noSectionDivider && visual?.titleSizeAligned && visual?.cardBorder==='1px' && visual?.nextFlat);
+  const visualOk=Boolean(
+    visual?.noSectionDivider
+    && visual?.noExternalFoodHead
+    && visual?.noExternalMemberHead
+    && visual?.foodInternalLabel
+    && visual?.memberInternalLabel
+    && visual?.labelSizeAligned
+    && visual?.cardBorder==='1px'
+    && visual?.nextFlat
+  );
 
   if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !foodOk || !visualOk || !prepMetric.aligned || !heroCaption.startsWith('전체 준비 ') || overflow) process.exitCode=1;
 } catch(error) {
