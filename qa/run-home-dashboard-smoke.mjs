@@ -15,13 +15,20 @@ try {
     await landing.waitFor({ state:'detached', timeout:5000 });
   }
 
-  const picker=page.locator('#firstEntryBackdrop');
-  if(await picker.count()) {
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+
+  const ensureTeamSelected=async()=>{
+    const selected=await page.evaluate(() => Boolean(localStorage.getItem('camp:myMemberId')));
+    if(selected) return;
+    const picker=page.locator('#firstEntryBackdrop');
+    if(!(await picker.count())) {
+      await page.locator('[data-open-team-picker]').first().click();
+      await picker.waitFor({ state:'visible', timeout:5000 });
+    }
     await page.locator('[data-first-entry-member]').first().click();
     await picker.waitFor({ state:'detached', timeout:5000 });
-  }
-
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  };
+  await ensureTeamSelected();
 
   await page.evaluate(async () => {
     const { dataAdapter } = await import('./js/firebase.js?v=064');
