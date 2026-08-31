@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="./css/meals-v4.css?v=047" />
   <link rel="stylesheet" href="./css/ios-input-fix.css?v=048" />
   <link rel="stylesheet" href="./css/unified-night.css?v=060" />
+  <link rel="stylesheet" href="./css/settlement.css?v=070" />
 </head>
 <body class="landing-boot">
   <div id="app" class="app-shell">
@@ -40,7 +41,10 @@
           </div>
         </div>
       </div>
-      <button id="shareBtn" class="icon-btn" aria-label="공유">↗</button>
+      <div class="topbar-actions">
+        <button id="settingsShortcut" class="icon-btn settings-shortcut" data-go="settings" aria-label="설정">⚙</button>
+        <button id="shareBtn" class="icon-btn" aria-label="공유">↗</button>
+      </div>
     </header>
 
     <main>
@@ -102,6 +106,34 @@
         <div id="itemList" class="item-list"></div>
       </section>
 
+      <section id="view-settlement" class="view" data-view="settlement">
+        <div class="view-heading">
+          <div><p class="section-kicker">SETTLEMENT</p><h2>얼마 썼지?</h2></div>
+          <button class="primary-small" id="addExpenseBtn">+ 지출</button>
+        </div>
+
+        <div class="settlement-hero">
+          <p class="settlement-hero-label">TOTAL SPEND</p>
+          <strong id="settlementTotal" class="settlement-total">0원</strong>
+          <p id="settlementStatus" class="settlement-status">금액을 입력하면 자동으로 계산해.</p>
+        </div>
+
+        <section class="settlement-block">
+          <div class="settlement-block-head"><div><span>TEAM</span><strong>팀별 정산 현황</strong></div><small>+ 받을 돈 · - 보낼 돈</small></div>
+          <div id="settlementMembers" class="settlement-member-grid"></div>
+        </section>
+
+        <section class="settlement-block">
+          <div class="settlement-block-head"><div><span>TRANSFER</span><strong>이렇게 보내면 끝</strong></div></div>
+          <div id="settlementTransfers" class="settlement-transfers"></div>
+        </section>
+
+        <section class="settlement-block">
+          <div class="settlement-block-head"><div><span>EXPENSES</span><strong>전체 지출</strong></div><small>식단 · 준비물 · 직접입력</small></div>
+          <div id="settlementList" class="settlement-list"></div>
+        </section>
+      </section>
+
       <section id="view-settings" class="view" data-view="settings">
         <div class="view-heading"><div><p class="section-kicker">SETTINGS</p><h2>캠핑 설정</h2></div></div>
         <div class="settings-card">
@@ -129,7 +161,7 @@
         <div class="settings-card dev-card">
           <p id="connectionText" class="muted">Firebase 연결 중…</p>
         </div>
-        <p class="version">Camping Planner v0.4.9</p>
+        <p class="version">Camping Planner v0.5.0</p>
       </section>
     </main>
 
@@ -137,7 +169,7 @@
       <button class="nav-item active" data-nav="home"><span>⌂</span><b>홈</b></button>
       <button class="nav-item" data-nav="meals"><span>♨</span><b>식단</b></button>
       <button class="nav-item" data-nav="items"><span>✓</span><b>준비물</b></button>
-      <button class="nav-item" data-nav="settings"><span>⚙</span><b>설정</b></button>
+      <button class="nav-item" data-nav="settlement"><span>₩</span><b>정산</b></button>
     </nav>
   </div>
 
@@ -153,6 +185,8 @@
   <script type="module" src="./js/entry-guard.js?v=053"></script>
   <script type="module" src="./js/bootstrap.js?v=067"></script>
   <script type="module" src="./js/items-cost.js?v=068"></script>
+  <script type="module" src="./js/payer-default.js?v=070"></script>
+  <script type="module" src="./js/settlement.js?v=070"></script>
   <script type="module" src="./js/meal-focus-fix.js?v=065"></script>
   <script type="module" src="./js/db-status.js?v=064"></script>
   <script type="module" src="./js/unified-theme.js?v=061"></script>
