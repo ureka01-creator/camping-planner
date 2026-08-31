@@ -41,6 +41,10 @@ function nodes() {
   };
 }
 
+function keyForNode(node, map) {
+  return DEFAULT_ORDER.find(key => map[key] === node) || '';
+}
+
 export function applyHomeOrder() {
   if (applying) return;
   const home = document.getElementById('view-home');
@@ -48,13 +52,22 @@ export function applyHomeOrder() {
 
   const map = nodes();
   const order = readOrder();
-  const available = order.map(key => map[key]).filter(Boolean);
-  if (!available.length) return;
+  const desiredKeys = order.filter(key => Boolean(map[key]));
+  if (!desiredKeys.length) return;
+
+  const currentKeys = [...home.children]
+    .map(node => keyForNode(node, map))
+    .filter(Boolean);
+
+  if (currentKeys.join(',') === desiredKeys.join(',')) {
+    home.dataset.homeOrder = order.join(',');
+    return;
+  }
 
   applying = true;
   try {
     const todoSection = document.getElementById('homeTodo')?.closest('.home-section') || null;
-    available.forEach(node => home.insertBefore(node, todoSection));
+    desiredKeys.forEach(key => home.insertBefore(map[key], todoSection));
     home.dataset.homeOrder = order.join(',');
   } finally {
     applying = false;
@@ -117,7 +130,7 @@ function renderSettings() {
   const list = document.getElementById('homeOrderList');
   if (!list) return;
   const order = readOrder();
-  list.innerHTML = order.map((key, index) => `
+  const html = order.map((key, index) => `
     <div class="home-order-row" data-home-order-row="${key}">
       <span class="home-order-number">${index + 1}</span>
       <strong>${LABELS[key]}</strong>
@@ -126,6 +139,12 @@ function renderSettings() {
         <button type="button" data-home-order-key="${key}" data-home-order-move="down" aria-label="${LABELS[key]} 아래로 이동" ${index === order.length - 1 ? 'disabled' : ''}>↓</button>
       </div>
     </div>`).join('');
+  if (list.dataset.orderHtml !== html) {
+    list.innerHTML = html;
+    list.dataset.orderHtml = html;
+  }
+  const version = document.querySelector('#view-settings .version');
+  if (version) version.textContent = 'Camping Planner v0.5.8';
 }
 
 const style = document.createElement('style');
@@ -150,11 +169,6 @@ if (home) {
   new MutationObserver(() => {
     if (!applying) queueMicrotask(applyHomeOrder);
   }).observe(home, { childList:true });
-}
-
-const settings = document.getElementById('view-settings');
-if (settings) {
-  new MutationObserver(() => queueMicrotask(renderSettings)).observe(settings, { childList:true, subtree:true });
 }
 
 renderSettings();
