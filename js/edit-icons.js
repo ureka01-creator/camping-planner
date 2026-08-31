@@ -19,8 +19,8 @@ function applyPencil(button) {
   button.innerHTML = pencilSvg;
 }
 
-function enhanceMealEditButtons(root = document) {
-  root.querySelectorAll?.('#mealList [data-edit-meal], #mealList [data-edit-meal-item]').forEach(applyPencil);
+function enhanceEditButtons(root = document) {
+  root.querySelectorAll?.('#mealList [data-edit-meal], #mealList [data-edit-meal-item], #itemList [data-edit-item]').forEach(applyPencil);
 }
 
 function enhanceMealNavIcon() {
@@ -32,7 +32,7 @@ function enhanceMealNavIcon() {
 }
 
 function enhanceIcons(root = document) {
-  enhanceMealEditButtons(root);
+  enhanceEditButtons(root);
   enhanceMealNavIcon();
 }
 
@@ -40,8 +40,14 @@ enhanceIcons();
 
 const mealList = document.getElementById('mealList');
 if (mealList) {
-  new MutationObserver(() => enhanceMealEditButtons(mealList))
+  new MutationObserver(() => enhanceEditButtons(mealList))
     .observe(mealList, { childList: true, subtree: true });
+}
+
+const itemList = document.getElementById('itemList');
+if (itemList) {
+  new MutationObserver(() => enhanceEditButtons(itemList))
+    .observe(itemList, { childList: true, subtree: true });
 }
 
 const style = document.createElement('style');
@@ -64,7 +70,8 @@ style.textContent = `
     pointer-events: none;
   }
 
-  .meal-detail-actions.edit-pencil-icon svg {
+  .meal-detail-actions.edit-pencil-icon svg,
+  .item-actions.edit-pencil-icon svg {
     width: 17px;
     height: 17px;
   }
