@@ -1,8 +1,9 @@
 import { dataAdapter } from './firebase.js?v=064';
-import { toast } from './ui.js';
+import { toast, esc } from './ui.js';
 
 const mealList = document.getElementById('mealList');
 const mealOrder = { breakfast:1, lunch:2, dinner:3, snack:4 };
+const mealLabels = { breakfast:'아침', lunch:'점심', dinner:'저녁', snack:'간식' };
 let latestData = null;
 let applyQueued = false;
 let dragState = null;
@@ -10,6 +11,15 @@ let suppressClickUntil = 0;
 
 function mealItems(meal) {
   return Array.isArray(meal?.items) ? meal.items : [];
+}
+
+function memberName(id) {
+  return latestData?.members?.find(member => member.id === id)?.name || '공용';
+}
+
+function formatShortDate(iso) {
+  const [, m, d] = String(iso || '').split('-').map(Number);
+  return `${m}/${d}`;
 }
 
 function orderValue(meal) {
@@ -76,6 +86,18 @@ function ensureDetailHandles() {
   });
 }
 
+function renderHomeNextMeal() {
+  const card = document.getElementById('nextMealCard');
+  if (!card || !latestData) return;
+  const meals = [...(latestData.meals || [])].sort((a, b) => a.date.localeCompare(b.date) || compareMealOrder(a, b));
+  const next = meals[0];
+  if (!next) return;
+  const items = mealItems(next);
+  const done = items.filter(item => item?.isDone).length;
+  const pct = items.length ? Math.round(done / items.length * 100) : 100;
+  card.innerHTML = `<div class="meal-day">${formatShortDate(next.date)} · ${mealLabels[next.mealType] || '식사'}</div><div class="meal-name">${esc(next.menu || '메뉴 미정')}</div><div class="meal-assignee">식단 담당 ${esc(memberName(next.assigneeId))}</div><div class="meal-feature-progress"><span>${items.length ? `${done}/${items.length} 준비` : '준비 항목 없음'}</span><strong>${pct}%</strong></div>`;
+}
+
 function applyEmptyMealCompletion() {
   if (!latestData) return;
 
@@ -90,18 +112,12 @@ function applyEmptyMealCompletion() {
     if (bar) bar.style.width = '100%';
     if (empty) empty.textContent = '준비 항목 없음 · 자동 완료';
   });
-
-  const meals = [...(latestData.meals || [])].sort((a, b) => a.date.localeCompare(b.date) || compareMealOrder(a, b));
-  const next = meals[0];
-  if (next && mealItems(next).length === 0) {
-    const percent = document.querySelector('#nextMealCard .meal-feature-progress strong');
-    if (percent) percent.textContent = '100%';
-  }
 }
 
 function applyEnhancements() {
   ensureDetailHandles();
   applyEmptyMealCompletion();
+  renderHomeNextMeal();
 }
 
 function dragCandidateFromHandle(handle) {
