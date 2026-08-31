@@ -25,19 +25,25 @@ try {
   await page.locator('[data-nav="meals"]').click();
   await page.locator('#view-meals.active').waitFor({state:'visible', timeout:5000});
   await page.waitForFunction(() => document.querySelectorAll('#dateTabs .date-tab').length >= 2, null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelectorAll('#mealList .meal-overview-row').length > 0, null, { timeout:15000 });
 
   const dates=await page.locator('#dateTabs .date-tab').allTextContents();
   const allDefault=await page.locator('#dateTabs [data-meal-scope="all"].active').count()===1;
   const overviewDays=await page.locator('#mealList .meal-overview-day').count();
   const overviewRows=await page.locator('#mealList .meal-overview-row').count();
+  const overviewDragHandles=await page.locator('#mealList .meal-overview-row .meal-drag-handle').count();
+  const emptyOverviewRows=page.locator('#mealList .meal-overview-row').filter({hasText:'준비 항목 없음'});
+  const emptyOverviewCount=await emptyOverviewRows.count();
+  const emptyOverview100=emptyOverviewCount===0 || (await emptyOverviewRows.first().locator('.meal-overview-progress b').textContent())?.trim()==='100%';
 
   const firstDateTab=page.locator('#dateTabs [data-date]').first();
   await firstDateTab.click();
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(180);
 
   const cards=await page.locator('#mealList .meal-card').count();
   const empty=await page.locator('#mealList .empty-state').count();
   const toggles=cards ? await page.locator('#mealList .meal-inline-toggle').count() : 0;
+  const detailDragHandles=cards ? await page.locator('#mealList .meal-card .meal-drag-handle').count() : 0;
   const visibleAddFormsBefore=cards ? await page.locator('#mealList .meal-inline-form:visible').count() : 0;
   const overflowBefore=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
@@ -66,8 +72,15 @@ try {
 
   await page.locator('[data-nav="home"]').click();
   await page.locator('[data-nav="meals"]').click();
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(150);
   const allAfterReentry=await page.locator('#dateTabs [data-meal-scope="all"].active').count()===1;
+
+  await page.locator('[data-nav="items"]').click();
+  await page.locator('#view-items.active').waitFor({state:'visible', timeout:5000});
+  await page.waitForTimeout(150);
+  const packingText=(await page.locator('#itemList').textContent()) || '';
+  const drinkNames=['소주','맥주','화와','레와','사케','고량주'];
+  const drinksInPacking=drinkNames.every(name => packingText.includes(name));
 
   await page.locator('[data-nav="settings"]').click();
   await page.locator('#view-settings.active').waitFor({state:'visible', timeout:5000});
@@ -95,14 +108,16 @@ try {
   }));
 
   const dbConnected=connectionText?.includes('Firebase 실시간 연결됨') === true;
-  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,cards,empty,toggles,visibleAddFormsBefore,addToggleOk,inlineEditOk,allAfterReentry,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
+  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,allAfterReentry,drinksInPacking,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
   const allViewOk=dates[0]==='전체' && allDefault && allAfterReentry && overviewDays>=1;
   const detailScreenOk=cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk : empty>0;
+  const dragUiOk=overviewRows>0 && overviewDragHandles===overviewRows && (cards===0 || detailDragHandles===cards);
+  const emptyMealOk=emptyOverviewCount>0 && emptyOverview100;
   const widthOk=!overflowBefore && !overflowAfter;
   const dateConstraintOk=initial.min===initial.start && constrained.min===probeStart && constrained.end===probeStart;
-  if(errors.length || !dbConnected || !allViewOk || !detailScreenOk || !widthOk || !dateConstraintOk) process.exitCode=1;
+  if(errors.length || !dbConnected || !allViewOk || !detailScreenOk || !dragUiOk || !emptyMealOk || !drinksInPacking || !widthOk || !dateConstraintOk) process.exitCode=1;
 } catch(e){
   console.error('APP_SMOKE_FAILED', e);
   console.error(errors.join('\n'));
