@@ -44,7 +44,7 @@ style.textContent = `
     text-shadow:0 1px 8px rgba(0,0,0,.35); opacity:0; pointer-events:none;
   }
   .camp-landing-hint.loaded { opacity:.72; }
-  .camp-landing.is-exiting { opacity:0; transition:opacity .20s ease; pointer-events:none; }
+  .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:none; }
   @media (min-aspect-ratio:2/3) {
     .camp-landing-safe-frame { height:100dvh; width:auto; max-width:100vw; }
   }
@@ -53,7 +53,7 @@ document.head.appendChild(style);
 
 let coverPromise = null;
 let overlay = null;
-let lastPointerCloseAt = 0;
+let suppressClickUntil = 0;
 
 function loadCoverSrc() {
   if (!coverPromise) {
@@ -70,9 +70,17 @@ function closeLanding() {
   if (!(overlay instanceof HTMLElement)) return;
   const current = overlay;
   overlay = null;
+  suppressClickUntil = Date.now() + 650;
   current.classList.add('is-exiting');
   document.body.classList.remove('landing-open');
-  window.setTimeout(() => current.remove(), 220);
+  window.setTimeout(() => current.remove(), 180);
+}
+
+function closeFromInput(event) {
+  if (!event) return;
+  event.preventDefault?.();
+  event.stopPropagation?.();
+  closeLanding();
 }
 
 function waitForImage(image, src, timeoutMs = 2500) {
@@ -109,20 +117,20 @@ async function openLanding() {
     </span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
-  overlay.addEventListener('pointerup', event => {
-    event.preventDefault();
-    lastPointerCloseAt = Date.now();
-    closeLanding();
-  });
+  // Safari can skip pointer/click after an image decode or browser gesture.
+  // Close immediately on the earliest touch event, with pointer/click fallbacks.
+  overlay.addEventListener('touchstart', closeFromInput, { passive:false });
+  overlay.addEventListener('pointerdown', closeFromInput, { passive:false });
   overlay.addEventListener('click', event => {
-    event.preventDefault();
-    if (Date.now() - lastPointerCloseAt < 500) return;
-    closeLanding();
+    if (Date.now() < suppressClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    closeFromInput(event);
   });
   overlay.addEventListener('keydown', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    closeLanding();
+    closeFromInput(event);
   });
 
   document.body.prepend(overlay);
@@ -151,6 +159,7 @@ async function openLanding() {
 
 window.CampingLandingSafe = { open:openLanding, close:closeLanding };
 
+// Open only through the safe controller. Block the legacy home-order handler.
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
   const button = event.target.closest('#landingShortcutBtn');
@@ -160,12 +169,25 @@ document.addEventListener('click', event => {
   openLanding();
 }, true);
 
-// Capture the landing tap before any other app-level click handler can interfere.
-document.addEventListener('pointerup', event => {
+// Global iOS fallback: a touch on any part of the landing always returns home.
+document.addEventListener('touchstart', event => {
   if (!(event.target instanceof Element)) return;
   if (!event.target.closest('.camp-landing')) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  lastPointerCloseAt = Date.now();
   closeLanding();
+}, { capture:true, passive:false });
+
+document.addEventListener('pointerdown', event => {
+  if (!(event.target instanceof Element)) return;
+  if (!event.target.closest('.camp-landing')) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  closeLanding();
+}, { capture:true, passive:false });
+
+document.addEventListener('click', event => {
+  if (Date.now() >= suppressClickUntil) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
 }, true);
