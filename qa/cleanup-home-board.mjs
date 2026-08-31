@@ -37,7 +37,7 @@ for (const doc of docs) {
   });
   if (kept.length === memoValues.length) continue;
 
-  const updateUrl = `${doc.name}?updateMask.fieldPaths=trip.homeMemos`;
+  const updateUrl = `https://firestore.googleapis.com/v1/${doc.name}?updateMask.fieldPaths=trip.homeMemos`;
   const body = {
     fields: {
       trip: {
