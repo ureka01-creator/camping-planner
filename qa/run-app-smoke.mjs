@@ -31,7 +31,6 @@ try {
   const overviewDays=await page.locator('#mealList .meal-overview-day').count();
   const overviewRows=await page.locator('#mealList .meal-overview-row').count();
 
-  // Detailed meal-item behavior is checked after explicitly opening a date.
   const firstDateTab=page.locator('#dateTabs [data-date]').first();
   await firstDateTab.click();
   await page.waitForTimeout(100);
@@ -59,15 +58,12 @@ try {
       inlineEditOk=await page.locator('#mealList .meal-inline-edit:visible').first().isVisible();
       const modalVisible=await page.locator('#modalBackdrop:not(.hidden)').count();
       inlineEditOk=inlineEditOk && modalVisible===0;
-      // The sticky bottom nav can physically overlap this low-positioned test control.
-      // Invoke its real DOM click so QA validates the close behavior, not pointer geometry.
       await page.locator('#mealList .meal-inline-cancel:visible').first().evaluate(button => button.click());
     }
   }
 
   const overflowAfter=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
-  // Leave Meals and re-enter: it must reset to All every time.
   await page.locator('[data-nav="home"]').click();
   await page.locator('[data-nav="meals"]').click();
   await page.waitForTimeout(100);
@@ -80,7 +76,9 @@ try {
     const end=document.querySelector('#tripEndDateInput');
     return Boolean(start?.value && end?.value);
   }, null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:15000 });
 
+  const connectionText=await page.locator('#connectionText').textContent();
   const initial=await page.evaluate(() => ({
     start: document.querySelector('#tripStartDateInput').value,
     end: document.querySelector('#tripEndDateInput').value,
@@ -96,14 +94,15 @@ try {
     min: document.querySelector('#tripEndDateInput').min
   }));
 
-  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,cards,empty,toggles,visibleAddFormsBefore,addToggleOk,inlineEditOk,allAfterReentry,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
+  const dbConnected=connectionText?.includes('Firebase 실시간 연결됨') === true;
+  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,cards,empty,toggles,visibleAddFormsBefore,addToggleOk,inlineEditOk,allAfterReentry,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
   const allViewOk=dates[0]==='전체' && allDefault && allAfterReentry && overviewDays>=1;
   const detailScreenOk=cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk : empty>0;
   const widthOk=!overflowBefore && !overflowAfter;
   const dateConstraintOk=initial.min===initial.start && constrained.min===probeStart && constrained.end===probeStart;
-  if(errors.length || !allViewOk || !detailScreenOk || !widthOk || !dateConstraintOk) process.exitCode=1;
+  if(errors.length || !dbConnected || !allViewOk || !detailScreenOk || !widthOk || !dateConstraintOk) process.exitCode=1;
 } catch(e){
   console.error('APP_SMOKE_FAILED', e);
   console.error(errors.join('\n'));
