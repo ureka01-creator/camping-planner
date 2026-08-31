@@ -47,6 +47,9 @@ jobs:
       - name: Run packing cost smoke check
         run: timeout 90s node qa/run-items-cost-smoke.mjs
 
+      - name: Run settlement and payer smoke check
+        run: timeout 120s node qa/run-settlement-smoke.mjs
+
       - name: Run two-client realtime sync smoke check
         run: timeout 120s node qa/run-realtime-sync-smoke.mjs
 
