@@ -50,7 +50,7 @@ try {
   });
 
   await page.waitForFunction(() => document.querySelectorAll('#nextMealCard .home-meal-stage').length >= 2, null, { timeout:15000 });
-  await page.waitForFunction(() => !document.querySelector('#homeTodo'), null, { timeout:5000 });
+  await page.waitForFunction(() => document.querySelector('#homeTodo')?.closest('.home-section')?.classList.contains('home-todo-hidden') === true, null, { timeout:5000 });
 
   const layout=await page.evaluate(() => {
     const hero=document.querySelector('#view-home .hero-card');
@@ -69,15 +69,15 @@ try {
 
   const labels=await page.locator('#nextMealCard .home-meal-stage-label').allTextContents();
   const stages=await page.locator('#nextMealCard .home-meal-stage').allTextContents();
-  const noTodoSection=await page.locator('#homeTodo').count()===0;
+  const todoHidden=await page.locator('#homeTodo').evaluate(node => getComputedStyle(node.closest('.home-section')).display === 'none');
   const firstHasDetail=stages[0]?.includes('준비')===true && stages[0]?.includes('담당')===true;
   const secondIsRoundTwo=labels[1]?.trim()==='2차' && stages[1]?.includes('QA 2차')===true;
   const overflow=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
-  console.log(JSON.stringify({layout,labels,noTodoSection,firstHasDetail,secondIsRoundTwo,overflow,errors},null,2));
+  console.log(JSON.stringify({layout,labels,todoHidden,firstHasDetail,secondIsRoundTwo,overflow,errors},null,2));
 
-  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !noTodoSection || !firstHasDetail || !secondIsRoundTwo || overflow) process.exitCode=1;
+  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !firstHasDetail || !secondIsRoundTwo || overflow) process.exitCode=1;
 } catch(error) {
   console.error('HOME_DASHBOARD_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
