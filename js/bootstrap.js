@@ -78,6 +78,7 @@ async function safeImport(path) {
 await import('./app.js?v=064');
 
 for (const path of [
+  './modal-keyboard-fix.js?v=100',
   './inline-meal-add.js?v=071',
   './trip-settings.js?v=064',
   './home-meal-progress.js?v=065',
@@ -101,7 +102,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.7.4';
+if (version) version.textContent = 'Camping Planner v0.7.5';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
