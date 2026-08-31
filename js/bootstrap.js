@@ -90,6 +90,7 @@ for (const path of [
   // Load home controls early so the cover/lock buttons cannot be blocked by
   // a later memo or decoration feature.
   './home-order.js?v=096',
+  './name-home-redirect.js?v=097',
   './home-memo.js?v=092',
   './home-board-paging.js?v=094',
   './meal-item-notes.js?v=091',
@@ -99,7 +100,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.7.1';
+if (version) version.textContent = 'Camping Planner v0.7.2';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
