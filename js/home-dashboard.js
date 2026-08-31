@@ -3,7 +3,7 @@ import { esc } from './ui.js';
 
 const mealLabels = { breakfast:'아침', lunch:'점심', dinner:'저녁', snack:'간식' };
 const mealOrder = { breakfast:1, lunch:2, dinner:3, snack:4 };
-const weekdayLabels = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const weekdayLabels = ['일','월','화','수','목','금','토'];
 let latestData = null;
 
 function formatShortDate(iso='') {
@@ -107,7 +107,7 @@ function renderNextPreview(meal) {
   if (!meal) return '';
   return `
     <button type="button" class="home-food-next" data-food-date="${esc(meal.date || '')}">
-      <span>NEXT · ${esc(formatShortDate(meal.date))} ${esc(weekdayText(meal.date))} · ${esc(mealLabels[meal.mealType] || '식사')}</span>
+      <span>다음 식사 · ${esc(formatShortDate(meal.date))} ${esc(weekdayText(meal.date))} · ${esc(mealLabels[meal.mealType] || '식사')}</span>
       <div><strong>${esc(meal.menu || '메뉴 미정')}</strong><b aria-hidden="true">→</b></div>
     </button>`;
 }
@@ -119,7 +119,6 @@ function renderFoodHeader() {
   if (!head) return;
   head.innerHTML = `
     <div class="home-food-heading">
-      <span>FOOD PLAN</span>
       <h2>식사 일정</h2>
     </div>
     <button class="text-btn" data-go="meals">전체보기</button>`;
