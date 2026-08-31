@@ -134,7 +134,6 @@ function applyAdminUi() {
     : '일반 사용자는 일정과 참여자/팀을 조회만 할 수 있어.');
   setText(document.getElementById('adminAccessBadge'), admin ? '관리자' : '읽기 전용');
   setText(document.getElementById('adminAccessBtn'), admin ? '관리자 모드 종료' : '관리자 인증');
-  setText(document.querySelector('#view-settings .version'), 'Camping Planner v0.5.9');
 }
 
 const style = document.createElement('style');
