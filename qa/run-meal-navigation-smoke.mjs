@@ -28,6 +28,10 @@ async function targetState() {
   });
 }
 
+async function waitForTargetFocus() {
+  await page.waitForFunction(() => document.getElementById('view-meals')?.classList.contains('active') && document.querySelector('[data-edit-meal="qa-meal-target"]')?.closest('.meal-card')?.classList.contains('meal-target-focus'), null, { timeout:5000 });
+}
+
 try {
   await page.goto(`http://127.0.0.1:4173/?trip=${tripId}`, { waitUntil:'domcontentloaded', timeout:30000 });
   const landing=page.locator('.camp-landing');
@@ -47,21 +51,28 @@ try {
     });
   });
 
+  await page.locator('[data-nav="home"]').click();
+  await page.waitForSelector('[data-food-meal-id="qa-meal-target"]');
+  await page.locator('[data-food-meal-id="qa-meal-target"]').click();
+  await waitForTargetFocus();
+  const fromHome=await targetState();
+
   await page.locator('[data-nav="meals"]').click();
   await page.waitForSelector('.meal-overview-row');
   await page.locator('.meal-overview-row', { hasText:'QA 고기파티' }).click();
-  await page.waitForFunction(() => document.querySelector('[data-edit-meal="qa-meal-target"]')?.closest('.meal-card')?.classList.contains('meal-target-focus') === true, null, { timeout:5000 });
+  await waitForTargetFocus();
   const fromAll=await targetState();
 
   await page.locator('[data-nav="items"]').click();
   await page.waitForSelector('.meal-prep-menu-link');
   await page.locator('.meal-prep-menu-link', { hasText:'QA 고기파티' }).click();
-  await page.waitForFunction(() => document.getElementById('view-meals')?.classList.contains('active') && document.querySelector('[data-edit-meal="qa-meal-target"]')?.closest('.meal-card')?.classList.contains('meal-target-focus'), null, { timeout:5000 });
+  await waitForTargetFocus();
   const fromItems=await targetState();
 
   await page.screenshot({ path:'qa/meal-navigation-smoke-result.png', fullPage:true });
-  console.log(JSON.stringify({fromAll,fromItems,errors},null,2));
-  if(errors.length || !fromAll.mealsActive || !fromAll.targetVisible || !fromAll.focused || fromAll.targetMenu!=='QA 고기파티' || !fromItems.mealsActive || !fromItems.targetVisible || !fromItems.focused || fromItems.targetMenu!=='QA 고기파티') process.exitCode=1;
+  console.log(JSON.stringify({fromHome,fromAll,fromItems,errors},null,2));
+  const ok=state => state.mealsActive && state.targetVisible && state.focused && state.targetMenu==='QA 고기파티';
+  if(errors.length || !ok(fromHome) || !ok(fromAll) || !ok(fromItems)) process.exitCode=1;
 } catch(error) {
   console.error('MEAL_NAVIGATION_SMOKE_FAILED', error);
   await page.screenshot({ path:'qa/meal-navigation-smoke-result.png', fullPage:true }).catch(()=>{});
