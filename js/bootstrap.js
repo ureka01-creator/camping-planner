@@ -60,7 +60,9 @@ await import('./meal-edit-focus.js?v=066');
 await import('./items-hub.js?v=067');
 await import('./item-edit-fix.js?v=082');
 await import('./edit-icons.js?v=081');
+await import('./admin-access.js?v=083');
 
 repairTripDatesIfNeeded().catch(error => {
+  if (error?.code === 'ADMIN_REQUIRED') return;
   console.warn('Trip date repair skipped.', error);
 });
