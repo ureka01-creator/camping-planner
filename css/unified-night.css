@@ -273,6 +273,100 @@ textarea:focus {
 }
 .dev-card { border-color: rgba(216,160,113,.18); }
 
+/* Meal details: always inherit the unified night theme, not the legacy home-only class. */
+.unified-night-theme #view-meals .meal-card {
+  border-color: rgba(216,160,113,.14);
+  background: rgba(20,24,22,.90);
+  color: #ead9c4;
+}
+.unified-night-theme #view-meals .meal-type,
+.unified-night-theme #view-meals .meal-detail-cost,
+.unified-night-theme #view-meals .meal-inline-toggle {
+  color: #d99a6a;
+}
+.unified-night-theme #view-meals .meal-menu,
+.unified-night-theme #view-meals .meal-detail-name,
+.unified-night-theme #view-meals .meal-progress-head strong,
+.unified-night-theme #view-meals .meal-inline-edit-title {
+  color: #f0dfcb;
+}
+.unified-night-theme #view-meals .badge {
+  background: rgba(201,137,93,.10);
+  color: #dca77b;
+}
+.unified-night-theme #view-meals .meal-progress-head,
+.unified-night-theme #view-meals .meal-detail-meta,
+.unified-night-theme #view-meals .meal-cost-total {
+  color: rgba(240,223,203,.58);
+}
+.unified-night-theme #view-meals .meal-detail-track {
+  background: rgba(234,217,196,.12);
+}
+.unified-night-theme #view-meals .meal-detail-track > span {
+  background: #c9895d;
+}
+.unified-night-theme #view-meals .meal-detail-item {
+  border-color: rgba(216,160,113,.16);
+  background: rgba(27,29,26,.92);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.015);
+}
+.unified-night-theme #view-meals .meal-detail-check {
+  border-color: rgba(234,217,196,.28);
+  background: #111716;
+  color: #ead9c4;
+}
+.unified-night-theme #view-meals .meal-detail-item.done .meal-detail-check {
+  border-color: #c9895d;
+  background: #c9895d;
+  color: #111613;
+}
+.unified-night-theme #view-meals .meal-detail-actions {
+  color: rgba(240,223,203,.58);
+}
+.unified-night-theme #view-meals .meal-inline-toggle {
+  border-color: rgba(216,160,113,.22);
+  background: rgba(201,137,93,.09);
+}
+.unified-night-theme #view-meals .meal-inline-form,
+.unified-night-theme #view-meals .meal-inline-edit {
+  border-color: rgba(216,160,113,.18);
+  background: rgba(12,17,18,.96);
+  box-shadow: 0 10px 24px rgba(0,0,0,.16);
+}
+.unified-night-theme #view-meals .meal-inline-form input,
+.unified-night-theme #view-meals .meal-inline-form select,
+.unified-night-theme #view-meals .meal-inline-edit input,
+.unified-night-theme #view-meals .meal-inline-edit select,
+.unified-night-theme #view-meals .meal-inline-edit textarea {
+  border-color: rgba(216,160,113,.20);
+  background: #1a1e1b;
+  color: #f0dfcb;
+}
+.unified-night-theme #view-meals .meal-inline-form input::placeholder,
+.unified-night-theme #view-meals .meal-inline-edit input::placeholder,
+.unified-night-theme #view-meals .meal-inline-edit textarea::placeholder {
+  color: rgba(240,223,203,.38);
+}
+.unified-night-theme #view-meals .meal-inline-form select,
+.unified-night-theme #view-meals .meal-inline-edit select {
+  color-scheme: dark;
+}
+.unified-night-theme #view-meals .meal-inline-submit,
+.unified-night-theme #view-meals .meal-inline-save {
+  background: #c9895d;
+  color: #111613;
+}
+.unified-night-theme #view-meals .meal-inline-cancel {
+  border-color: rgba(216,160,113,.18);
+  background: rgba(234,217,196,.06);
+  color: rgba(240,223,203,.72);
+}
+.unified-night-theme #view-meals .meal-inline-delete {
+  border-color: rgba(195,92,58,.30);
+  background: rgba(195,92,58,.10);
+  color: #e99b7c;
+}
+
 /* All modals use the same night theme, regardless of active page. */
 .modal-backdrop {
   background: rgba(0,0,0,.62);
