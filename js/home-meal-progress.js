@@ -9,7 +9,7 @@ let latestData = null;
 
 function mealDone(meal) {
   const items = Array.isArray(meal?.items) ? meal.items : [];
-  return items.length > 0 && items.every(item => item?.isDone === true);
+  return items.length === 0 || items.every(item => item?.isDone === true);
 }
 
 function applyMealProgress() {
