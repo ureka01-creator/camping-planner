@@ -1,6 +1,5 @@
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
-// Every fresh app entry starts from Home. Storage failures must never block boot.
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
 
 function isIsoDate(value) {
@@ -52,14 +51,12 @@ async function repairTripDatesIfNeeded() {
   });
 }
 
-// Critical path: attach all UI/navigation handlers immediately.
-// Never wait for Firestore before the app becomes interactive.
 await import('./app.js?v=064');
 await import('./inline-meal-add.js?v=064');
 await import('./trip-settings.js?v=064');
-await import('./home-meal-progress.js?v=064');
+await import('./home-meal-progress.js?v=065');
+await import('./meal-reorder.js?v=065');
 
-// Non-critical data repair runs after the UI is already interactive.
 repairTripDatesIfNeeded().catch(error => {
   console.warn('Trip date repair skipped.', error);
 });
