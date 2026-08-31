@@ -18,9 +18,11 @@ export const DATA_MODE = {
 };
 
 const STORE_KEY = `camping-planner:${DATA_MODE.tripId}`;
+const SERVER_CACHE_KEY = `${STORE_KEY}:last-server`;
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(STORE_KEY) : null;
 
 function clone(v){ return JSON.parse(JSON.stringify(v)); }
+function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 
 export const seedData = {
   trip: {
@@ -54,6 +56,8 @@ export const seedData = {
 class LocalAdapter {
   constructor(){
     this.listeners = new Set();
+    this.statusListeners = new Set();
+    this.status = { state:'local', error:null };
     if (!localStorage.getItem(STORE_KEY)) this.write(seedData, false);
     window.addEventListener('storage', e => { if (e.key === STORE_KEY) this.emit(); });
     channel?.addEventListener('message', () => this.emit());
@@ -69,56 +73,203 @@ class LocalAdapter {
   }
   emit(){ const data=this.read(); this.listeners.forEach(fn=>fn(clone(data))); }
   subscribe(fn){ this.listeners.add(fn); fn(this.read()); return () => this.listeners.delete(fn); }
+  subscribeStatus(fn){ this.statusListeners.add(fn); fn({...this.status}); return () => this.statusListeners.delete(fn); }
   async mutate(mutator){ const data=this.read(); mutator(data); data.trip.updatedAt=Date.now(); this.write(data); return clone(data); }
   async reset(){ this.write(clone(seedData)); }
 }
 
 class FirebaseAdapter {
-  constructor(){ this.listeners = new Set(); this.ready = this.init(); }
-  async init(){
-    const [{ initializeApp }, { getAuth, signInAnonymously }, firestore] = await Promise.all([
+  constructor(){
+    this.listeners = new Set();
+    this.statusListeners = new Set();
+    this.status = { state:'connecting', error:null };
+    this.unsubscribe = null;
+    this.retryTimer = null;
+    this.connecting = false;
+    this.cachedData = this.readServerCache();
+    this.ready = this.connect();
+    // Keep the rejected promise observed; subscribers/writes will trigger a reconnect.
+    this.ready.catch(() => {});
+
+    window.addEventListener('online', () => {
+      if (this.status.state !== 'connected') this.reconnect();
+    });
+    window.addEventListener('offline', () => this.setStatus('offline'));
+  }
+
+  readServerCache(){
+    try { return JSON.parse(localStorage.getItem(SERVER_CACHE_KEY)) || null; }
+    catch { return null; }
+  }
+
+  writeServerCache(data){
+    try { localStorage.setItem(SERVER_CACHE_KEY, JSON.stringify(data)); }
+    catch (_) {}
+  }
+
+  setStatus(state, error=null){
+    this.status = { state, error: error ? String(error?.code || error?.message || error) : null };
+    this.statusListeners.forEach(fn => fn({...this.status}));
+  }
+
+  subscribeStatus(fn){
+    this.statusListeners.add(fn);
+    fn({...this.status});
+    return () => this.statusListeners.delete(fn);
+  }
+
+  normalizeSnapshot(snapshot){
+    if (!snapshot?.exists()) return null;
+    const d = snapshot.data();
+    return {
+      trip: { id:DATA_MODE.tripId, ...d.trip },
+      members:d.members||[],
+      meals:d.meals||[],
+      items:d.items||[]
+    };
+  }
+
+  emitData(data, cache=true){
+    if (!data) return;
+    if (cache) {
+      this.cachedData = clone(data);
+      this.writeServerCache(this.cachedData);
+    }
+    this.listeners.forEach(fn => fn(clone(data)));
+  }
+
+  async connect(){
+    if (this.connecting) return this.ready;
+    this.connecting = true;
+    this.setStatus(navigator.onLine === false ? 'offline' : 'connecting');
+    let lastError = null;
+
+    try {
+      for (let attempt=0; attempt<3; attempt++) {
+        try {
+          await this.initOnce();
+          this.setStatus('connected');
+          return true;
+        } catch (error) {
+          lastError = error;
+          console.warn(`Firebase connect attempt ${attempt + 1} failed.`, error);
+          if (navigator.onLine === false) break;
+          if (attempt < 2) await sleep(700 * (attempt + 1));
+        }
+      }
+      this.setStatus(navigator.onLine === false ? 'offline' : 'error', lastError);
+      this.scheduleReconnect();
+      throw lastError || new Error('Firebase connection failed');
+    } finally {
+      this.connecting = false;
+    }
+  }
+
+  async initOnce(){
+    const [appMod, authMod, firestore] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js'),
       import('https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js')
     ]);
+
     this.fs = firestore;
-    this.app = initializeApp(FIREBASE_CONFIG);
-    this.auth = getAuth(this.app);
-    await signInAnonymously(this.auth);
+    this.app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(FIREBASE_CONFIG);
+    this.auth = authMod.getAuth(this.app);
+
+    // We only need an authenticated UID for Firestore rules. In-memory auth avoids
+    // Safari/Private Browsing storage edge cases while preserving anonymous access.
+    await authMod.setPersistence(this.auth, authMod.inMemoryPersistence);
+    if (!this.auth.currentUser) await authMod.signInAnonymously(this.auth);
+
     this.db = firestore.getFirestore(this.app);
     this.tripRef = firestore.doc(this.db, 'trips', DATA_MODE.tripId);
+
     const snapshot = await firestore.getDoc(this.tripRef);
-    if (!snapshot.exists()) await this.seed();
-    this.unsubscribe = firestore.onSnapshot(this.tripRef, snap => {
-      if (!snap.exists()) return;
-      const d = snap.data();
-      const data = { trip: { id:DATA_MODE.tripId, ...d.trip }, members:d.members||[], meals:d.meals||[], items:d.items||[] };
-      this.listeners.forEach(fn => fn(clone(data)));
-    });
+    if (!snapshot.exists()) {
+      await this.seed();
+    } else {
+      this.emitData(this.normalizeSnapshot(snapshot));
+    }
+
+    this.attachRealtime();
   }
+
+  attachRealtime(){
+    this.unsubscribe?.();
+    this.unsubscribe = this.fs.onSnapshot(
+      this.tripRef,
+      { includeMetadataChanges:true },
+      snapshot => {
+        const data = this.normalizeSnapshot(snapshot);
+        if (!data) return;
+        this.emitData(data, !snapshot.metadata.fromCache);
+        if (!snapshot.metadata.fromCache) this.setStatus('connected');
+      },
+      error => {
+        console.error('Firestore realtime listener failed.', error);
+        this.setStatus(navigator.onLine === false ? 'offline' : 'error', error);
+        this.scheduleReconnect();
+      }
+    );
+  }
+
+  scheduleReconnect(){
+    clearTimeout(this.retryTimer);
+    if (navigator.onLine === false) return;
+    this.retryTimer = setTimeout(() => this.reconnect(), 1800);
+  }
+
+  reconnect(){
+    if (this.connecting) return this.ready;
+    clearTimeout(this.retryTimer);
+    this.unsubscribe?.();
+    this.unsubscribe = null;
+    this.ready = this.connect();
+    this.ready.catch(() => {});
+    return this.ready;
+  }
+
   async seed(){
     const { setDoc, serverTimestamp } = this.fs;
     const s=clone(seedData);
     await setDoc(this.tripRef,{...s,trip:{...s.trip,updatedAt:serverTimestamp()}},{merge:true});
   }
+
   subscribe(fn){
     let alive=true;
+    this.listeners.add(fn);
+
+    // Render the last known server state immediately while Firebase reconnects.
+    // It is replaced by the live snapshot as soon as the server responds.
+    if (this.cachedData) queueMicrotask(() => { if (alive) fn(clone(this.cachedData)); });
+
     this.ready.then(async()=>{
       if(!alive) return;
-      this.listeners.add(fn);
+      // If the realtime callback has not painted yet, force one current document read.
       const snap=await this.fs.getDoc(this.tripRef);
-      if(snap.exists()){
-        const d=snap.data(); fn({trip:{id:DATA_MODE.tripId,...d.trip},members:d.members||[],meals:d.meals||[],items:d.items||[]});
-      }
+      const data=this.normalizeSnapshot(snap);
+      if(data) this.emitData(data);
+    }).catch(error => {
+      console.warn('Firebase subscription waiting for reconnect.', error);
     });
-    return ()=>{alive=false;this.listeners.delete(fn)};
+
+    return ()=>{ alive=false; this.listeners.delete(fn); };
   }
+
+  async ensureReady(){
+    try {
+      await this.ready;
+    } catch (_) {
+      await this.reconnect();
+    }
+  }
+
   async mutate(mutator){
-    await this.ready;
+    await this.ensureReady();
     const { runTransaction, serverTimestamp } = this.fs;
     return runTransaction(this.db, async tx => {
       const snap=await tx.get(this.tripRef);
-      const d=snap.data();
+      const d=snap.data() || {};
       const data={trip:{id:DATA_MODE.tripId,...d.trip},members:d.members||[],meals:d.meals||[],items:d.items||[]};
       mutator(data);
       tx.set(this.tripRef,{trip:{...data.trip,updatedAt:serverTimestamp()},members:data.members,meals:data.meals,items:data.items},{merge:true});
