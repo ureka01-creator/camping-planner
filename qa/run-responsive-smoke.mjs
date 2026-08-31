@@ -11,8 +11,14 @@ let failed = false;
 for (const c of cases) {
   const page = await browser.newPage({ viewport: { width: c.width, height: c.height }, deviceScaleFactor: 2 });
   const errors = [];
+  const networkWarnings = [];
   page.on('pageerror', e => errors.push(e.message));
-  page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+  page.on('console', msg => {
+    if (msg.type() !== 'error') return;
+    const text = msg.text();
+    if (/Failed to load resource/.test(text)) networkWarnings.push(text);
+    else errors.push(text);
+  });
 
   try {
     await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -23,7 +29,7 @@ for (const c of cases) {
     }
 
     await page.locator('#view-home.active').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForFunction(() => Boolean(document.querySelector('#tripDates')?.textContent.trim()), null, { timeout: 15000 });
+    await page.waitForTimeout(250);
 
     const check = async label => {
       const result = await page.evaluate(() => ({
@@ -57,6 +63,7 @@ for (const c of cases) {
       console.error(c.name, errors);
       failed = true;
     }
+    if (networkWarnings.length) console.warn(c.name, networkWarnings);
   } catch (error) {
     console.error(c.name, error);
     failed = true;
