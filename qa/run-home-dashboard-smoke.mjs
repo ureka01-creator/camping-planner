@@ -17,7 +17,7 @@ try {
 
   const picker=page.locator('#firstEntryBackdrop');
   if(await picker.count()) {
-    await page.locator('[data-first-entry-later]').click();
+    await page.locator('[data-first-entry-member]').first().click();
     await picker.waitFor({ state:'detached', timeout:5000 });
   }
 
@@ -51,6 +51,7 @@ try {
 
   await page.waitForFunction(() => document.querySelectorAll('#nextMealCard .home-meal-stage').length >= 2, null, { timeout:15000 });
   await page.waitForFunction(() => document.querySelector('#homeTodo')?.closest('.home-section')?.classList.contains('home-todo-hidden') === true, null, { timeout:5000 });
+  await page.waitForFunction(() => document.querySelector('#progressCaption')?.textContent.startsWith('전체 준비 '), null, { timeout:5000 });
 
   const layout=await page.evaluate(() => {
     const hero=document.querySelector('#view-home .hero-card');
@@ -72,12 +73,28 @@ try {
   const todoHidden=await page.locator('#homeTodo').evaluate(node => getComputedStyle(node.closest('.home-section')).display === 'none');
   const firstHasDetail=stages[0]?.includes('준비')===true && stages[0]?.includes('담당')===true;
   const secondIsRoundTwo=labels[1]?.trim()==='2차' && stages[1]?.includes('QA 2차')===true;
+
+  const prepMetric=await page.evaluate(() => {
+    const memberId=localStorage.getItem('camp:myMemberId') || '';
+    const myText=document.querySelector('#myPrepQuickCard .my-prep-copy strong')?.textContent || '';
+    const memberText=document.querySelector(`[data-home-member-progress="${CSS.escape(memberId)}"] .tiny`)?.textContent || '';
+    const myMatch=myText.match(/(\d+)\/(\d+)/);
+    const memberMatch=memberText.match(/(\d+)\/(\d+)/);
+    return {
+      memberId,
+      myText,
+      memberText,
+      aligned:Boolean(myMatch && memberMatch && myMatch[1]===memberMatch[1] && myMatch[2]===memberMatch[2])
+    };
+  });
+
+  const heroCaption=(await page.locator('#progressCaption').textContent())?.trim() || '';
   const overflow=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
-  console.log(JSON.stringify({layout,labels,todoHidden,firstHasDetail,secondIsRoundTwo,overflow,errors},null,2));
+  console.log(JSON.stringify({layout,labels,todoHidden,firstHasDetail,secondIsRoundTwo,prepMetric,heroCaption,overflow,errors},null,2));
 
-  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !firstHasDetail || !secondIsRoundTwo || overflow) process.exitCode=1;
+  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !firstHasDetail || !secondIsRoundTwo || !prepMetric.aligned || !heroCaption.startsWith('전체 준비 ') || overflow) process.exitCode=1;
 } catch(error) {
   console.error('HOME_DASHBOARD_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
