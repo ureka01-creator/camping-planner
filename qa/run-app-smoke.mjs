@@ -49,6 +49,7 @@ try {
 
   let addToggleOk=true;
   let inlineEditOk=true;
+  let editFocusOk=true;
   if(cards>0){
     const firstToggle=page.locator('#mealList .meal-inline-toggle:visible').first();
     await firstToggle.scrollIntoViewIfNeeded();
@@ -61,9 +62,12 @@ try {
       const firstEdit=editButtons.first();
       await firstEdit.scrollIntoViewIfNeeded();
       await firstEdit.click();
-      inlineEditOk=await page.locator('#mealList .meal-inline-edit:visible').first().isVisible();
+      const editor=page.locator('#mealList .meal-inline-edit:visible').first();
+      inlineEditOk=await editor.isVisible();
       const modalVisible=await page.locator('#modalBackdrop:not(.hidden)').count();
       inlineEditOk=inlineEditOk && modalVisible===0;
+      await page.waitForTimeout(120);
+      editFocusOk=await page.evaluate(() => document.activeElement?.matches?.('#mealList .meal-inline-edit input[name="name"]') === true);
       await page.locator('#mealList .meal-inline-cancel:visible').first().evaluate(button => button.click());
     }
   }
@@ -108,11 +112,11 @@ try {
   }));
 
   const dbConnected=connectionText?.includes('Firebase 실시간 연결됨') === true;
-  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,allAfterReentry,drinksInPacking,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
+  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,editFocusOk,allAfterReentry,drinksInPacking,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
   const allViewOk=dates[0]==='전체' && allDefault && allAfterReentry && overviewDays>=1;
-  const detailScreenOk=cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk : empty>0;
+  const detailScreenOk=cards>0 ? toggles===cards && visibleAddFormsBefore===0 && addToggleOk && inlineEditOk && editFocusOk : empty>0;
   const dragUiOk=overviewRows>0 && overviewDragHandles===overviewRows && (cards===0 || detailDragHandles===cards);
   const emptyMealOk=emptyOverviewCount>0 && emptyOverview100;
   const widthOk=!overflowBefore && !overflowAfter;
