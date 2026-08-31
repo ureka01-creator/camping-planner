@@ -3,8 +3,14 @@ import { chromium } from 'playwright';
 const browser = await chromium.launch({ headless:true });
 const page = await browser.newPage({ viewport:{ width:390, height:844 }, deviceScaleFactor:2 });
 const errors=[];
+const networkWarnings=[];
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-page.on('console', msg => { if (msg.type()==='error') errors.push(`console: ${msg.text()}`); });
+page.on('console', msg => {
+  if(msg.type()!=='error') return;
+  const text=msg.text();
+  if(/Failed to load resource/.test(text)) networkWarnings.push(text);
+  else errors.push(`console: ${text}`);
+});
 
 const packingName = `QA 정산 준비물 ${Date.now()}`;
 const expenseName = `QA 현장 지출 ${Date.now()}`;
@@ -102,7 +108,7 @@ try {
   await page.locator('#deleteItemBtn').click();
   await page.waitForFunction(name => ![...document.querySelectorAll('#itemList .item-name')].some(entry => entry.textContent.trim()===name), packingName, { timeout:15000 });
 
-  console.log(JSON.stringify({packingPayerDefault,packingAutoImported,totalAfterPacking,checkedParticipants,manualImported,totalAfterManual,transferWarning,memberCards,mealPayerDefault,settingsShortcutOk,errors},null,2));
+  console.log(JSON.stringify({packingPayerDefault,packingAutoImported,totalAfterPacking,checkedParticipants,manualImported,totalAfterManual,transferWarning,memberCards,mealPayerDefault,settingsShortcutOk,errors,networkWarnings},null,2));
 
   if(errors.length || !packingPayerDefault || !packingAutoImported || totalAfterPacking!=='12,345원' || checkedParticipants<1 || !manualImported || totalAfterManual!=='13,345원' || transferWarning!==0 || memberCards<1 || !mealPayerDefault || !settingsShortcutOk) process.exitCode=1;
 } catch(error) {
