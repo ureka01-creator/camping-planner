@@ -5,8 +5,19 @@ let latestData = null;
 let pendingPackingId = null;
 let pendingMealItemRef = null;
 
+function payerMembers() {
+  return (latestData?.members || []).filter(member => {
+    const name = String(member?.name || '').trim();
+    return name && !name.startsWith('공용');
+  });
+}
+
+function isValidPayer(id) {
+  return payerMembers().some(member => member.id === id);
+}
+
 function memberOptions(selected = '') {
-  return `<option value="">결제자 미정</option>` + (latestData?.members || [])
+  return `<option value="">결제자 미정</option>` + payerMembers()
     .map(member => `<option value="${member.id}" ${member.id === selected ? 'selected' : ''}>${escapeHtml(member.name)}</option>`)
     .join('');
 }
@@ -29,14 +40,19 @@ function findPendingRecord(form) {
   return null;
 }
 
+function defaultPayerForAssignee(assigneeId) {
+  return isValidPayer(assigneeId) ? assigneeId : '';
+}
+
 function ensurePayerField(form) {
   if (!form || form.querySelector('select[name="payerId"]')) return;
   const assignee = form.querySelector('select[name="assigneeId"]');
   if (!assignee) return;
 
   const record = findPendingRecord(form);
-  const initialPayer = record?.payerId || assignee.value || '';
-  const explicitOverride = Boolean(record?.payerId && record.payerId !== record.assigneeId);
+  const savedPayer = isValidPayer(record?.payerId) ? record.payerId : '';
+  const initialPayer = savedPayer || defaultPayerForAssignee(assignee.value);
+  const explicitOverride = Boolean(savedPayer && savedPayer !== record?.assigneeId);
 
   const label = document.createElement('label');
   label.className = 'payer-field';
@@ -53,11 +69,12 @@ function ensurePayerField(form) {
   payer.dataset.overridden = explicitOverride ? '1' : '0';
 
   assignee.addEventListener('change', () => {
-    if (payer.dataset.overridden !== '1') payer.value = assignee.value || '';
+    if (payer.dataset.overridden !== '1') payer.value = defaultPayerForAssignee(assignee.value);
   });
 
   payer.addEventListener('change', () => {
-    payer.dataset.overridden = payer.value && payer.value !== assignee.value ? '1' : '0';
+    const defaultPayer = defaultPayerForAssignee(assignee.value);
+    payer.dataset.overridden = payer.value && payer.value !== defaultPayer ? '1' : '0';
   });
 }
 
