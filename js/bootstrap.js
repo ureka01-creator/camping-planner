@@ -52,7 +52,7 @@ async function repairTripDatesIfNeeded() {
 }
 
 await import('./app.js?v=064');
-await import('./inline-meal-add.js?v=064');
+await import('./inline-meal-add.js?v=071');
 await import('./trip-settings.js?v=064');
 await import('./home-meal-progress.js?v=065');
 await import('./meal-reorder.js?v=065');
