@@ -62,6 +62,9 @@ jobs:
       - name: Run real app meal smoke check
         run: timeout 90s node qa/run-app-smoke.mjs
 
+      - name: Run meal edit icon smoke check
+        run: timeout 90s node qa/run-edit-icons-smoke.mjs
+
       - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,4 +75,5 @@ jobs:
             qa/first-entry-smoke-result.png
             qa/home-dashboard-smoke-result.png
             qa/app-smoke-result.png
+            qa/edit-icons-smoke-result.png
           if-no-files-found: ignore
