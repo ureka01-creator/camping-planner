@@ -62,9 +62,9 @@ try {
   await lock.waitFor({ state:'visible', timeout:5000 });
   if(await lock.getAttribute('aria-pressed')!=='false') throw new Error('Home order should start locked');
 
-  const mealHeadDisplay=await page.locator('#nextMealCard').evaluate(card => getComputedStyle(card.closest('.home-section').querySelector('.section-head')).display);
-  const memberHeadDisplay=await page.locator('#memberProgress').evaluate(card => getComputedStyle(card.closest('.home-section').querySelector('.section-head')).display);
-  if(mealHeadDisplay!=='none' || memberHeadDisplay!=='none') throw new Error(`External headings visible: meal=${mealHeadDisplay}, member=${memberHeadDisplay}`);
+  const mealHeadCount=await page.locator('#nextMealCard').evaluate(card => card.closest('.home-section')?.querySelectorAll(':scope > .section-head').length || 0);
+  const memberHeadCount=await page.locator('#memberProgress').evaluate(card => card.closest('.home-section')?.querySelectorAll(':scope > .section-head').length || 0);
+  if(mealHeadCount || memberHeadCount) throw new Error(`External headings remain: meal=${mealHeadCount}, member=${memberHeadCount}`);
 
   const initialGaps=await cardGaps();
   if(initialGaps.some(gap => Math.abs(gap-16)>1)) throw new Error(`Uneven initial card gaps: ${initialGaps.join(',')}`);
@@ -112,7 +112,7 @@ try {
   const persistedGaps=await cardGaps();
   await page.screenshot({ path:'qa/home-order-smoke-result.png', fullPage:true });
 
-  console.log(JSON.stringify({tripId,initial,initialGaps,reordered,reorderedGaps,stored,persisted,persistedLocked,persistedGaps,errors,networkWarnings},null,2));
+  console.log(JSON.stringify({tripId,initial,initialGaps,reordered,reorderedGaps,stored,persisted,persistedLocked,persistedGaps,mealHeadCount,memberHeadCount,errors,networkWarnings},null,2));
 
   if(errors.length || persisted.join(',')!==expected || persistedLocked!=='false' || persistedGaps.some(gap => Math.abs(gap-16)>1)) process.exitCode=1;
 } catch(error) {
