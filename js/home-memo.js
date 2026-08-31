@@ -1,5 +1,5 @@
 import { dataAdapter } from './firebase.js?v=064';
-import { openModal, closeModal, esc, toast } from './ui.js';
+import { openModal, closeModal, esc, toast, uid } from './ui.js';
 
 let latestData = null;
 let renderQueued = false;
@@ -21,9 +21,16 @@ function currentIdentity() {
   };
 }
 
-function memoList() {
+function boardPosts() {
   const source = latestData?.trip?.homeMemos;
-  return Array.isArray(source) ? source.filter(memo => String(memo?.text || '').trim()) : [];
+  if (!Array.isArray(source)) return [];
+  return source
+    .map((memo, index) => ({
+      ...memo,
+      _boardId: memo?.id || `legacy:${memo?.key || memo?.memberId || memo?.name || index}`,
+      _index: index
+    }))
+    .filter(memo => String(memo?.text || '').trim());
 }
 
 function ensureCard() {
@@ -37,8 +44,8 @@ function ensureCard() {
   card.className = 'home-memo-card';
   card.innerHTML = `
     <div class="home-memo-head">
-      <strong>한줄 메모</strong>
-      <button type="button" class="home-memo-edit" data-edit-home-memo aria-label="내 한줄 메모 작성"></button>
+      <div><strong>한줄 게시판</strong><small>같이 보는 메모</small></div>
+      <button type="button" class="home-memo-add" data-add-home-memo aria-label="한줄 게시글 작성">+</button>
     </div>
     <div id="homeMemoList" class="home-memo-list"></div>`;
 
@@ -52,9 +59,18 @@ function pencilSvg() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.12 2.12 0 0 0-3-3L5 17l-1 3Z"></path><path d="m14.5 7.5 3 3"></path></svg>`;
 }
 
-function displayName(memo) {
-  const current = (latestData?.members || []).find(member => member.id && member.id === memo.memberId);
-  return current?.name || memo.name || '이름 없음';
+function displayName(post) {
+  const current = (latestData?.members || []).find(member => member.id && member.id === post.memberId);
+  return current?.name || post.name || '이름 없음';
+}
+
+function isMine(post) {
+  const identity = currentIdentity();
+  if (!identity.key) return false;
+  return Boolean(
+    (post.memberId && identity.memberId && post.memberId === identity.memberId) ||
+    (post.key && post.key === identity.key)
+  );
 }
 
 function render() {
@@ -62,22 +78,20 @@ function render() {
   const card = ensureCard();
   if (!card || !latestData) return;
 
-  const edit = card.querySelector('[data-edit-home-memo]');
-  if (edit && !edit.innerHTML) edit.innerHTML = pencilSvg();
-
   const list = card.querySelector('#homeMemoList');
   if (!list) return;
-  const memos = memoList();
-  const memberOrder = new Map((latestData.members || []).map((member, index) => [member.id, index]));
-  memos.sort((a, b) => {
-    const ao = memberOrder.has(a.memberId) ? memberOrder.get(a.memberId) : 999;
-    const bo = memberOrder.has(b.memberId) ? memberOrder.get(b.memberId) : 999;
-    return ao - bo || Number(a.updatedAt || 0) - Number(b.updatedAt || 0);
-  });
+  const posts = boardPosts().sort((a, b) =>
+    Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0) ||
+    b._index - a._index
+  );
 
-  list.innerHTML = memos.length
-    ? memos.map(memo => `<div class="home-memo-row"><strong>${esc(displayName(memo))}</strong><span>:</span><p>${esc(String(memo.text || '').trim())}</p></div>`).join('')
-    : '<div class="home-memo-empty">아직 메모가 없어. 연필을 눌러 한 줄 남겨봐.</div>';
+  list.innerHTML = posts.length
+    ? posts.map(post => `
+      <article class="home-memo-row ${isMine(post) ? 'mine' : ''}" data-home-board-post="${esc(post._boardId)}">
+        <div class="home-memo-copy"><strong>${esc(displayName(post))}</strong><span>:</span><p>${esc(String(post.text || '').trim())}</p></div>
+        ${isMine(post) ? `<button type="button" class="home-memo-row-edit" data-edit-home-memo="${esc(post._boardId)}" aria-label="내 게시글 수정">${pencilSvg()}</button>` : ''}
+      </article>`).join('')
+    : '<div class="home-memo-empty">아직 글이 없어. + 버튼을 눌러 한 줄 남겨봐.</div>';
 
   window.CampingHomeOrder?.apply?.();
 }
@@ -88,59 +102,119 @@ function queueRender() {
   queueMicrotask(render);
 }
 
-function openMemoEditor() {
+function findStoredPost(data, boardId, fallbackIndex = -1) {
+  const posts = Array.isArray(data?.trip?.homeMemos) ? data.trip.homeMemos : [];
+  const byId = posts.findIndex(post => post?.id && post.id === boardId);
+  if (byId >= 0) return byId;
+  if (boardId.startsWith('legacy:') && fallbackIndex >= 0 && fallbackIndex < posts.length) return fallbackIndex;
+  return -1;
+}
+
+function openPostEditor(post = null) {
   const identity = currentIdentity();
   if (!identity.key || !identity.name) {
     toast('먼저 설정에서 내 표시 이름을 정해줘.');
     document.querySelector('[data-go="settings"]')?.click();
     return;
   }
+  if (post && !isMine(post)) {
+    toast('내가 쓴 글만 수정할 수 있어.');
+    return;
+  }
 
-  const existing = memoList().find(memo => (memo.memberId && memo.memberId === identity.memberId) || memo.key === identity.key);
-  const value = String(existing?.text || '');
+  const isEdit = Boolean(post);
+  const value = String(post?.text || '');
   openModal(`
-    <div class="modal-title"><div><div class="tiny">${esc(identity.name)}</div><h3>한줄 메모</h3></div><button class="more-btn" data-close>×</button></div>
+    <div class="modal-title"><div><div class="tiny">${esc(identity.name)}</div><h3>${isEdit ? '게시글 수정' : '한줄 남기기'}</h3></div><button class="more-btn" data-close>×</button></div>
     <form id="homeMemoForm" class="form-grid">
       <label>메모<textarea name="memo" maxlength="80" rows="3" placeholder="예: 장작은 내가 가져갈게">${esc(value)}</textarea></label>
-      <div class="home-memo-count"><span>다른 사람 홈에도 같이 보여.</span><b>${value.length}/80</b></div>
-      <div class="modal-actions"><button type="button" class="cancel-btn" data-close>취소</button><button class="save-btn">저장</button></div>
+      <div class="home-memo-count"><span>같은 캠핑을 보는 사람들에게 바로 보여.</span><b>${value.length}/80</b></div>
+      <div class="modal-actions"><button type="button" class="cancel-btn" data-close>취소</button><button class="save-btn">${isEdit ? '수정' : '등록'}</button></div>
+      ${isEdit ? '<button type="button" id="deleteHomeMemoBtn" class="delete-btn">게시글 삭제</button>' : ''}
     </form>`, root => {
       const form = root.querySelector('#homeMemoForm');
       const textarea = form?.querySelector('textarea[name="memo"]');
       const count = root.querySelector('.home-memo-count b');
       textarea?.addEventListener('input', () => { if (count) count.textContent = `${textarea.value.length}/80`; });
+      requestAnimationFrame(() => textarea?.focus({ preventScroll:true }));
+
       form.onsubmit = async event => {
         event.preventDefault();
         const text = String(new FormData(form).get('memo') || '').trim().slice(0, 80);
+        if (!text) {
+          toast('메모를 한 줄 입력해줘.');
+          return;
+        }
         try {
           await dataAdapter.mutate(data => {
             if (!data.trip) data.trip = {};
-            const memos = Array.isArray(data.trip.homeMemos) ? data.trip.homeMemos : [];
-            const index = memos.findIndex(memo => (identity.memberId && memo.memberId === identity.memberId) || memo.key === identity.key);
-            if (!text) {
-              if (index >= 0) memos.splice(index, 1);
+            const posts = Array.isArray(data.trip.homeMemos) ? data.trip.homeMemos : [];
+            const now = Date.now();
+            if (isEdit) {
+              const index = findStoredPost(data, post._boardId, post._index);
+              if (index < 0) return;
+              posts[index] = {
+                ...posts[index],
+                id: posts[index].id || uid('memo'),
+                key: identity.key,
+                memberId: identity.memberId,
+                name: identity.name,
+                text,
+                createdAt: posts[index].createdAt || posts[index].updatedAt || now,
+                updatedAt: now
+              };
             } else {
-              const next = { key:identity.key, memberId:identity.memberId, name:identity.name, text, updatedAt:Date.now() };
-              if (index >= 0) memos[index] = next;
-              else memos.push(next);
+              posts.push({
+                id: uid('memo'),
+                key: identity.key,
+                memberId: identity.memberId,
+                name: identity.name,
+                text,
+                createdAt: now,
+                updatedAt: now
+              });
             }
-            data.trip.homeMemos = memos;
+            data.trip.homeMemos = posts;
           });
           closeModal();
-          toast(text ? '한줄 메모를 저장했어.' : '한줄 메모를 지웠어.');
+          toast(isEdit ? '게시글을 수정했어.' : '게시글을 등록했어.');
         } catch (error) {
           console.error(error);
-          toast('메모 저장에 실패했어.');
+          toast('게시글 저장에 실패했어.');
         }
       };
+
+      root.querySelector('#deleteHomeMemoBtn')?.addEventListener('click', async () => {
+        if (!window.confirm('이 게시글을 삭제할까?')) return;
+        try {
+          await dataAdapter.mutate(data => {
+            const posts = Array.isArray(data?.trip?.homeMemos) ? data.trip.homeMemos : [];
+            const index = findStoredPost(data, post._boardId, post._index);
+            if (index >= 0) posts.splice(index, 1);
+            if (data.trip) data.trip.homeMemos = posts;
+          });
+          closeModal();
+          toast('게시글을 삭제했어.');
+        } catch (error) {
+          console.error(error);
+          toast('게시글 삭제에 실패했어.');
+        }
+      });
     });
 }
 
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
-  if (event.target.closest('[data-edit-home-memo]')) {
+  if (event.target.closest('[data-add-home-memo]')) {
     event.preventDefault();
-    openMemoEditor();
+    openPostEditor();
+    return;
+  }
+  const edit = event.target.closest('[data-edit-home-memo]');
+  if (edit) {
+    event.preventDefault();
+    const post = boardPosts().find(entry => entry._boardId === edit.dataset.editHomeMemo);
+    if (post) openPostEditor(post);
   }
 }, true);
 
@@ -159,15 +233,19 @@ style.textContent = `
     box-shadow:0 9px 24px rgba(0,0,0,.08);
   }
   .home-memo-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:7px; }
-  .home-memo-head > strong { color:rgba(234,217,196,.76); font-size:12px; line-height:1.2; font-weight:850; letter-spacing:-.02em; }
-  .home-memo-edit { width:30px; height:30px; display:grid; place-items:center; padding:0; border:0; border-radius:10px; background:transparent; color:rgba(216,160,113,.75); }
-  .home-memo-edit svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .home-memo-head > div { display:flex; align-items:baseline; gap:7px; min-width:0; }
+  .home-memo-head strong { color:rgba(234,217,196,.82); font-size:12px; line-height:1.2; font-weight:850; letter-spacing:-.02em; }
+  .home-memo-head small { color:rgba(234,217,196,.34); font-size:9px; }
+  .home-memo-add { width:30px; height:30px; display:grid; place-items:center; flex:none; padding:0 0 2px; border:1px solid rgba(216,160,113,.18); border-radius:10px; background:rgba(216,160,113,.05); color:rgba(216,160,113,.80); font-size:20px; font-weight:400; line-height:1; }
   .home-memo-list { display:grid; }
-  .home-memo-row { display:grid; grid-template-columns:auto auto minmax(0,1fr); gap:5px; align-items:start; padding:9px 0; border-top:1px solid rgba(216,160,113,.08); color:rgba(234,217,196,.62); font-size:11px; line-height:1.45; }
+  .home-memo-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:start; padding:10px 0; border-top:1px solid rgba(216,160,113,.08); }
   .home-memo-row:first-child { border-top:0; padding-top:6px; }
   .home-memo-row:last-child { padding-bottom:1px; }
-  .home-memo-row strong { color:#ead9c4; font-size:11px; white-space:nowrap; }
-  .home-memo-row p { min-width:0; margin:0; overflow-wrap:anywhere; }
+  .home-memo-copy { display:grid; grid-template-columns:auto auto minmax(0,1fr); gap:5px; align-items:start; min-width:0; color:rgba(234,217,196,.62); font-size:11px; line-height:1.45; }
+  .home-memo-copy strong { color:#ead9c4; font-size:11px; white-space:nowrap; }
+  .home-memo-copy p { min-width:0; margin:0; overflow-wrap:anywhere; }
+  .home-memo-row-edit { width:27px; height:27px; display:grid; place-items:center; flex:none; padding:0; border:0; border-radius:8px; background:transparent; color:rgba(216,160,113,.56); }
+  .home-memo-row-edit svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   .home-memo-empty { padding:7px 0 3px; color:rgba(234,217,196,.38); font-size:10px; }
   .home-memo-count { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:-4px; color:var(--muted); font-size:10px; }
   .home-memo-count b { font-size:10px; }
