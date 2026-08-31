@@ -71,6 +71,9 @@ jobs:
       - name: Run real app meal smoke check
         run: timeout 90s node qa/run-app-smoke.mjs
 
+      - name: Run exact meal navigation smoke check
+        run: timeout 90s node qa/run-meal-navigation-smoke.mjs
+
       - name: Run meal edit icon smoke check
         run: timeout 90s node qa/run-edit-icons-smoke.mjs
 
@@ -86,5 +89,6 @@ jobs:
             qa/home-order-smoke-result.png
             qa/admin-access-smoke-result.png
             qa/app-smoke-result.png
+            qa/meal-navigation-smoke-result.png
             qa/edit-icons-smoke-result.png
           if-no-files-found: ignore
