@@ -28,6 +28,12 @@ function renderPackingNotes() {
       noteEl.className = 'packing-item-note';
       body.appendChild(noteEl);
     }
+
+    // Do not rewrite the same DOM on every MutationObserver pass.
+    // Rewriting innerHTML here triggers the observer again and can starve
+    // the rest of the bootstrap chain on Safari.
+    if (noteEl.dataset.noteText === note) return;
+    noteEl.dataset.noteText = note;
     noteEl.innerHTML = `<span>메모</span><b>·</b><p>${esc(note)}</p>`;
   });
 }
