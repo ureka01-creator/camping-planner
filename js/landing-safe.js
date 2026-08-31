@@ -77,9 +77,8 @@ function closeLanding() {
 }
 
 function closeFromInput(event) {
-  if (!event) return;
-  event.preventDefault?.();
-  event.stopPropagation?.();
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
   closeLanding();
 }
 
@@ -117,8 +116,6 @@ async function openLanding() {
     </span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
-  // Safari can skip pointer/click after an image decode or browser gesture.
-  // Close immediately on the earliest touch event, with pointer/click fallbacks.
   overlay.addEventListener('touchstart', closeFromInput, { passive:false });
   overlay.addEventListener('pointerdown', closeFromInput, { passive:false });
   overlay.addEventListener('click', event => {
@@ -159,7 +156,6 @@ async function openLanding() {
 
 window.CampingLandingSafe = { open:openLanding, close:closeLanding };
 
-// Open only through the safe controller. Block the legacy home-order handler.
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
   const button = event.target.closest('#landingShortcutBtn');
@@ -169,7 +165,6 @@ document.addEventListener('click', event => {
   openLanding();
 }, true);
 
-// Global iOS fallback: a touch on any part of the landing always returns home.
 document.addEventListener('touchstart', event => {
   if (!(event.target instanceof Element)) return;
   if (!event.target.closest('.camp-landing')) return;
@@ -191,3 +186,7 @@ document.addEventListener('click', event => {
   event.preventDefault();
   event.stopImmediatePropagation();
 }, true);
+
+// Initial entry: show the cover as an overlay only. The app is already alive
+// underneath, so a cover failure can never hide or block the whole app.
+requestAnimationFrame(() => openLanding());
