@@ -1,14 +1,14 @@
 # PM / Implementation Status
 
 - Project: Camping Planner WebApp
-- Version: v0.5.7
+- Version: v0.5.8
 - Previous phase: Planning v1.0 DONE
-- Current mode: 관리자 권한 / 홈 식사 영역 정리 + QA 완료 → PM 모드 복귀
-- Current implementation status: LIVE FIREBASE MVP + PREPARATION HUB + SETTLEMENT MVP + FIRST ENTRY UX + ADMIN UI GUARD + AUTOMATED REGRESSION PASS
+- Current mode: 개인별 홈 화면 순서 커스터마이징 + QA 완료 → PM 모드 복귀
+- Current implementation status: LIVE FIREBASE MVP + PREPARATION HUB + SETTLEMENT MVP + FIRST ENTRY UX + ADMIN UI GUARD + PERSONALIZED HOME + AUTOMATED REGRESSION PASS
 - Firebase realtime mode: ENABLED
 - Two-client realtime sync: AUTOMATED QA PASS
 - GitHub Pages deployment: PASS
-- Next recommended mode: 실제 iPhone 시각 리뷰 → 실제 캠핑 데이터 점검 → 최종 안정화
+- Next recommended mode: 실제 iPhone 홈 순서 UX 리뷰 → 실제 캠핑 데이터 점검 → 최종 안정화
 
 ## 완료된 것
 1. 모바일 앱 셸 / 하단 4탭
@@ -70,6 +70,11 @@
 57. 관리자 인증 후에만 캠핑 일정과 참여자/팀 추가·수정·삭제 가능
 58. 앱 내부 `dataAdapter.mutate` 경로에서도 일반 사용자의 일정/참여자 변경 차단
 59. 관리자 권한 자동 smoke test 추가
+60. 홈 `준비 현황 / 내 준비 / 담당자별 준비율 / 식사 일정` 4개 영역의 순서를 사용자별로 변경 가능
+61. 홈 순서 설정은 `trip`별 로컬 저장으로 같은 캠핑을 보는 다른 사람 화면에는 영향 없음
+62. 설정의 `홈 화면 순서`에서 ↑/↓로 이동하고 `초기화`로 기본 순서 복원
+63. 식사 일정을 맨 위로 올린 뒤 홈 즉시 반영 + 새로고침 후 유지되는지 자동 smoke test 추가
+64. Responsive smoke를 Firebase 데이터 도착 타이밍과 분리해 순수 레이아웃 회귀 검사로 안정화
 
 ## 정산 MVP 규칙
 - 준비물/식단 준비항목의 `결제자`는 입력 부담을 줄이기 위해 기본적으로 `담당자`를 자동으로 따라간다.
@@ -86,7 +91,8 @@
 - 기존 팀 선택 정보가 있으면 온보딩 없이 바로 홈으로 진입한다.
 - 선택한 팀 기준의 일반 준비물 + 식단 준비항목을 합쳐 `내 준비` 현황을 보여준다.
 - 홈의 전체 준비율과 담당자별 준비율도 같은 통합 준비항목 기준을 사용한다.
-- 홈은 `전체 준비 현황 → 내 준비 → 담당자별 준비율`로 준비 관련 정보를 먼저 끝낸 뒤 식사 일정으로 넘어간다.
+- 기본 홈 순서는 `준비 현황 → 내 준비 → 담당자별 준비율 → 식사 일정`이다.
+- 사용자는 설정에서 4개 영역 순서를 자유롭게 바꿀 수 있고 이 순서는 해당 기기/해당 trip에만 저장한다.
 - 미완료 준비물 개별 목록은 홈에서 반복하지 않고 준비물 탭에서 확인한다.
 - 식사 일정은 준비 진행률을 설명하는 카드가 아니라 `무엇을 먹는지`를 가장 먼저 보여준다.
 - 같은 날 식사는 `1차 / 2차`로 보여주고, 다음 날짜의 첫 식사는 작은 `다음 식사` 미리보기로 이어준다.
@@ -106,6 +112,7 @@
 - Responsive smoke: PASS
 - First entry smoke: PASS
 - Home dashboard smoke: PASS
+- Home order customization smoke: PASS
 - Admin access smoke: PASS
 - Preparation Hub smoke: PASS
 - Packing cost smoke: PASS
@@ -116,10 +123,10 @@
 - GitHub Pages build/deploy: PASS
 
 ## 현재 남은 핵심 검증
-자동 QA와 Pages 배포는 통과했다. 실제 iPhone에서 홈/식단/준비물/정산 및 관리자 읽기 전용 화면을 확인하고 실제 캠핑 데이터의 담당자/금액을 최종 점검한다. 이후 네트워크 전환·백그라운드 복귀까지 포함한 실기기 QA를 진행한다.
+자동 QA와 Pages 배포는 통과했다. 실제 iPhone에서 설정의 홈 화면 순서 변경 UX와 변경 후 홈 카드 흐름을 확인한다. 이후 실제 캠핑 데이터의 담당자/금액을 최종 점검하고 네트워크 전환·백그라운드 복귀까지 포함한 실기기 QA를 진행한다.
 
 ## 다음 스프린트 후보
-1. 실제 iPhone 전체 시각 리뷰
+1. 실제 iPhone에서 홈 순서 커스터마이징 UX 리뷰
 2. 실제 캠핑 데이터 최종 입력 / 담당자 / 금액 점검
 3. 홈 식사 일정 표현 / 간격 미세조정
 4. 오프라인/재연결 UX 점검
