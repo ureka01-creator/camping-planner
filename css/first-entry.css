@@ -1,0 +1,258 @@
+.first-entry-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px 14px max(18px, env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, .66);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.first-entry-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+.first-entry-sheet {
+  width: min(100%, 430px);
+  max-height: min(78vh, 690px);
+  overflow: auto;
+  padding: 24px 18px 16px;
+  border: 1px solid rgba(216,160,113,.18);
+  border-radius: 28px;
+  background: #141816;
+  color: #ead9c4;
+  box-shadow: 0 26px 70px rgba(0,0,0,.42);
+}
+
+.first-entry-kicker {
+  margin-bottom: 7px;
+  color: #c9895d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .22em;
+}
+
+.first-entry-sheet h2 {
+  margin: 0;
+  color: #f0dfcb;
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -.04em;
+}
+
+.first-entry-sheet > p {
+  margin: 9px 0 18px;
+  color: rgba(234,217,196,.57);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.first-entry-sheet > p b {
+  color: #ead9c4;
+}
+
+.first-entry-team-list {
+  display: grid;
+  gap: 9px;
+}
+
+.first-entry-team {
+  width: 100%;
+  min-height: 67px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(216,160,113,.15);
+  border-radius: 18px;
+  background: rgba(22,26,23,.92);
+  color: #ead9c4;
+  text-align: left;
+}
+
+.first-entry-team.selected {
+  border-color: rgba(201,137,93,.65);
+  background: rgba(201,137,93,.10);
+}
+
+.first-entry-team > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.first-entry-team strong {
+  font-size: 15px;
+}
+
+.first-entry-team small {
+  color: rgba(234,217,196,.43);
+  font-size: 10px;
+}
+
+.first-entry-team > b {
+  flex: 0 0 auto;
+  color: #d99a6a;
+  font-size: 20px;
+}
+
+.first-entry-later {
+  width: 100%;
+  margin-top: 13px;
+  padding: 11px 8px;
+  border: 0;
+  background: transparent;
+  color: rgba(234,217,196,.42);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.my-prep-quick-card {
+  margin: 14px 0 20px;
+  padding: 15px;
+  border: 1px solid rgba(216,160,113,.16);
+  border-radius: 22px;
+  background: rgba(19,23,21,.88);
+  box-shadow: 0 10px 28px rgba(0,0,0,.10);
+}
+
+.my-prep-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.my-prep-top > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.my-prep-top span {
+  color: #c9895d;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.my-prep-top strong {
+  color: #ead9c4;
+  font-size: 15px;
+}
+
+.my-team-change {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border: 1px solid rgba(216,160,113,.17);
+  border-radius: 999px;
+  background: rgba(234,217,196,.04);
+  color: rgba(234,217,196,.56);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.my-prep-main,
+.my-prep-empty {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #ead9c4;
+  text-align: left;
+}
+
+.my-prep-main {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+
+.my-prep-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.my-prep-count b {
+  color: #e3ad7e;
+  font-size: 31px;
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+
+.my-prep-count span {
+  color: rgba(234,217,196,.52);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.my-prep-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.my-prep-copy strong {
+  overflow: hidden;
+  color: #ead9c4;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-prep-copy small {
+  color: rgba(234,217,196,.40);
+  font-size: 9px;
+}
+
+.my-prep-arrow {
+  color: #d99a6a;
+  font-size: 18px;
+}
+
+.my-prep-preview {
+  display: flex;
+  gap: 6px;
+  margin-top: 11px;
+  overflow: hidden;
+}
+
+.my-prep-preview span {
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: rgba(234,217,196,.05);
+  color: rgba(234,217,196,.53);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-prep-empty {
+  display: grid;
+  gap: 3px;
+  padding: 7px 2px 3px;
+}
+
+.my-prep-empty b {
+  color: #ead9c4;
+  font-size: 13px;
+}
+
+.my-prep-empty small {
+  color: rgba(234,217,196,.42);
+  font-size: 10px;
+}
+
+@media (min-width: 700px) {
+  .first-entry-backdrop { align-items: center; }
+}
