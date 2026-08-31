@@ -2,6 +2,19 @@ import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
 
+// The top-right share button was removed from the visible UI in v0.5.7.
+// app.js still binds the legacy control during boot, so provide an invisible
+// compatibility target until that older binding is retired.
+if (!document.getElementById('shareBtn')) {
+  const legacyShare = document.createElement('button');
+  legacyShare.id = 'shareBtn';
+  legacyShare.type = 'button';
+  legacyShare.hidden = true;
+  legacyShare.tabIndex = -1;
+  legacyShare.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(legacyShare);
+}
+
 function isIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
   const [y,m,d] = value.split('-').map(Number);
