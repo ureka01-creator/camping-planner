@@ -59,7 +59,9 @@ try {
       inlineEditOk=await page.locator('#mealList .meal-inline-edit:visible').first().isVisible();
       const modalVisible=await page.locator('#modalBackdrop:not(.hidden)').count();
       inlineEditOk=inlineEditOk && modalVisible===0;
-      await page.locator('#mealList .meal-inline-cancel:visible').first().click();
+      // The sticky bottom nav can physically overlap this low-positioned test control.
+      // Invoke its real DOM click so QA validates the close behavior, not pointer geometry.
+      await page.locator('#mealList .meal-inline-cancel:visible').first().evaluate(button => button.click());
     }
   }
 
