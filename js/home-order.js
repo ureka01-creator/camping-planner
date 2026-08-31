@@ -55,7 +55,15 @@ function orderedKeysFromDom() {
     .filter(Boolean);
 }
 
+function removeExternalCardHeaders() {
+  const map = nodes();
+  for (const key of ['members', 'meals']) {
+    map[key]?.querySelector(':scope > .section-head')?.remove();
+  }
+}
+
 function decorateCards() {
+  removeExternalCardHeaders();
   const map = nodes();
   DEFAULT_ORDER.forEach(key => {
     const node = map[key];
@@ -247,8 +255,6 @@ style.textContent = `
     background:rgba(19,23,21,.86);
     box-shadow:0 9px 24px rgba(0,0,0,.08);
   }
-  .home-theme .home-prep-member-section > .section-head,
-  .home-theme .home-meal-section > .section-head { display:none !important; }
   .home-theme .home-prep-member-section::before,
   .home-theme #nextMealCard.meal-feature::before {
     display:block;
@@ -339,6 +345,7 @@ document.addEventListener('click', event => {
 }, true);
 
 removeLegacySettingsControl();
+removeExternalCardHeaders();
 ensureLockButton();
 applyHomeOrder();
 syncLockUi();
