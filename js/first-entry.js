@@ -13,13 +13,22 @@ function members() {
   return Array.isArray(latestData?.members) ? latestData.members : [];
 }
 
+function identityMembers() {
+  const filtered = members().filter(member => {
+    const name = String(member?.name || '').trim();
+    return name && !/^공용(?:\s*\/\s*미정)?$/.test(name);
+  });
+  return filtered.length ? filtered : members();
+}
+
 function resolveMyMember() {
+  const candidates = identityMembers();
   const id = localStorage.getItem(MEMBER_KEY) || '';
-  const byId = members().find(member => member.id === id);
+  const byId = candidates.find(member => member.id === id);
   if (byId) return byId;
 
   const legacyName = localStorage.getItem(LEGACY_NAME_KEY) || '';
-  const byName = members().find(member => member.name === legacyName);
+  const byName = candidates.find(member => member.name === legacyName);
   if (byName) {
     localStorage.setItem(MEMBER_KEY, byName.id);
     return byName;
@@ -109,7 +118,8 @@ function closePicker() {
 }
 
 function openPicker({ required = false } = {}) {
-  if (pickerOpen || !latestData || !members().length) return;
+  const candidates = identityMembers();
+  if (pickerOpen || !latestData || !candidates.length) return;
   pickerOpen = true;
 
   const current = resolveMyMember();
@@ -122,7 +132,7 @@ function openPicker({ required = false } = {}) {
       <h2 id="firstEntryTitle">이번 캠핑, 누구로 볼까?</h2>
       <p>내 팀을 고르면 <b>내가 챙길 것</b>부터 바로 보여줄게.</p>
       <div class="first-entry-team-list">
-        ${members().map(member => {
+        ${candidates.map(member => {
           const assigned = allAssignedItems(member.id);
           const todo = assigned.filter(item => !item.isDone).length;
           return `<button type="button" class="first-entry-team ${current?.id === member.id ? 'selected' : ''}" data-first-entry-member="${member.id}">
@@ -173,7 +183,7 @@ document.addEventListener('click', event => {
 
   const memberButton = event.target.closest('[data-first-entry-member]');
   if (memberButton) {
-    const member = members().find(entry => entry.id === memberButton.dataset.firstEntryMember);
+    const member = identityMembers().find(entry => entry.id === memberButton.dataset.firstEntryMember);
     if (member) saveMember(member);
     return;
   }
@@ -203,7 +213,7 @@ document.addEventListener('click', event => {
   if (event.target.closest('#saveMyNameBtn')) {
     queueMicrotask(() => {
       const name = localStorage.getItem(LEGACY_NAME_KEY) || '';
-      const member = members().find(entry => entry.name === name);
+      const member = identityMembers().find(entry => entry.name === name);
       if (member) localStorage.setItem(MEMBER_KEY, member.id);
       else localStorage.removeItem(MEMBER_KEY);
       renderHomeCard();
