@@ -81,7 +81,7 @@ await import('./packing-item-notes.js?v=093');
 await import('./home-order.js?v=091');
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.6.6';
+if (version) version.textContent = 'Camping Planner v0.6.7';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
