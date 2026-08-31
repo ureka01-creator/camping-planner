@@ -59,6 +59,9 @@ await import('./inline-meal-add.js?v=064');
 await import('./trip-settings.js?v=064');
 await import('./home-meal-progress.js?v=064');
 
+// One-time idempotent import for the September camping plan.
+await import('./import-meal-plan-20260831.js?v=065');
+
 // Non-critical data repair runs after the UI is already interactive.
 repairTripDatesIfNeeded().catch(error => {
   console.warn('Trip date repair skipped.', error);
