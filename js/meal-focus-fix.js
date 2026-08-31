@@ -4,7 +4,8 @@ import { esc } from './ui.js';
 const mealList = document.getElementById('mealList');
 const dateTabs = document.getElementById('dateTabs');
 let latestData = null;
-let allActive = localStorage.getItem('camp:mealScope') === 'all';
+// Every time the Meals page is entered, start from the full schedule.
+let allActive = true;
 let syncQueued = false;
 
 const mealLabels = { breakfast:'아침', lunch:'점심', dinner:'저녁', snack:'간식' };
@@ -134,6 +135,22 @@ function queueAllSync() {
     if (allActive) renderAllMeals();
   });
 }
+
+function activateAllMeals() {
+  allActive = true;
+  localStorage.setItem('camp:mealScope', 'all');
+  queueAllSync();
+  requestAnimationFrame(() => {
+    ensureAllTab();
+    renderAllMeals();
+  });
+}
+
+// Home -> Meals, bottom nav -> Meals: always open the full itinerary first.
+document.addEventListener('click', event => {
+  const entry = event.target.closest('[data-nav="meals"], [data-go="meals"]');
+  if (entry) activateAllMeals();
+}, true);
 
 mealList?.addEventListener('click', event => {
   const toggle = event.target.closest('.meal-inline-toggle');
