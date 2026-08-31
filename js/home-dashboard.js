@@ -3,11 +3,18 @@ import { esc } from './ui.js';
 
 const mealLabels = { breakfast:'아침', lunch:'점심', dinner:'저녁', snack:'간식' };
 const mealOrder = { breakfast:1, lunch:2, dinner:3, snack:4 };
+const weekdayLabels = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 let latestData = null;
 
 function formatShortDate(iso='') {
   const [,m,d] = iso.split('-').map(Number);
   return m && d ? `${m}/${d}` : '';
+}
+
+function weekdayText(iso='') {
+  const [y,m,d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  return weekdayLabels[new Date(Date.UTC(y,m-1,d)).getUTCDay()] || '';
 }
 
 function memberName(id) {
@@ -28,10 +35,6 @@ function progressOfItems(items=[]) {
   const total = items.length;
   const done = items.filter(item => item?.isDone === true).length;
   return { total, done, pct: total ? Math.round(done / total * 100) : 0 };
-}
-
-function progressOfMeal(meal) {
-  return progressOfItems(mealItems(meal));
 }
 
 function sortedMeals() {
@@ -75,25 +78,58 @@ function renderCombinedPrep() {
   }
 }
 
-function renderMealStage(meal, label) {
-  if (!meal) return '';
-  const progress = progressOfMeal(meal);
-  const note = String(meal.note || '').trim();
-  const prepText = progress.total ? `준비 ${progress.done}/${progress.total}` : '준비 항목 없음';
+function mealPrepStatus(meal) {
+  const items = mealItems(meal);
+  if (!items.length) return '준비 항목 없음';
+  const left = items.filter(item => item?.isDone !== true).length;
+  return left ? `${left}개 남음` : '준비 완료';
+}
 
+function foodPlanTitle(firstMeal) {
+  const firstDate = String(firstMeal?.date || '');
+  const tripStart = String(latestData?.trip?.startDate || '');
+  return firstDate && firstDate === tripStart ? '첫날 먹을 것' : `${formatShortDate(firstDate)} 먹을 것`;
+}
+
+function renderFoodStage(meal, roundLabel) {
+  if (!meal) return '';
+  const note = String(meal.note || '').trim();
   return `
-    <div class="home-meal-stage">
-      <div class="home-meal-stage-top">
-        <span class="home-meal-stage-label">${esc(label)}</span>
-        <span class="home-meal-stage-time">${esc(formatShortDate(meal.date))} · ${esc(mealLabels[meal.mealType] || '식사')}</span>
+    <button type="button" class="home-food-stage" data-food-date="${esc(meal.date || '')}">
+      <div class="home-food-stage-mark">
+        <span>${esc(roundLabel)}</span>
+        <small>${esc(mealLabels[meal.mealType] || '식사')}</small>
       </div>
-      <strong class="home-meal-menu">${esc(meal.menu || '메뉴 미정')}</strong>
-      ${note ? `<p class="home-meal-note">${esc(note)}</p>` : ''}
-      <div class="home-meal-stage-footer">
-        <span>담당 ${esc(memberName(meal.assigneeId))}</span>
-        <b>${prepText}</b>
+      <div class="home-food-stage-copy">
+        <strong>${esc(meal.menu || '메뉴 미정')}</strong>
+        ${note ? `<p>${esc(note)}</p>` : ''}
+        <small>${esc(memberName(meal.assigneeId))} · ${esc(mealPrepStatus(meal))}</small>
       </div>
-    </div>`;
+      <span class="home-food-stage-arrow" aria-hidden="true">›</span>
+    </button>`;
+}
+
+function renderNextPreview(meal) {
+  if (!meal) return '';
+  return `
+    <button type="button" class="home-food-next" data-food-date="${esc(meal.date || '')}">
+      <span>NEXT · ${esc(formatShortDate(meal.date))} ${esc(weekdayText(meal.date))} · ${esc(mealLabels[meal.mealType] || '식사')}</span>
+      <div><strong>${esc(meal.menu || '메뉴 미정')}</strong><b aria-hidden="true">→</b></div>
+    </button>`;
+}
+
+function renderFoodHeader(firstMeal) {
+  const card = document.getElementById('nextMealCard');
+  const section = card?.closest('.home-section');
+  const head = section?.querySelector('.section-head');
+  if (!head) return;
+  const title = foodPlanTitle(firstMeal);
+  head.innerHTML = `
+    <div class="home-food-heading">
+      <span>FOOD PLAN</span>
+      <h2>${esc(title)}</h2>
+    </div>
+    <button class="text-btn" data-go="meals">전체보기</button>`;
 }
 
 function renderNextMeals() {
@@ -111,16 +147,22 @@ function renderNextMeals() {
     return;
   }
 
+  renderFoodHeader(first);
   card.classList.remove('empty-card');
-  const sameDayNext = meals.slice(1).find(meal => meal.date === first.date) || null;
-  const secondary = sameDayNext || meals[1] || null;
-  const secondaryLabel = sameDayNext ? '2차' : secondary ? '다음 일정' : '';
+
+  const sameDayMeals = meals.filter(meal => meal.date === first.date).slice(0, 2);
+  const nextDayMeal = meals.find(meal => meal.date > first.date) || null;
+  const dayLabel = `${formatShortDate(first.date)} ${weekdayText(first.date)}`;
   const html = `
-    <div class="home-meal-flow">
-      ${renderMealStage(first, '1차')}
-      ${secondary ? `<div class="home-meal-divider"></div>${renderMealStage(secondary, secondaryLabel)}` : ''}
+    <div class="home-food-plan">
+      <div class="home-food-day">${esc(dayLabel)}</div>
+      <div class="home-food-rounds">
+        ${sameDayMeals.map((meal, index) => renderFoodStage(meal, `${index + 1}차`)).join('<div class="home-food-divider"></div>')}
+      </div>
+      ${renderNextPreview(nextDayMeal)}
     </div>`;
-  if (!card.querySelector('.home-meal-flow') || card.dataset.homeMealHtml !== html) {
+
+  if (!card.querySelector('.home-food-plan') || card.dataset.homeMealHtml !== html) {
     card.innerHTML = html;
     card.dataset.homeMealHtml = html;
   }
@@ -150,6 +192,16 @@ function arrangeHome() {
   mealSection.classList.add('home-meal-section');
 }
 
+function openMealDate(date) {
+  if (!date) return;
+  localStorage.setItem('camp:selectedDate', date);
+  document.querySelector('[data-nav="meals"]')?.click();
+  setTimeout(() => {
+    const tab = document.querySelector(`#dateTabs [data-date="${CSS.escape(date)}"]`);
+    if (tab instanceof HTMLElement) tab.click();
+  }, 80);
+}
+
 function apply() {
   arrangeHome();
   renderCombinedPrep();
@@ -165,7 +217,7 @@ const nextMealCard = document.getElementById('nextMealCard');
 if (nextMealCard) {
   new MutationObserver(() => {
     if (!latestData || !sortedMeals().length) return;
-    if (!nextMealCard.querySelector('.home-meal-flow')) queueMicrotask(renderNextMeals);
+    if (!nextMealCard.querySelector('.home-food-plan')) queueMicrotask(renderNextMeals);
   }).observe(nextMealCard, { childList:true, subtree:true, characterData:true });
 }
 
@@ -181,6 +233,14 @@ if (prepHero) new MutationObserver(keepCombinedPrep).observe(prepHero, { childLi
 if (memberProgress) new MutationObserver(keepCombinedPrep).observe(memberProgress, { childList:true, subtree:true, characterData:true });
 
 document.addEventListener('click', event => {
-  const target = event.target instanceof Element ? event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later], [data-toggle-item], [data-toggle-meal-prep], [data-toggle-meal-item]') : null;
+  if (!(event.target instanceof Element)) return;
+
+  const foodTarget = event.target.closest('[data-food-date]');
+  if (foodTarget) {
+    openMealDate(foodTarget.dataset.foodDate || '');
+    return;
+  }
+
+  const target = event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later], [data-toggle-item], [data-toggle-meal-prep], [data-toggle-meal-item]');
   if (target) setTimeout(apply, 0);
 }, true);
