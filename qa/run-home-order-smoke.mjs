@@ -72,21 +72,29 @@ try {
   await lock.click();
   if(await lock.getAttribute('aria-pressed')!=='true') throw new Error('Unlock control did not enter reorder mode');
 
-  const mealBox=await page.locator('[data-home-order-card="meals"]').boundingBox();
-  const prepBox=await page.locator('[data-home-order-card="prep"]').boundingBox();
-  if(!mealBox || !prepBox) throw new Error('Missing sortable card bounds');
+  const meal=page.locator('[data-home-order-card="meals"]');
+  await meal.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(100);
+  const mealBox=await meal.boundingBox();
+  if(!mealBox) throw new Error('Missing sortable meal card bounds');
 
-  await page.mouse.move(mealBox.x+mealBox.width/2, mealBox.y+Math.min(45,mealBox.height/2));
+  const dragX=mealBox.x+mealBox.width/2;
+  const dragY=Math.min(mealBox.y+45, 760);
+  await page.mouse.move(dragX, dragY);
   await page.mouse.down();
-  await page.mouse.move(prepBox.x+prepBox.width/2, prepBox.y+8, { steps:12 });
-  await page.mouse.up();
+  await page.mouse.move(dragX, 70, { steps:36 });
   await page.waitForTimeout(120);
+  await page.mouse.move(dragX, 62, { steps:8 });
+  await page.mouse.up();
+  await page.waitForTimeout(180);
 
   const expected='meals,prep,mine,members';
   const reordered=await homeOrder();
   const stored=await page.evaluate(key => JSON.parse(localStorage.getItem(key) || '[]'), `camp:homeOrder:${tripId}`);
   if(reordered.join(',')!==expected || stored.join(',')!==expected) throw new Error(`Drag order not saved: dom=${reordered.join(',')} stored=${stored.join(',')}`);
 
+  await page.evaluate(() => window.scrollTo(0,0));
+  await page.waitForTimeout(80);
   const reorderedGaps=await cardGaps();
   if(reorderedGaps.some(gap => Math.abs(gap-16)>1)) throw new Error(`Uneven reordered card gaps: ${reorderedGaps.join(',')}`);
 
