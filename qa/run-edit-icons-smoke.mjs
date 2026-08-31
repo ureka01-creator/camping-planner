@@ -59,6 +59,9 @@ try {
 
   await page.locator('[data-nav="meals"]').click();
   await page.locator('#view-meals.active').waitFor({ state:'visible', timeout:5000 });
+  await page.waitForFunction(() => document.querySelectorAll('#dateTabs [data-date]').length > 0, null, { timeout:10000 });
+  await page.locator('#dateTabs [data-date]').first().click();
+  await page.locator('[data-edit-meal="qa-icon-meal"]').waitFor({ state:'visible', timeout:10000 });
   await page.locator('[data-edit-meal="qa-icon-meal"] svg').waitFor({ state:'visible', timeout:10000 });
   await page.locator('[data-edit-meal-item="qa-icon-meal:qa-icon-item"] svg').waitFor({ state:'visible', timeout:10000 });
 
