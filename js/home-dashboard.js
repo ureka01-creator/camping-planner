@@ -104,14 +104,13 @@ function arrangeHome() {
   const memberSection = document.getElementById('memberProgress')?.closest('.home-section');
   const mealSection = document.getElementById('nextMealCard')?.closest('.home-section');
   const myPrep = document.getElementById('myPrepQuickCard');
-  if (!memberSection || !mealSection) return;
+  const anchor = myPrep || home.querySelector('.hero-card');
+  if (!memberSection || !mealSection || !anchor) return;
 
-  if (myPrep) {
-    myPrep.insertAdjacentElement('afterend', memberSection);
-    memberSection.insertAdjacentElement('afterend', mealSection);
-  } else {
-    const hero = home.querySelector('.hero-card');
-    hero?.insertAdjacentElement('afterend', memberSection);
+  if (anchor.nextElementSibling !== memberSection) {
+    anchor.insertAdjacentElement('afterend', memberSection);
+  }
+  if (memberSection.nextElementSibling !== mealSection) {
     memberSection.insertAdjacentElement('afterend', mealSection);
   }
 
@@ -129,7 +128,7 @@ dataAdapter.subscribe(data => {
   queueMicrotask(apply);
 });
 
-new MutationObserver(() => {
-  if (!latestData) return;
-  if (document.getElementById('myPrepQuickCard')) queueMicrotask(apply);
-}).observe(document.getElementById('view-home') || document.body, { childList:true, subtree:true });
+document.addEventListener('click', event => {
+  const target = event.target instanceof Element ? event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later]') : null;
+  if (target) setTimeout(apply, 0);
+}, true);
