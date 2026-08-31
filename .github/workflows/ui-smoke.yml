@@ -44,6 +44,9 @@ jobs:
       - name: Run preparation hub smoke check
         run: timeout 90s node qa/run-items-hub-smoke.mjs
 
+      - name: Run two-client realtime sync smoke check
+        run: timeout 120s node qa/run-realtime-sync-smoke.mjs
+
       - name: Run real app meal smoke check
         run: timeout 90s node qa/run-app-smoke.mjs
 
