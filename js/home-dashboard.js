@@ -18,11 +18,20 @@ function mealItems(meal) {
   return Array.isArray(meal?.items) ? meal.items : [];
 }
 
-function progressOf(meal) {
-  const items = mealItems(meal);
+function allPrepItems() {
+  const packing = Array.isArray(latestData?.items) ? latestData.items : [];
+  const mealPrep = (latestData?.meals || []).flatMap(meal => mealItems(meal));
+  return [...packing, ...mealPrep];
+}
+
+function progressOfItems(items=[]) {
   const total = items.length;
   const done = items.filter(item => item?.isDone === true).length;
-  return { total, done, pct: total ? Math.round(done / total * 100) : 100 };
+  return { total, done, pct: total ? Math.round(done / total * 100) : 0 };
+}
+
+function progressOfMeal(meal) {
+  return progressOfItems(mealItems(meal));
 }
 
 function sortedMeals() {
@@ -32,27 +41,36 @@ function sortedMeals() {
   );
 }
 
-function compactPrepNames(meal) {
-  return mealItems(meal)
-    .filter(item => !item?.isDone)
-    .slice(0, 3)
-    .map(item => item?.name)
-    .filter(Boolean);
+function renderCombinedPrep() {
+  if (!latestData) return;
+  const all = allPrepItems();
+  const progress = progressOfItems(all);
+
+  const percent = document.getElementById('progressPercent');
+  const bar = document.getElementById('progressBar');
+  const ring = document.getElementById('progressRing');
+  const caption = document.getElementById('progressCaption');
+  if (percent) percent.textContent = `${progress.pct}%`;
+  if (bar) bar.style.width = `${progress.pct}%`;
+  if (ring) ring.style.setProperty('--progress', `${progress.pct * 3.6}deg`);
+  if (caption) caption.textContent = progress.total
+    ? `전체 준비 ${progress.total}개 중 ${progress.done}개 완료`
+    : '준비 항목을 추가해봐.';
+
+  const host = document.getElementById('memberProgress');
+  if (!host) return;
+  host.innerHTML = (latestData.members || []).map(member => {
+    const mine = all.filter(item => item?.assigneeId === member.id);
+    const p = progressOfItems(mine);
+    return `<div class="member-row" data-home-member-progress="${esc(member.id)}"><div class="member-row-top"><span>${esc(member.name)}</span><span>${p.pct}%</span></div><div class="small-track"><span style="width:${p.pct}%"></span></div><div class="tiny">${p.total ? `${p.done}/${p.total}개 준비` : '담당 항목 없음'}</div></div>`;
+  }).join('') || '<div class="empty-state">참여자를 추가해봐.</div>';
 }
 
-function renderMealLine(meal, label) {
+function renderMealStage(meal, label) {
   if (!meal) return '';
-  const progress = progressOf(meal);
-  const todoNames = compactPrepNames(meal);
-  const prepText = progress.total
-    ? `${progress.done}/${progress.total} 준비 · ${progress.pct}%`
-    : '준비 항목 없음';
+  const progress = progressOfMeal(meal);
   const note = String(meal.note || '').trim();
-  const detail = todoNames.length
-    ? `남은 준비 · ${todoNames.map(esc).join(' · ')}`
-    : note
-      ? esc(note)
-      : '준비 완료';
+  const prepText = progress.total ? `준비 ${progress.done}/${progress.total}` : '준비 항목 없음';
 
   return `
     <div class="home-meal-stage">
@@ -60,13 +78,11 @@ function renderMealLine(meal, label) {
         <span class="home-meal-stage-label">${esc(label)}</span>
         <span class="home-meal-stage-time">${esc(formatShortDate(meal.date))} · ${esc(mealLabels[meal.mealType] || '식사')}</span>
       </div>
-      <div class="home-meal-stage-main">
-        <strong>${esc(meal.menu || '메뉴 미정')}</strong>
+      <strong class="home-meal-menu">${esc(meal.menu || '메뉴 미정')}</strong>
+      ${note ? `<p class="home-meal-note">${esc(note)}</p>` : ''}
+      <div class="home-meal-stage-footer">
         <span>담당 ${esc(memberName(meal.assigneeId))}</span>
-      </div>
-      <div class="home-meal-stage-meta">
-        <span>${prepText}</span>
-        <small>${detail}</small>
+        <b>${prepText}</b>
       </div>
     </div>`;
 }
@@ -93,8 +109,8 @@ function renderNextMeals() {
 
   card.innerHTML = `
     <div class="home-meal-flow">
-      ${renderMealLine(first, '1차')}
-      ${secondary ? `<div class="home-meal-connector"><span></span><b>→</b><span></span></div>${renderMealLine(secondary, secondaryLabel)}` : ''}
+      ${renderMealStage(first, '1차')}
+      ${secondary ? `<div class="home-meal-divider"></div>${renderMealStage(secondary, secondaryLabel)}` : ''}
     </div>`;
 }
 
@@ -124,6 +140,7 @@ function arrangeHome() {
 
 function apply() {
   arrangeHome();
+  renderCombinedPrep();
   renderNextMeals();
 }
 
@@ -141,6 +158,6 @@ if (nextMealCard) {
 }
 
 document.addEventListener('click', event => {
-  const target = event.target instanceof Element ? event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later]') : null;
+  const target = event.target instanceof Element ? event.target.closest('[data-nav], [data-go], [data-first-entry-member], [data-first-entry-later], [data-toggle-item], [data-toggle-meal-prep], [data-toggle-meal-item]') : null;
   if (target) setTimeout(apply, 0);
 }, true);
