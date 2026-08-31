@@ -154,22 +154,11 @@
 
   <script type="module" src="./js/landing.js?v=10"></script>
   <script type="module" src="./js/entry-guard.js?v=053"></script>
-  <script type="module" src="./js/bootstrap.js?v=053"></script>
+  <script type="module" src="./js/bootstrap.js?v=056"></script>
   <script type="module" src="./js/meal-focus-fix.js?v=048"></script>
   <script type="module" src="./js/unified-theme.js?v=055"></script>
   <script>
     (() => {
-      const syncNightTheme = () => {
-        const app = document.getElementById('app');
-        const dark = Boolean(document.querySelector('#view-home.active, #view-meals.active'));
-        if (app) app.classList.toggle('home-theme', dark);
-        const theme = document.querySelector('meta[name="theme-color"]');
-        if (theme) theme.content = dark ? '#071018' : '#f7f2e8';
-      };
-      const main = document.querySelector('main');
-      if (main) new MutationObserver(syncNightTheme).observe(main, { attributes:true, subtree:true, attributeFilter:['class'] });
-      queueMicrotask(syncNightTheme);
-
       const title = document.getElementById('tripTitle');
       if (title) {
         const buildDday = (text) => {
