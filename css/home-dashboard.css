@@ -44,11 +44,7 @@
 }
 
 .home-theme .home-meal-section .home-food-heading h2 {
-  margin: 0;
-  color: #f0dfcb;
-  font-size: 24px;
-  line-height: 1.16;
-  letter-spacing: -.04em;
+  display: none;
 }
 
 .home-theme #nextMealCard.meal-feature {
