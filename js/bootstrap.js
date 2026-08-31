@@ -64,24 +64,42 @@ async function repairTripDatesIfNeeded() {
   });
 }
 
+async function safeImport(path) {
+  try {
+    return await import(path);
+  } catch (error) {
+    console.error(`Optional module failed: ${path}`, error);
+    return null;
+  }
+}
+
+// Core app must load. Enhancements are isolated so one bad optional feature
+// can never stop the rest of the UI from booting.
 await import('./app.js?v=064');
-await import('./inline-meal-add.js?v=071');
-await import('./trip-settings.js?v=064');
-await import('./home-meal-progress.js?v=065');
-await import('./meal-reorder.js?v=065');
-await import('./meal-edit-focus.js?v=066');
-await import('./items-hub.js?v=089');
-await import('./item-edit-fix.js?v=082');
-await import('./edit-icons.js?v=081');
-await import('./admin-access.js?v=083');
-await import('./home-memo.js?v=092');
-await import('./home-board-paging.js?v=094');
-await import('./meal-item-notes.js?v=091');
-await import('./packing-item-notes.js?v=093');
-await import('./home-order.js?v=091');
+
+for (const path of [
+  './inline-meal-add.js?v=071',
+  './trip-settings.js?v=064',
+  './home-meal-progress.js?v=065',
+  './meal-reorder.js?v=065',
+  './meal-edit-focus.js?v=066',
+  './items-hub.js?v=089',
+  './item-edit-fix.js?v=082',
+  './edit-icons.js?v=081',
+  './admin-access.js?v=083',
+  // Load home controls early so the cover/lock buttons cannot be blocked by
+  // a later memo or decoration feature.
+  './home-order.js?v=096',
+  './home-memo.js?v=092',
+  './home-board-paging.js?v=094',
+  './meal-item-notes.js?v=091',
+  './packing-item-notes.js?v=096'
+]) {
+  await safeImport(path);
+}
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.7.0';
+if (version) version.textContent = 'Camping Planner v0.7.1';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
