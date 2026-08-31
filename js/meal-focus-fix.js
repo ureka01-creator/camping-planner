@@ -1,10 +1,9 @@
-import { dataAdapter } from './firebase.js';
+import { dataAdapter } from './firebase.js?v=064';
 import { esc } from './ui.js';
 
 const mealList = document.getElementById('mealList');
 const dateTabs = document.getElementById('dateTabs');
 let latestData = null;
-// Every time the Meals page is entered, start from the full schedule.
 let allActive = true;
 let syncQueued = false;
 
@@ -17,7 +16,6 @@ function centerFocusedInput(toggle) {
   const panel = toggle.nextElementSibling;
   const input = panel?.querySelector('.meal-inline-name, input[name="name"]');
   if (!input) return;
-
   input.focus({ preventScroll: false });
   const bringIntoView = () => input.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
   requestAnimationFrame(bringIntoView);
@@ -75,11 +73,8 @@ function ensureAllTab() {
     });
     dateTabs.prepend(button);
   }
-
   button.classList.toggle('active', allActive);
-  if (allActive) {
-    dateTabs.querySelectorAll('[data-date]').forEach(tab => tab.classList.remove('active'));
-  }
+  if (allActive) dateTabs.querySelectorAll('[data-date]').forEach(tab => tab.classList.remove('active'));
 }
 
 function mealOverviewRow(meal) {
@@ -96,7 +91,6 @@ function mealOverviewRow(meal) {
 
 function renderAllMeals() {
   if (!allActive || !mealList || !latestData?.trip) return;
-
   ensureAllTab();
   const days = dateRange(latestData.trip.startDate, latestData.trip.endDate);
   const daySet = new Set(days);
@@ -105,23 +99,14 @@ function renderAllMeals() {
     .sort((a, b) => a.date.localeCompare(b.date) || (mealOrder[a.mealType] || 99) - (mealOrder[b.mealType] || 99));
   const allItems = meals.flatMap(meal => Array.isArray(meal.items) ? meal.items : []);
   const totalProgress = progress(allItems);
-
-  const summary = `<div class="meal-total-summary">
-    <span>전체 일정</span>
-    <strong>${meals.length}식 · 준비 ${totalProgress.done}/${totalProgress.total}</strong>
-  </div>`;
-
+  const summary = `<div class="meal-total-summary"><span>전체 일정</span><strong>${meals.length}식 · 준비 ${totalProgress.done}/${totalProgress.total}</strong></div>`;
   const schedule = days.map(day => {
     const dayMeals = meals.filter(meal => meal.date === day);
     return `<section class="meal-overview-day">
-      <div class="meal-overview-day-head">
-        <strong>${shortDate(day)} <small>${weekday(day)}</small></strong>
-        <span>${dayMeals.length ? `${dayMeals.length}식` : '일정 없음'}</span>
-      </div>
+      <div class="meal-overview-day-head"><strong>${shortDate(day)} <small>${weekday(day)}</small></strong><span>${dayMeals.length ? `${dayMeals.length}식` : '일정 없음'}</span></div>
       ${dayMeals.length ? `<div class="meal-overview-list">${dayMeals.map(mealOverviewRow).join('')}</div>` : `<div class="meal-overview-empty">등록된 식단이 없어.</div>`}
     </section>`;
   }).join('');
-
   mealList.dataset.mealAllView = '1';
   mealList.innerHTML = summary + schedule;
 }
@@ -146,7 +131,6 @@ function activateAllMeals() {
   });
 }
 
-// Home -> Meals, bottom nav -> Meals: always open the full itinerary first.
 document.addEventListener('click', event => {
   const entry = event.target.closest('[data-nav="meals"], [data-go="meals"]');
   if (entry) activateAllMeals();
@@ -158,7 +142,6 @@ mealList?.addEventListener('click', event => {
     requestAnimationFrame(() => centerFocusedInput(toggle));
     return;
   }
-
   const overview = event.target.closest('[data-open-meal-date]');
   if (!overview) return;
   const date = overview.dataset.openMealDate;
@@ -168,8 +151,6 @@ mealList?.addEventListener('click', event => {
   targetTab?.click();
 });
 
-// Capture before app.js handles the date button so the All renderer cannot
-// overwrite the date-specific cards during the same navigation event.
 dateTabs?.addEventListener('click', event => {
   const dateButton = event.target.closest('[data-date]');
   if (!dateButton) return;
@@ -177,9 +158,7 @@ dateTabs?.addEventListener('click', event => {
   localStorage.setItem('camp:mealScope', 'date');
 }, true);
 
-if (dateTabs) {
-  new MutationObserver(queueAllSync).observe(dateTabs, { childList:true });
-}
+if (dateTabs) new MutationObserver(queueAllSync).observe(dateTabs, { childList:true });
 
 dataAdapter.subscribe(data => {
   latestData = data;
@@ -206,7 +185,6 @@ style.textContent = `
   .meal-overview-progress { display:grid; justify-items:end; gap:2px; white-space:nowrap; font-size:9px; color:var(--muted); }
   .meal-overview-progress b { font-size:12px; color:var(--ink); }
   .meal-overview-empty { padding:16px 13px; border:1px dashed var(--line); border-radius:15px; color:var(--muted); font-size:11px; text-align:center; }
-
   .home-theme #view-meals .meal-total-summary,
   .home-theme #view-meals .meal-overview-row { border-color:rgba(216,160,113,.14); background:rgba(20,24,22,.86); color:#ead9c4; }
   .home-theme #view-meals .meal-total-summary strong { color:#dca77b; }
