@@ -1,23 +1,43 @@
 import { dataAdapter } from './firebase.js?v=064';
 import { openModal, closeModal, esc, toast, uid } from './ui.js';
 
+const AUTHOR_ID_KEY = 'camp:boardAuthorId';
 let latestData = null;
 let renderQueued = false;
+let sessionAuthorId = '';
+
+function ensureAuthorId() {
+  if (sessionAuthorId) return sessionAuthorId;
+  try {
+    const stored = localStorage.getItem(AUTHOR_ID_KEY) || '';
+    if (stored) {
+      sessionAuthorId = stored;
+      return stored;
+    }
+    sessionAuthorId = uid('author');
+    localStorage.setItem(AUTHOR_ID_KEY, sessionAuthorId);
+    return sessionAuthorId;
+  } catch (_) {
+    sessionAuthorId = sessionAuthorId || uid('author');
+    return sessionAuthorId;
+  }
+}
 
 function currentIdentity() {
   let memberId = '';
   let name = '';
   try {
     memberId = localStorage.getItem('camp:myMemberId') || '';
-    name = localStorage.getItem('camp:myName') || '';
+    name = String(localStorage.getItem('camp:myName') || '').trim();
   } catch (_) {}
 
-  const member = (latestData?.members || []).find(entry => entry.id === memberId)
-    || (latestData?.members || []).find(entry => entry.name === name);
+  const member = (latestData?.members || []).find(entry => entry.id === memberId);
+  const authorId = name ? ensureAuthorId() : '';
   return {
-    key: member?.id || (name ? `name:${name}` : ''),
-    memberId: member?.id || '',
-    name: member?.name || name
+    key: authorId,
+    authorId,
+    memberId: member?.id || memberId,
+    name
   };
 }
 
@@ -60,17 +80,27 @@ function pencilSvg() {
 }
 
 function displayName(post) {
-  const current = (latestData?.members || []).find(member => member.id && member.id === post.memberId);
-  return current?.name || post.name || '이름 없음';
+  if (String(post?.name || '').trim()) return String(post.name).trim();
+  const member = (latestData?.members || []).find(entry => entry.id && entry.id === post.memberId);
+  return member?.name || '이름 없음';
 }
 
 function isMine(post) {
   const identity = currentIdentity();
-  if (!identity.key) return false;
-  return Boolean(
-    (post.memberId && identity.memberId && post.memberId === identity.memberId) ||
-    (post.key && post.key === identity.key)
-  );
+  if (!identity.key || !identity.name) return false;
+
+  // New posts have a per-browser author id, so people in the same team cannot
+  // edit each other's board posts.
+  if (post.authorId && post.authorId === identity.authorId) return true;
+  if (post.key && post.key === identity.key) return true;
+
+  // Legacy posts used the team/member id or display name as their key. Keep a
+  // narrow compatibility path so existing posts remain editable after upgrade.
+  if (post.authorId) return false;
+  const legacyKey = String(post.key || '');
+  if (legacyKey === `name:${identity.name}`) return true;
+  const looksLegacy = !legacyKey || legacyKey === post.memberId || legacyKey.startsWith('name:');
+  return Boolean(looksLegacy && post.memberId && identity.memberId && post.memberId === identity.memberId);
 }
 
 function render() {
@@ -154,6 +184,7 @@ function openPostEditor(post = null) {
       const count = root.querySelector('.home-memo-count b');
       textarea?.addEventListener('input', () => { if (count) count.textContent = `${textarea.value.length}/80`; });
       requestAnimationFrame(() => textarea?.focus({ preventScroll:true }));
+      if (!form) return;
 
       form.onsubmit = async event => {
         event.preventDefault();
@@ -174,6 +205,7 @@ function openPostEditor(post = null) {
                 ...posts[index],
                 id: posts[index].id || uid('memo'),
                 key: identity.key,
+                authorId: identity.authorId,
                 memberId: identity.memberId,
                 name: identity.name,
                 text,
@@ -184,6 +216,7 @@ function openPostEditor(post = null) {
               posts.push({
                 id: uid('memo'),
                 key: identity.key,
+                authorId: identity.authorId,
                 memberId: identity.memberId,
                 name: identity.name,
                 text,
@@ -220,8 +253,35 @@ function openPostEditor(post = null) {
     });
 }
 
+async function syncMyPostDisplayName() {
+  const identity = currentIdentity();
+  if (!identity.authorId || !identity.name) {
+    queueRender();
+    return;
+  }
+  const needsSync = boardPosts().some(post => post.authorId === identity.authorId && post.name !== identity.name);
+  if (!needsSync) {
+    queueRender();
+    return;
+  }
+  try {
+    await dataAdapter.mutate(data => {
+      const posts = Array.isArray(data?.trip?.homeMemos) ? data.trip.homeMemos : [];
+      posts.forEach(post => {
+        if (post?.authorId === identity.authorId) post.name = identity.name;
+      });
+    });
+  } catch (error) {
+    console.warn('Board display-name sync skipped.', error);
+  }
+}
+
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
+  if (event.target.closest('#saveMyNameBtn')) {
+    queueMicrotask(syncMyPostDisplayName);
+    return;
+  }
   if (event.target.closest('[data-add-home-memo]')) {
     event.preventDefault();
     openPostEditor();
