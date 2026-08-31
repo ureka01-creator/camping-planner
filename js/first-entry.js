@@ -2,7 +2,7 @@ import { dataAdapter } from './firebase.js?v=064';
 import { esc, toast } from './ui.js';
 
 const MEMBER_KEY = 'camp:myMemberId';
-const LEGACY_NAME_KEY = 'camp:myName';
+const DISPLAY_NAME_KEY = 'camp:myName';
 const sharedEntry = new URLSearchParams(location.search).has('trip');
 
 let latestData = null;
@@ -27,7 +27,8 @@ function resolveMyMember() {
   const byId = candidates.find(member => member.id === id);
   if (byId) return byId;
 
-  const legacyName = localStorage.getItem(LEGACY_NAME_KEY) || '';
+  // Migration fallback for older sessions where the team name was stored in camp:myName.
+  const legacyName = localStorage.getItem(DISPLAY_NAME_KEY) || '';
   const byName = candidates.find(member => member.name === legacyName);
   if (byName) {
     localStorage.setItem(MEMBER_KEY, byName.id);
@@ -103,12 +104,13 @@ function renderHomeCard() {
 }
 
 function saveMember(member) {
+  // Team selection controls preparation filtering only. Never overwrite the
+  // user's personal display name used by the board.
   localStorage.setItem(MEMBER_KEY, member.id);
-  localStorage.setItem(LEGACY_NAME_KEY, member.name);
   pickerDismissedThisSession = true;
   closePicker();
   renderHomeCard();
-  toast(`${member.name}로 시작할게.`);
+  toast(`${member.name} 팀으로 볼게.`);
 }
 
 function closePicker() {
@@ -211,13 +213,8 @@ document.addEventListener('click', event => {
   }
 
   if (event.target.closest('#saveMyNameBtn')) {
-    queueMicrotask(() => {
-      const name = localStorage.getItem(LEGACY_NAME_KEY) || '';
-      const member = identityMembers().find(entry => entry.name === name);
-      if (member) localStorage.setItem(MEMBER_KEY, member.id);
-      else localStorage.removeItem(MEMBER_KEY);
-      renderHomeCard();
-    });
+    // Display-name changes must not alter the selected preparation team.
+    queueMicrotask(renderHomeCard);
   }
 }, true);
 
