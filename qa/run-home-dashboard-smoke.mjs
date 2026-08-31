@@ -34,29 +34,31 @@ try {
     const { dataAdapter } = await import('./js/firebase.js?v=064');
     await dataAdapter.mutate(data => {
       const firstDate = data?.trip?.startDate || '2026-09-11';
-      const existing = (data.meals || []).find(meal => meal.id === 'qa-home-2nd');
-      if (existing) {
-        existing.date = firstDate;
-        existing.mealType = 'snack';
-        existing.menu = 'QA 2차';
-        existing.note = '2차 테스트';
-        existing.items = existing.items || [];
-      } else {
-        data.meals = data.meals || [];
-        data.meals.push({
-          id:'qa-home-2nd',
-          date:firstDate,
-          mealType:'snack',
-          menu:'QA 2차',
-          assigneeId:data.members?.[0]?.id || '',
-          note:'2차 테스트',
-          items:[{ id:'qa-home-2nd-item', name:'QA 안주', quantity:'1개', assigneeId:data.members?.[0]?.id || '', isDone:false, note:'' }]
-        });
-      }
+      const next = new Date(`${firstDate}T00:00:00Z`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      const nextDate = next.toISOString().slice(0,10);
+      const memberId = data.members?.[0]?.id || '';
+      data.meals = [
+        {
+          id:'qa-home-1st', date:firstDate, mealType:'dinner', menu:'QA 해산물 파티',
+          assigneeId:memberId, note:'첫날 메인 저녁',
+          items:[{ id:'qa-home-1st-item', name:'QA 해산물', quantity:'1개', assigneeId:memberId, isDone:true, note:'' }]
+        },
+        {
+          id:'qa-home-2nd', date:firstDate, mealType:'snack', menu:'QA 닭발 & 계란찜',
+          assigneeId:memberId, note:'2차 테스트',
+          items:[{ id:'qa-home-2nd-item', name:'QA 안주', quantity:'1개', assigneeId:memberId, isDone:false, note:'' }]
+        },
+        {
+          id:'qa-home-next', date:nextDate, mealType:'breakfast', menu:'QA 다음 아침',
+          assigneeId:memberId, note:'', items:[]
+        }
+      ];
     });
   });
 
-  await page.waitForFunction(() => document.querySelectorAll('#nextMealCard .home-meal-stage').length >= 2, null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelectorAll('#nextMealCard .home-food-stage').length === 2, null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelector('#nextMealCard .home-food-next')?.textContent.includes('QA 다음 아침'), null, { timeout:10000 });
   await page.waitForFunction(() => document.querySelector('#homeTodo')?.closest('.home-section')?.classList.contains('home-todo-hidden') === true, null, { timeout:5000 });
   await page.waitForFunction(() => document.querySelector('#progressCaption')?.textContent.startsWith('전체 준비 '), null, { timeout:5000 });
 
@@ -75,11 +77,25 @@ try {
     };
   });
 
-  const labels=await page.locator('#nextMealCard .home-meal-stage-label').allTextContents();
-  const stages=await page.locator('#nextMealCard .home-meal-stage').allTextContents();
+  const food=await page.evaluate(() => {
+    const section=document.querySelector('#nextMealCard')?.closest('.home-section');
+    const stages=[...document.querySelectorAll('#nextMealCard .home-food-stage')];
+    const marks=stages.map(stage => stage.querySelector('.home-food-stage-mark span')?.textContent.trim() || '');
+    const menus=stages.map(stage => stage.querySelector('.home-food-stage-copy strong')?.textContent.trim() || '');
+    const cardText=document.querySelector('#nextMealCard')?.textContent || '';
+    return {
+      kicker:section?.querySelector('.home-food-heading > span')?.textContent.trim() || '',
+      title:section?.querySelector('.home-food-heading h2')?.textContent.trim() || '',
+      marks,
+      menus,
+      nextText:document.querySelector('#nextMealCard .home-food-next')?.textContent.replace(/\s+/g,' ').trim() || '',
+      hasPercent:cardText.includes('%'),
+      firstStatus:stages[0]?.querySelector('.home-food-stage-copy small')?.textContent.trim() || '',
+      secondStatus:stages[1]?.querySelector('.home-food-stage-copy small')?.textContent.trim() || ''
+    };
+  });
+
   const todoHidden=await page.locator('#homeTodo').evaluate(node => getComputedStyle(node.closest('.home-section')).display === 'none');
-  const firstHasDetail=stages[0]?.includes('준비')===true && stages[0]?.includes('담당')===true;
-  const secondIsRoundTwo=labels[1]?.trim()==='2차' && stages[1]?.includes('QA 2차')===true;
 
   const prepMetric=await page.evaluate(() => {
     const memberId=localStorage.getItem('camp:myMemberId') || '';
@@ -99,9 +115,21 @@ try {
   const overflow=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
-  console.log(JSON.stringify({layout,labels,todoHidden,firstHasDetail,secondIsRoundTwo,prepMetric,heroCaption,overflow,errors},null,2));
+  console.log(JSON.stringify({layout,food,todoHidden,prepMetric,heroCaption,overflow,errors},null,2));
 
-  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !firstHasDetail || !secondIsRoundTwo || !prepMetric.aligned || !heroCaption.startsWith('전체 준비 ') || overflow) process.exitCode=1;
+  const foodOk = food.kicker==='FOOD PLAN'
+    && food.title==='첫날 먹을 것'
+    && food.marks[0]==='1차'
+    && food.marks[1]==='2차'
+    && food.menus[0]==='QA 해산물 파티'
+    && food.menus[1]==='QA 닭발 & 계란찜'
+    && food.nextText.includes('NEXT')
+    && food.nextText.includes('QA 다음 아침')
+    && food.firstStatus.includes('준비 완료')
+    && food.secondStatus.includes('1개 남음')
+    && !food.hasPercent;
+
+  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !foodOk || !prepMetric.aligned || !heroCaption.startsWith('전체 준비 ') || overflow) process.exitCode=1;
 } catch(error) {
   console.error('HOME_DASHBOARD_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
