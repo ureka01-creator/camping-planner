@@ -137,16 +137,13 @@ function filteredMealPrepItems() {
 }
 
 function mealPrepCard(item) {
-  const meta = [
-    item.mealDate ? item.mealDate.slice(5).replace('-', '/') : '',
-    item.mealMenu,
-    item.quantity || '수량 미정',
-    memberName(item.assigneeId)
-  ].filter(Boolean);
+  const dateText = item.mealDate ? item.mealDate.slice(5).replace('-', '/') : '';
+  const menu = `<button type="button" class="meal-prep-menu-link" data-open-meal="${esc(item.mealId)}" data-meal-date="${esc(item.mealDate)}">${esc(item.mealMenu)}</button>`;
+  const meta = [dateText, menu, esc(item.quantity || '수량 미정'), esc(memberName(item.assigneeId))].filter(Boolean);
   return `<article class="packing-item meal-prep-item ${item.isDone ? 'done' : ''}" data-meal-prep="${item.mealId}:${item.id}">
     <button type="button" class="check-btn" data-toggle-meal-prep="${item.mealId}:${item.id}" aria-label="${esc(item.name)} 완료 토글">${item.isDone ? '✓' : ''}</button>
-    <div class="meal-prep-main"><div class="item-name">${esc(item.name)}</div><div class="item-meta">${meta.map((value, index) => `${index ? '<span>·</span>' : ''}<span>${esc(value)}</span>`).join('')}</div></div>
-    <span class="meal-prep-source">식단</span>
+    <div class="meal-prep-main"><div class="item-name">${esc(item.name)}</div><div class="item-meta">${meta.map((value, index) => `${index ? '<span>·</span>' : ''}${value.startsWith('<button') ? value : `<span>${value}</span>`}`).join('')}</div></div>
+    <button type="button" class="meal-prep-source" data-open-meal="${esc(item.mealId)}" data-meal-date="${esc(item.mealDate)}" aria-label="${esc(item.mealMenu)} 식단으로 이동">식단</button>
   </article>`;
 }
 
@@ -213,6 +210,18 @@ function queueRender() {
 }
 
 document.addEventListener('click', event => {
+  const mealLink = event.target instanceof Element ? event.target.closest('[data-open-meal]') : null;
+  if (mealLink) {
+    event.preventDefault();
+    event.stopPropagation();
+    const opened = window.CampingMealFocus?.open?.(mealLink.dataset.openMeal || '', mealLink.dataset.mealDate || '');
+    if (!opened) {
+      document.querySelector('[data-nav="meals"]')?.click();
+      toast('식단 화면으로 이동했어.');
+    }
+    return;
+  }
+
   const category = event.target instanceof Element ? event.target.closest('[data-item-category]') : null;
   if (category) {
     categoryFilter = category.dataset.itemCategory || 'all';
@@ -276,7 +285,8 @@ style.textContent = `
   .meal-prep-list { display:grid; gap:8px; }
   .meal-prep-item { grid-template-columns:auto minmax(0,1fr) auto; }
   .meal-prep-main { min-width:0; }
-  .meal-prep-source { align-self:center; padding:5px 7px; border:1px solid rgba(216,160,113,.18); border-radius:999px; color:#c9895d; font-size:9px; font-weight:850; }
+  .meal-prep-menu-link { padding:0; border:0; background:transparent; color:inherit; font-size:inherit; text-decoration:underline; text-decoration-color:rgba(201,137,93,.45); text-underline-offset:2px; }
+  .meal-prep-source { align-self:center; padding:5px 7px; border:1px solid rgba(216,160,113,.18); border-radius:999px; background:transparent; color:#c9895d; font-size:9px; font-weight:850; }
   @media (max-width:370px) { .items-member-grid { grid-template-columns:1fr; } }
 `;
 document.head.appendChild(style);
