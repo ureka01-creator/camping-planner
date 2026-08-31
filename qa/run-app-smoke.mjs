@@ -3,8 +3,14 @@ import { chromium } from 'playwright';
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 const errors=[];
+const networkWarnings=[];
 page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
-page.on('console', msg => { if(msg.type()==='error') errors.push(`console: ${msg.text()}`); });
+page.on('console', msg => {
+  if(msg.type()!=='error') return;
+  const text=msg.text();
+  if(/Failed to load resource/.test(text)) networkWarnings.push(text);
+  else errors.push(`console: ${text}`);
+});
 
 function addDay(iso){
   const [y,m,d]=iso.split('-').map(Number);
@@ -21,6 +27,8 @@ try {
   }
 
   await page.waitForFunction(() => Boolean(document.querySelector('#tripDates')?.textContent.trim()), null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  await page.waitForTimeout(250);
 
   await page.locator('[data-nav="meals"]').click();
   await page.locator('#view-meals.active').waitFor({state:'visible', timeout:5000});
@@ -38,7 +46,7 @@ try {
 
   const firstDateTab=page.locator('#dateTabs [data-date]').first();
   await firstDateTab.click();
-  await page.waitForTimeout(180);
+  await page.waitForTimeout(350);
 
   const cards=await page.locator('#mealList .meal-card').count();
   const empty=await page.locator('#mealList .empty-state').count();
@@ -52,16 +60,15 @@ try {
   let editFocusOk=true;
   if(cards>0){
     const firstToggle=page.locator('#mealList .meal-inline-toggle:visible').first();
-    await firstToggle.scrollIntoViewIfNeeded();
+    await firstToggle.waitFor({state:'visible', timeout:10000});
     await firstToggle.click();
-    addToggleOk=(await firstToggle.getAttribute('aria-expanded'))==='true' && await page.locator('#mealList .meal-inline-form:visible').first().isVisible();
-    await firstToggle.click();
+    addToggleOk=(await page.locator('#mealList .meal-inline-toggle:visible').first().getAttribute('aria-expanded'))==='true' && await page.locator('#mealList .meal-inline-form:visible').first().isVisible();
+    await page.locator('#mealList .meal-inline-toggle:visible').first().click();
 
     const editButtons=page.locator('#mealList [data-edit-meal-item]:visible');
     if(await editButtons.count()){
-      const firstEdit=editButtons.first();
-      await firstEdit.scrollIntoViewIfNeeded();
-      await firstEdit.click();
+      await editButtons.first().waitFor({state:'visible', timeout:10000});
+      await editButtons.first().click();
       const editor=page.locator('#mealList .meal-inline-edit:visible').first();
       inlineEditOk=await editor.isVisible();
       const modalVisible=await page.locator('#modalBackdrop:not(.hidden)').count();
@@ -113,7 +120,7 @@ try {
   }));
 
   const dbConnected=connectionText?.includes('Firebase 실시간 연결됨') === true;
-  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,editFocusOk,allAfterReentry,itemSummary,packingViewOk,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
+  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,editFocusOk,allAfterReentry,itemSummary,packingViewOk,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors,networkWarnings},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
   const allViewOk=dates[0]==='전체' && allDefault && allAfterReentry && overviewDays>=1;
