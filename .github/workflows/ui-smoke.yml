@@ -62,6 +62,9 @@ jobs:
       - name: Run settlement and payer smoke check
         run: timeout 120s node qa/run-settlement-smoke.mjs
 
+      - name: Run Firebase auth reload stability smoke check
+        run: timeout 120s node qa/run-auth-reload-smoke.mjs
+
       - name: Run two-client realtime sync smoke check
         run: timeout 120s node qa/run-realtime-sync-smoke.mjs
 
