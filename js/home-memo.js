@@ -110,11 +110,28 @@ function findStoredPost(data, boardId, fallbackIndex = -1) {
   return -1;
 }
 
+function goToDisplayNameSetting() {
+  toast('게시판에 글을 쓰려면 먼저 내 표시 이름을 정해줘.');
+  document.querySelector('[data-go="settings"]')?.click();
+
+  const focusName = () => {
+    const input = document.getElementById('myNameInput');
+    if (!(input instanceof HTMLInputElement)) return;
+    const card = input.closest('.settings-card');
+    card?.classList.add('display-name-target');
+    input.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+    window.setTimeout(() => input.focus({ preventScroll:true }), 220);
+    window.setTimeout(() => card?.classList.remove('display-name-target'), 1800);
+  };
+
+  requestAnimationFrame(focusName);
+  window.setTimeout(focusName, 120);
+}
+
 function openPostEditor(post = null) {
   const identity = currentIdentity();
   if (!identity.key || !identity.name) {
-    toast('먼저 설정에서 내 표시 이름을 정해줘.');
-    document.querySelector('[data-go="settings"]')?.click();
+    goToDisplayNameSetting();
     return;
   }
   if (post && !isMine(post)) {
@@ -249,6 +266,7 @@ style.textContent = `
   .home-memo-empty { padding:7px 0 3px; color:rgba(234,217,196,.38); font-size:10px; }
   .home-memo-count { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:-4px; color:var(--muted); font-size:10px; }
   .home-memo-count b { font-size:10px; }
+  .settings-card.display-name-target { outline:2px solid rgba(220,167,123,.58); outline-offset:2px; box-shadow:0 0 0 5px rgba(220,167,123,.08); }
 `;
 document.head.appendChild(style);
 
