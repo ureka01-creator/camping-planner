@@ -85,12 +85,6 @@ function mealPrepStatus(meal) {
   return left ? `${left}개 남음` : '준비 완료';
 }
 
-function foodPlanTitle(firstMeal) {
-  const firstDate = String(firstMeal?.date || '');
-  const tripStart = String(latestData?.trip?.startDate || '');
-  return firstDate && firstDate === tripStart ? '첫날 먹을 것' : `${formatShortDate(firstDate)} 먹을 것`;
-}
-
 function renderFoodStage(meal, roundLabel) {
   if (!meal) return '';
   const note = String(meal.note || '').trim();
@@ -118,16 +112,15 @@ function renderNextPreview(meal) {
     </button>`;
 }
 
-function renderFoodHeader(firstMeal) {
+function renderFoodHeader() {
   const card = document.getElementById('nextMealCard');
   const section = card?.closest('.home-section');
   const head = section?.querySelector('.section-head');
   if (!head) return;
-  const title = foodPlanTitle(firstMeal);
   head.innerHTML = `
     <div class="home-food-heading">
       <span>FOOD PLAN</span>
-      <h2>${esc(title)}</h2>
+      <h2>식사 일정</h2>
     </div>
     <button class="text-btn" data-go="meals">전체보기</button>`;
 }
@@ -147,7 +140,7 @@ function renderNextMeals() {
     return;
   }
 
-  renderFoodHeader(first);
+  renderFoodHeader();
   card.classList.remove('empty-card');
 
   const sameDayMeals = meals.filter(meal => meal.date === first.date).slice(0, 2);
