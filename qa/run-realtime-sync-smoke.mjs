@@ -15,6 +15,15 @@ for (const [label, page] of [['A', pageA], ['B', pageB]]) {
 const tripId = 'qa-realtime-smoke';
 const url = `http://127.0.0.1:4173/?trip=${tripId}`;
 
+async function dismissFirstEntryIfShown(page) {
+  await page.waitForTimeout(80);
+  const picker=page.locator('#firstEntryBackdrop');
+  if(await picker.count()) {
+    await picker.locator('[data-first-entry-later]').click();
+    await picker.waitFor({ state:'detached', timeout:5000 });
+  }
+}
+
 async function enterApp(page) {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:30000 });
   const landing = page.locator('.camp-landing');
@@ -27,6 +36,7 @@ async function enterApp(page) {
     null,
     { timeout:20000 }
   );
+  await dismissFirstEntryIfShown(page);
   await page.locator('[data-nav="items"]').click();
   await page.locator('#view-items.active').waitFor({ state:'visible', timeout:5000 });
   await page.locator('#itemList [data-toggle-item]').first().waitFor({ state:'visible', timeout:15000 });
