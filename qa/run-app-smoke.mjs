@@ -82,9 +82,10 @@ try {
   await page.locator('[data-nav="items"]').click();
   await page.locator('#view-items.active').waitFor({state:'visible', timeout:5000});
   await page.waitForTimeout(150);
-  const packingText=(await page.locator('#itemList').textContent()) || '';
-  const drinkNames=['소주','맥주','화와','레와','사케','고량주'];
-  const drinksInPacking=drinkNames.every(name => packingText.includes(name));
+  const itemSummary=(await page.locator('#itemSummary').textContent())?.trim() || '';
+  const packingViewOk=/^전체 \d+개 중 \d+개 준비$/.test(itemSummary)
+    && await page.locator('#itemFilters [data-filter="all"]').count()===1
+    && await page.locator('#itemFilters [data-filter="todo"]').count()===1;
 
   await page.locator('#settingsShortcut').click();
   await page.locator('#view-settings.active').waitFor({state:'visible', timeout:5000});
@@ -112,7 +113,7 @@ try {
   }));
 
   const dbConnected=connectionText?.includes('Firebase 실시간 연결됨') === true;
-  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,editFocusOk,allAfterReentry,drinksInPacking,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
+  console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,editFocusOk,allAfterReentry,itemSummary,packingViewOk,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
   const allViewOk=dates[0]==='전체' && allDefault && allAfterReentry && overviewDays>=1;
@@ -121,7 +122,7 @@ try {
   const emptyMealOk=emptyOverviewCount>0 && emptyOverview100;
   const widthOk=!overflowBefore && !overflowAfter;
   const dateConstraintOk=initial.min===initial.start && constrained.min===probeStart && constrained.end===probeStart;
-  if(errors.length || !dbConnected || !allViewOk || !detailScreenOk || !dragUiOk || !emptyMealOk || !drinksInPacking || !widthOk || !dateConstraintOk) process.exitCode=1;
+  if(errors.length || !dbConnected || !allViewOk || !detailScreenOk || !dragUiOk || !emptyMealOk || !packingViewOk || !widthOk || !dateConstraintOk) process.exitCode=1;
 } catch(e){
   console.error('APP_SMOKE_FAILED', e);
   console.error(errors.join('\n'));
