@@ -41,9 +41,6 @@ jobs:
       - name: Run Android responsive smoke check
         run: node qa/run-responsive-smoke.mjs
 
-      - name: Write requested meal data to Firebase
-        run: timeout 60s node qa/import-meal-plan-once.mjs
-
       - name: Run real app meal smoke check
         run: timeout 90s node qa/run-app-smoke.mjs
 
