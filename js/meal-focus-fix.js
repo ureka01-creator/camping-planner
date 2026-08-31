@@ -6,6 +6,7 @@ const dateTabs = document.getElementById('dateTabs');
 let latestData = null;
 let allActive = true;
 let syncQueued = false;
+let focusTimer = 0;
 
 const mealLabels = { breakfast:'아침', lunch:'점심', dinner:'저녁', snack:'간식' };
 const mealOrder = { breakfast:1, lunch:2, dinner:3, snack:4 };
@@ -142,6 +143,56 @@ function activateAllMeals() {
   });
 }
 
+function findMealCard(mealId) {
+  if (!mealId) return null;
+  const edit = document.querySelector(`[data-edit-meal="${CSS.escape(mealId)}"]`);
+  return edit?.closest('.meal-card') || null;
+}
+
+function focusMealCard(mealId, attempt = 0) {
+  window.clearTimeout(focusTimer);
+  const card = findMealCard(mealId);
+  if (!card) {
+    if (attempt < 8) focusTimer = window.setTimeout(() => focusMealCard(mealId, attempt + 1), 70 + attempt * 35);
+    return;
+  }
+
+  document.querySelectorAll('.meal-card.meal-target-focus').forEach(node => node.classList.remove('meal-target-focus'));
+  card.classList.add('meal-target-focus');
+  card.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+  window.setTimeout(() => card.classList.remove('meal-target-focus'), 1600);
+}
+
+function selectMealDateAndFocus(mealId, date) {
+  if (!date) return;
+  allActive = false;
+  localStorage.setItem('camp:mealScope', 'date');
+  const targetTab = dateTabs?.querySelector(`[data-date="${CSS.escape(date)}"]`);
+  if (targetTab) targetTab.click();
+  requestAnimationFrame(() => focusMealCard(mealId));
+  window.setTimeout(() => focusMealCard(mealId), 90);
+}
+
+function openMealById(mealId, date = '') {
+  const meal = latestData?.meals?.find(entry => entry.id === mealId);
+  const targetDate = date || meal?.date || '';
+  if (!mealId || !targetDate) return false;
+
+  const mealsView = document.getElementById('view-meals');
+  if (!mealsView?.classList.contains('active')) {
+    document.querySelector('[data-nav="meals"]')?.click();
+    window.setTimeout(() => selectMealDateAndFocus(mealId, targetDate), 0);
+    window.setTimeout(() => selectMealDateAndFocus(mealId, targetDate), 120);
+  } else {
+    selectMealDateAndFocus(mealId, targetDate);
+  }
+  return true;
+}
+
+window.CampingMealFocus = {
+  open: openMealById
+};
+
 document.addEventListener('click', event => {
   const entry = event.target.closest('[data-nav="meals"], [data-go="meals"]');
   if (entry) activateAllMeals();
@@ -156,11 +207,8 @@ mealList?.addEventListener('click', event => {
   }
   const overview = event.target.closest('[data-open-meal-date]');
   if (!overview) return;
-  const date = overview.dataset.openMealDate;
-  allActive = false;
-  localStorage.setItem('camp:mealScope', 'date');
-  const targetTab = dateTabs?.querySelector(`[data-date="${date}"]`);
-  targetTab?.click();
+  event.preventDefault();
+  openMealById(overview.dataset.mealId || '', overview.dataset.openMealDate || '');
 });
 
 dateTabs?.addEventListener('click', event => {
@@ -197,6 +245,7 @@ style.textContent = `
   .meal-overview-progress { display:grid; justify-items:end; gap:2px; white-space:nowrap; font-size:9px; color:var(--muted); }
   .meal-overview-progress b { font-size:12px; color:var(--ink); }
   .meal-overview-empty { padding:16px 13px; border:1px dashed var(--line); border-radius:15px; color:var(--muted); font-size:11px; text-align:center; }
+  .meal-card.meal-target-focus { outline:2px solid rgba(220,167,123,.72); outline-offset:2px; box-shadow:0 0 0 5px rgba(220,167,123,.10), 0 16px 36px rgba(0,0,0,.16); }
   .home-theme #view-meals .meal-total-summary,
   .home-theme #view-meals .meal-overview-row { border-color:rgba(216,160,113,.14); background:rgba(20,24,22,.86); color:#ead9c4; }
   .home-theme #view-meals .meal-total-summary strong { color:#dca77b; }
