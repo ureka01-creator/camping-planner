@@ -76,10 +76,11 @@ await import('./edit-icons.js?v=081');
 await import('./admin-access.js?v=083');
 await import('./home-memo.js?v=092');
 await import('./meal-item-notes.js?v=091');
+await import('./packing-item-notes.js?v=093');
 await import('./home-order.js?v=091');
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.6.3';
+if (version) version.textContent = 'Camping Planner v0.6.4';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
