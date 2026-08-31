@@ -58,6 +58,7 @@ await import('./home-meal-progress.js?v=065');
 await import('./meal-reorder.js?v=065');
 await import('./meal-edit-focus.js?v=066');
 await import('./items-hub.js?v=067');
+await import('./edit-icons.js?v=080');
 
 repairTripDatesIfNeeded().catch(error => {
   console.warn('Trip date repair skipped.', error);
