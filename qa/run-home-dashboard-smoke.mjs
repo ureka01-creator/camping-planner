@@ -102,6 +102,27 @@ try {
     };
   });
 
+  const visual=await page.evaluate(() => {
+    const foodSection=document.querySelector('#nextMealCard')?.closest('.home-section');
+    const foodTitle=foodSection?.querySelector('.home-food-heading h2');
+    const memberTitle=document.querySelector('.home-prep-member-section h2');
+    const foodCard=document.querySelector('#nextMealCard');
+    const next=document.querySelector('#nextMealCard .home-food-next');
+    if(!foodSection || !foodTitle || !memberTitle || !foodCard || !next) return null;
+    const sectionStyle=getComputedStyle(foodSection);
+    const foodTitleStyle=getComputedStyle(foodTitle);
+    const memberTitleStyle=getComputedStyle(memberTitle);
+    const cardStyle=getComputedStyle(foodCard);
+    const nextStyle=getComputedStyle(next);
+    return {
+      noSectionDivider: sectionStyle.borderTopWidth === '0px',
+      titleSizeAligned: foodTitleStyle.fontSize === memberTitleStyle.fontSize,
+      cardRadius: cardStyle.borderRadius,
+      cardBorder: cardStyle.borderTopWidth,
+      nextFlat: nextStyle.backgroundColor === 'rgba(0, 0, 0, 0)' && nextStyle.borderRadius === '0px'
+    };
+  });
+
   const todoHidden=await page.locator('#homeTodo').evaluate(node => getComputedStyle(node.closest('.home-section')).display === 'none');
 
   const prepMetric=await page.evaluate(() => {
@@ -122,10 +143,10 @@ try {
   const overflow=await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
 
   await page.screenshot({ path:'qa/home-dashboard-smoke-result.png', fullPage:true });
-  console.log(JSON.stringify({tripId,layout,food,todoHidden,prepMetric,heroCaption,overflow,errors,networkWarnings},null,2));
+  console.log(JSON.stringify({tripId,layout,food,visual,todoHidden,prepMetric,heroCaption,overflow,errors,networkWarnings},null,2));
 
   const foodOk = food.kicker==='FOOD PLAN'
-    && food.title==='첫날 먹을 것'
+    && food.title==='식사 일정'
     && food.marks[0]==='1차'
     && food.marks[1]==='2차'
     && food.menus[0]==='QA 해산물 파티'
@@ -135,8 +156,9 @@ try {
     && food.firstStatus.includes('준비 완료')
     && food.secondStatus.includes('1개 남음')
     && !food.hasPercent;
+  const visualOk=Boolean(visual?.noSectionDivider && visual?.titleSizeAligned && visual?.cardBorder==='1px' && visual?.nextFlat);
 
-  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !foodOk || !prepMetric.aligned || !heroCaption.startsWith('전체 준비 ') || overflow) process.exitCode=1;
+  if(errors.length || !layout.heroBeforeMyPrep || !layout.myPrepBeforeMember || !layout.memberBeforeMeal || !layout.memberClass || !layout.mealClass || !todoHidden || !foodOk || !visualOk || !prepMetric.aligned || !heroCaption.startsWith('전체 준비 ') || overflow) process.exitCode=1;
 } catch(error) {
   console.error('HOME_DASHBOARD_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
