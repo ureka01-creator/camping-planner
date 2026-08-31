@@ -1,4 +1,4 @@
-import { dataAdapter } from './firebase.js';
+import { dataAdapter } from './firebase.js?v=064';
 import { toast, esc, uid } from './ui.js';
 
 const mealList = document.getElementById('mealList');
