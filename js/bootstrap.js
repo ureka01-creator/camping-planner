@@ -10,13 +10,21 @@ function isIsoDate(value) {
   return dt.getUTCFullYear() === y && dt.getUTCMonth() === m-1 && dt.getUTCDate() === d;
 }
 
-function firstData() {
-  return new Promise(resolve => {
+function firstData(timeoutMs = 6000) {
+  return new Promise((resolve, reject) => {
     let unsubscribe = null;
     let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      unsubscribe?.();
+      reject(new Error('Initial data timeout'));
+    }, timeoutMs);
+
     unsubscribe = dataAdapter.subscribe(data => {
       if (settled) return;
       settled = true;
+      window.clearTimeout(timer);
       queueMicrotask(() => unsubscribe?.());
       resolve(data);
     });
@@ -44,13 +52,14 @@ async function repairTripDatesIfNeeded() {
   });
 }
 
-try {
-  await repairTripDatesIfNeeded();
-} catch (error) {
-  console.error('Trip date repair failed; continuing with app boot.', error);
-}
+// Critical path: attach all UI/navigation handlers immediately.
+// Never wait for Firestore before the app becomes interactive.
+await import('./app.js?v=056');
+await import('./inline-meal-add.js?v=056');
+await import('./trip-settings.js?v=056');
+await import('./home-meal-progress.js?v=056');
 
-await import('./app.js?v=053');
-await import('./inline-meal-add.js?v=053');
-await import('./trip-settings.js?v=053');
-await import('./home-meal-progress.js?v=053');
+// Non-critical data repair runs after the UI is already interactive.
+repairTripDatesIfNeeded().catch(error => {
+  console.warn('Trip date repair skipped.', error);
+});
