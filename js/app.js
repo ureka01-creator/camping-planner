@@ -1,4 +1,4 @@
-import { dataAdapter, DATA_MODE } from './firebase.js';
+import { dataAdapter, DATA_MODE } from './firebase.js?v=064';
 import { toast, openModal, closeModal, esc, uid } from './ui.js';
 
 const state = {
