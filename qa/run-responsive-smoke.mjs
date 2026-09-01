@@ -20,6 +20,13 @@ for (const c of cases) {
     else errors.push(text);
   });
 
+  const dismissAuthGateForLayoutSmoke = async () => {
+    await page.evaluate(() => {
+      document.querySelectorAll('.google-login-backdrop').forEach(node => node.remove());
+      document.body.classList.remove('google-login-open');
+    });
+  };
+
   try {
     await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     const landing = page.locator('.camp-landing');
@@ -43,18 +50,24 @@ for (const c of cases) {
 
     await check('home');
 
+    // This smoke test validates view navigation independently of the real Google OAuth gate.
+    // OAuth itself has a separate auth stability smoke check in the workflow.
+    await dismissAuthGateForLayoutSmoke();
     await page.locator('[data-nav="meals"]').click();
     await page.locator('#view-meals.active').waitFor({ state: 'visible', timeout: 5000 });
     await check('meals');
 
+    await dismissAuthGateForLayoutSmoke();
     await page.locator('[data-nav="items"]').click();
     await page.locator('#view-items.active').waitFor({ state: 'visible', timeout: 5000 });
     await check('items');
 
+    await dismissAuthGateForLayoutSmoke();
     await page.locator('[data-nav="settlement"]').click();
     await page.locator('#view-settlement.active').waitFor({ state: 'visible', timeout: 5000 });
     await check('settlement');
 
+    await dismissAuthGateForLayoutSmoke();
     await page.locator('#settingsShortcut').click();
     await page.locator('#view-settings.active').waitFor({ state: 'visible', timeout: 5000 });
     await check('settings');
