@@ -1,6 +1,6 @@
-import './bgm.js?v=4';
+import './bgm.js?v=5';
 
-// QA marker: landing cover + BGM pause-on-cover v0.9.5.
+// QA marker: landing cover + BGM restart-from-beginning v0.9.6.
 const COVER_CACHE_KEY = 'camp:landingCover:v9';
 const COVER_PARTS = [
   './assets/cover-v2.part0?v=2',
@@ -124,8 +124,8 @@ function waitForImage(image, src, timeoutMs = 2500) {
 
 async function openLanding() {
   // The landing/poster screen is intentionally silent. This is a temporary
-  // pause only: the user's BGM on/off preference is preserved, and the next
-  // tap that enters the planner resumes playback through the normal gesture path.
+  // pause only: the user's BGM on/off preference is preserved. The BGM module
+  // also rewinds here, so the next planner entry starts the track from 0:00.
   window.CampingBgm?.pause?.();
 
   if (overlay instanceof HTMLElement && overlay.isConnected) return;
