@@ -25,7 +25,7 @@ jobs:
           npm install --no-save playwright@1.55.0
           npx playwright install chromium --with-deps
 
-      - name: Resolve official Pixabay MP3 URL
+      - name: Capture official Pixabay MP3
         shell: bash
         run: |
           set -euo pipefail
@@ -33,50 +33,132 @@ jobs:
           const { chromium } = require('playwright');
           const fs = require('fs');
 
+          const PAGE_URL = 'https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/';
+          const OUT = 'assets/midnight-dreaming-lofi.mp3';
+          const candidates = new Set();
+          let captured = false;
+
+          function looksLikeAudio(url, contentType = '') {
+            return /audio\//i.test(contentType) || /\.mp3(?:$|[?#])/i.test(url) || /cdn\.pixabay\.com\/download\/audio/i.test(url);
+          }
+
           (async () => {
+            fs.mkdirSync('assets', { recursive: true });
             const browser = await chromium.launch({ headless: true });
-            const page = await browser.newPage({
-              userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'
+            const context = await browser.newContext({
+              userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+              locale: 'en-US'
             });
-            await page.goto('https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/', {
-              waitUntil: 'domcontentloaded', timeout: 60000
+            const page = await context.newPage();
+
+            page.on('request', request => {
+              const url = request.url();
+              if (looksLikeAudio(url)) candidates.add(url);
             });
-            await page.waitForTimeout(3500);
 
-            const contentUrl = await page.evaluate(() => {
-              const scripts = [...document.querySelectorAll('script[type="application/ld+json"]')];
-              const find = value => {
-                if (!value) return null;
-                if (Array.isArray(value)) {
-                  for (const entry of value) {
-                    const hit = find(entry);
-                    if (hit) return hit;
-                  }
-                  return null;
+            page.on('response', async response => {
+              if (captured) return;
+              const url = response.url();
+              const contentType = response.headers()['content-type'] || '';
+              if (!looksLikeAudio(url, contentType)) return;
+              candidates.add(url);
+              try {
+                const body = await response.body();
+                if (body.length > 100000) {
+                  fs.writeFileSync(OUT, body);
+                  captured = true;
+                  console.log(`Captured audio response: ${body.length} bytes`);
                 }
-                if (typeof value === 'object') {
-                  if (typeof value.contentUrl === 'string' && value.contentUrl) return value.contentUrl;
-                  for (const entry of Object.values(value)) {
-                    const hit = find(entry);
-                    if (hit) return hit;
-                  }
-                }
-                return null;
-              };
+              } catch (_) {}
+            });
 
-              for (const script of scripts) {
-                try {
-                  const hit = find(JSON.parse(script.textContent || '{}'));
-                  if (hit) return hit;
-                } catch (_) {}
+            const nav = await page.goto(PAGE_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            console.log(`Pixabay page status: ${nav?.status()} title: ${await page.title()}`);
+            await page.waitForTimeout(3000);
+
+            const discovered = await page.evaluate(() => {
+              const urls = new Set();
+              document.querySelectorAll('audio, audio source').forEach(el => {
+                for (const value of [el.src, el.currentSrc, el.getAttribute?.('src')]) {
+                  if (value) urls.add(value);
+                }
+              });
+              document.querySelectorAll('a[href]').forEach(el => {
+                const href = el.href || '';
+                if (/\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(href)) urls.add(href);
+              });
+              performance.getEntriesByType('resource').forEach(entry => {
+                if (/\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(entry.name)) urls.add(entry.name);
+              });
+              const html = document.documentElement.innerHTML;
+              for (const match of html.matchAll(/https?:\\?\/\\?\/[^"'<>\s]+(?:\.mp3|download\/audio)[^"'<>\s]*/gi)) {
+                urls.add(match[0].replaceAll('\\u0026', '&').replaceAll('\\/', '/'));
               }
-              return null;
+              return [...urls];
             });
+            discovered.forEach(url => candidates.add(url));
+            console.log(`Discovered ${candidates.size} possible audio URLs before play.`);
 
+            if (!captured) {
+              try {
+                const playButton = page.getByRole('button', { name: /play/i }).first();
+                if (await playButton.count()) {
+                  await playButton.click({ timeout: 5000 });
+                  console.log('Clicked Pixabay play button.');
+                }
+              } catch (error) {
+                console.log(`Play button click skipped: ${error.message}`);
+              }
+
+              try {
+                await page.evaluate(() => {
+                  const audio = document.querySelector('audio');
+                  if (audio) return audio.play().catch(() => {});
+                });
+              } catch (_) {}
+              await page.waitForTimeout(6000);
+            }
+
+            const afterPlay = await page.evaluate(() => [
+              ...new Set([
+                ...[...document.querySelectorAll('audio, audio source')].flatMap(el => [el.src, el.currentSrc, el.getAttribute?.('src')]).filter(Boolean),
+                ...performance.getEntriesByType('resource').map(entry => entry.name).filter(name => /\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(name))
+              ])
+            ]);
+            afterPlay.forEach(url => candidates.add(url));
+            console.log(`Discovered ${candidates.size} possible audio URLs after play.`);
+
+            if (!captured) {
+              for (const url of candidates) {
+                if (!url || url.startsWith('blob:')) continue;
+                try {
+                  const response = await context.request.get(url, {
+                    headers: { Referer: PAGE_URL, Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' },
+                    timeout: 60000
+                  });
+                  const body = await response.body();
+                  const type = response.headers()['content-type'] || '';
+                  console.log(`Candidate fetch ${response.status()} ${type} ${body.length} bytes`);
+                  if (response.ok() && body.length > 100000 && looksLikeAudio(url, type)) {
+                    fs.writeFileSync(OUT, body);
+                    captured = true;
+                    break;
+                  }
+                } catch (error) {
+                  console.log(`Candidate fetch failed: ${error.message}`);
+                }
+              }
+            }
+
+            if (!captured) {
+              console.log('Body preview:', (await page.locator('body').innerText()).slice(0, 700).replace(/\s+/g, ' '));
+            }
             await browser.close();
-            if (!contentUrl) throw new Error('Pixabay MP3 contentUrl not found');
-            fs.writeFileSync('/tmp/bgm-url.txt', contentUrl);
-            console.log('Resolved official Pixabay audio URL.');
+
+            if (!captured || !fs.existsSync(OUT)) throw new Error('Could not capture the selected Pixabay MP3');
+            const size = fs.statSync(OUT).size;
+            if (size < 100000) throw new Error(`Captured file too small: ${size}`);
+            console.log(`Saved selected BGM: ${size} bytes`);
           })().catch(error => {
             console.error(error);
             process.exit(1);
@@ -84,20 +166,6 @@ jobs:
           JS
           node resolve-bgm.cjs
           rm -f resolve-bgm.cjs
-
-      - name: Download and validate MP3
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p assets
-          URL="$(cat /tmp/bgm-url.txt)"
-          curl -fL --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o assets/midnight-dreaming-lofi.mp3 "$URL"
-          test -s assets/midnight-dreaming-lofi.mp3
-          SIZE="$(wc -c < assets/midnight-dreaming-lofi.mp3)"
-          if [ "$SIZE" -lt 100000 ]; then
-            echo "Downloaded file is unexpectedly small: $SIZE bytes"
-            exit 1
-          fi
           file assets/midnight-dreaming-lofi.mp3
 
       - name: Commit BGM asset
