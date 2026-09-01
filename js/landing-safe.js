@@ -1,20 +1,37 @@
 import './bgm.js?v=5';
 
-// Safari repair: load the checksum-verified JPEG directly.
-// assets/cover-main-approved.jpg is 18,857 bytes / 480x720.
-const COVER_SRC = './assets/cover-main-approved.jpg?v=6';
+// v1.0.8: HQ poster, full composition, iPhone Safari scroll lock.
+const COVER_SRC = './assets/cover-main-approved.jpg?v=8';
 
 let overlay = null;
 let closing = false;
+let lockedScrollY = 0;
+
+function lockViewport() {
+  lockedScrollY = window.scrollY || window.pageYOffset || 0;
+  document.documentElement.classList.add('landing-open');
+  document.body.classList.add('landing-open');
+  document.body.style.setProperty('--landing-scroll-y', `-${lockedScrollY}px`);
+}
+
+function unlockViewport() {
+  document.documentElement.classList.remove('landing-open');
+  document.body.classList.remove('landing-open');
+  document.body.style.removeProperty('--landing-scroll-y');
+  window.scrollTo(0, lockedScrollY);
+}
 
 async function hydratePoster(root) {
   const image = root?.querySelector?.('.camp-landing-poster');
+  const backdrop = root?.querySelector?.('.camp-landing-backdrop');
   const loading = root?.querySelector?.('.camp-landing-loading');
   const hint = root?.querySelector?.('.camp-landing-hint');
   if (!(image instanceof HTMLImageElement)) return;
 
   image.removeAttribute('src');
+  if (backdrop instanceof HTMLImageElement) backdrop.removeAttribute('src');
   image.classList.remove('loaded');
+  backdrop?.classList.remove('loaded');
   hint?.classList.remove('loaded');
   loading?.classList.remove('hidden');
   if (loading) loading.textContent = '메인 이미지를 불러오는 중…';
@@ -27,16 +44,18 @@ async function hydratePoster(root) {
         settled = true;
         image.onload = null;
         image.onerror = null;
-        ok ? resolve() : reject(new Error('verified JPEG file decode failed'));
+        ok ? resolve() : reject(new Error('HQ JPEG decode failed'));
       };
       image.onload = () => done(true);
       image.onerror = () => done(false);
       image.src = COVER_SRC;
+      if (backdrop instanceof HTMLImageElement) backdrop.src = COVER_SRC;
       if (image.complete && image.naturalWidth > 0) done(true);
     });
 
     if (!root?.isConnected) return;
     image.classList.add('loaded');
+    backdrop?.classList.add('loaded');
     loading?.classList.add('hidden');
     hint?.classList.add('loaded');
     root.dataset.coverWidth = String(image.naturalWidth || 0);
@@ -69,7 +88,8 @@ function closeLanding() {
   if (closing) return;
   closing = true;
   activateHome();
-  document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
+  document.body.classList.remove('landing-boot', 'landing-cover-active');
+  unlockViewport();
 
   const current = overlay instanceof HTMLElement ? overlay : document.querySelector('.camp-landing');
   overlay = null;
@@ -111,6 +131,7 @@ function makeLanding() {
   node.setAttribute('aria-label', '캠핑 플래너로 들어가기');
   node.innerHTML = `
     <span class="camp-landing-safe-frame">
+      <img class="camp-landing-backdrop" alt="" aria-hidden="true" />
       <img class="camp-landing-poster" alt="캠핑 메인 이미지" />
       <span class="camp-landing-loading">메인 이미지를 불러오는 중…</span>
     </span>
@@ -121,17 +142,25 @@ function makeLanding() {
 function openLanding() {
   window.CampingBgm?.pause?.();
   closing = false;
+  lockViewport();
 
   const existing = document.querySelector('.camp-landing');
   if (existing instanceof HTMLElement && existing.isConnected) {
     overlay = existing;
+    if (!overlay.querySelector('.camp-landing-backdrop')) {
+      const backdrop = document.createElement('img');
+      backdrop.className = 'camp-landing-backdrop';
+      backdrop.alt = '';
+      backdrop.setAttribute('aria-hidden', 'true');
+      overlay.querySelector('.camp-landing-safe-frame')?.prepend(backdrop);
+    }
   } else {
     overlay = makeLanding();
     document.body.prepend(overlay);
   }
 
   bindLanding(overlay);
-  document.body.classList.add('landing-open', 'landing-cover-active');
+  document.body.classList.add('landing-cover-active');
   document.body.classList.remove('landing-boot');
   hydratePoster(overlay);
 }
