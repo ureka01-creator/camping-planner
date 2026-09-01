@@ -24,12 +24,13 @@
     html, body { background:#070b0f; }
     body.landing-boot { overflow:hidden; }
     body.landing-boot #app { visibility:hidden; }
+    body.home-hydrating #view-home { visibility:hidden; }
   </style>
   <script type="importmap">
     {"imports":{"./js/firebase.js?v=064":"./js/firebase.js?v=087"}}
   </script>
 </head>
-<body class="landing-boot">
+<body class="landing-boot home-hydrating">
   <div id="app" class="app-shell">
     <header class="topbar">
       <div class="trip-heading">
@@ -162,7 +163,7 @@
         <div class="settings-card dev-card">
           <p id="connectionText" class="muted">Firebase 연결 중…</p>
         </div>
-        <p class="version">Camping Planner v1.0.3</p>
+        <p class="version">Camping Planner v1.0.4</p>
       </section>
     </main>
 
@@ -182,12 +183,12 @@
   </div>
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script type="module" src="./js/landing-safe.js?v=23"></script>
+  <script type="module" src="./js/landing-safe.js?v=24"></script>
   <script type="module" src="./js/google-login.js?v=105"></script>
   <script type="module" src="./js/entry-guard.js?v=055"></script>
   <script type="module" src="./js/bootstrap.js?v=123"></script>
   <script type="module" src="./js/first-entry.js?v=102"></script>
-  <script type="module" src="./js/home-dashboard.js?v=090"></script>
+  <script type="module" src="./js/home-dashboard.js?v=091"></script>
   <script type="module" src="./js/items-cost.js?v=068"></script>
   <script type="module" src="./js/payer-default.js?v=071"></script>
   <script type="module" src="./js/settlement.js?v=070"></script>
