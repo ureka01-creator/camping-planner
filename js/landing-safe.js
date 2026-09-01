@@ -1,8 +1,8 @@
 import './bgm.js?v=5';
 
 // v1.0.7 Safari repair: load the verified JPEG as a normal image file.
-// No WebP, canvas patching, chunk assembly, or base64 hydration remains here.
-const COVER_SRC = './assets/cover-main-approved.jpg?v=4';
+// The JPEG is checksum-verified in CI before it is committed.
+const COVER_SRC = './assets/cover-main-approved.jpg?v=5';
 
 let overlay = null;
 let closing = false;
