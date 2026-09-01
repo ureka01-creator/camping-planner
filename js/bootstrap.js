@@ -1,4 +1,4 @@
-// Deployment marker: refresh-stable home cards + participant terminology v1.0.4
+// Deployment marker: static-first landing + decoupled Google auth v1.0.5
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -100,7 +100,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v1.0.4';
+if (version) version.textContent = 'Camping Planner v1.0.5';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
