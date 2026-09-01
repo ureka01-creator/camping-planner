@@ -1,0 +1,182 @@
+name: Fix selected BGM exact track
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-selected-bgm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-bgm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install browser and media tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium --with-deps
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Capture exact Midnight Dreaming player audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/fix-bgm.cjs <<'JS'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const cp = require('child_process');
+
+          const PAGE_URL = 'https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/';
+          const EXPECTED_TITLE = 'Midnight Dreaming / Lofi';
+          const OUT = 'assets/midnight-dreaming-lofi.mp3';
+
+          function durationOf(path) {
+            try {
+              return Number(cp.execFileSync('ffprobe', [
+                '-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',path
+              ], { encoding:'utf8' }).trim());
+            } catch (_) { return NaN; }
+          }
+
+          (async () => {
+            fs.mkdirSync('assets', { recursive:true });
+            const browser = await chromium.launch({ headless:true });
+            const context = await browser.newContext({
+              userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+              locale:'en-US'
+            });
+            const page = await context.newPage();
+            const network = [];
+            let capture = false;
+
+            page.on('response', response => {
+              if (!capture) return;
+              const url = response.url();
+              const type = response.headers()['content-type'] || '';
+              if (/audio\//i.test(type) || /\.mp3(?:$|[?#])/i.test(url) || /cdn\.pixabay\.com\/download\/audio/i.test(url)) {
+                network.push(url);
+              }
+            });
+
+            const nav = await page.goto(PAGE_URL, { waitUntil:'domcontentloaded', timeout:60000 });
+            if (!nav || !nav.ok()) throw new Error(`Pixabay page status ${nav?.status()}`);
+            await page.waitForTimeout(3500);
+
+            const pageTitle = await page.locator('body').innerText();
+            if (!pageTitle.includes(EXPECTED_TITLE)) throw new Error('Expected track title not found on page');
+
+            await page.evaluate(() => {
+              document.querySelectorAll('audio').forEach(a => { try { a.pause(); a.currentTime = 0; } catch (_) {} });
+              performance.clearResourceTimings?.();
+            });
+
+            capture = true;
+            const clicked = await page.evaluate((expectedTitle) => {
+              const all = [...document.querySelectorAll('*')];
+              const titleEl = all.find(el => el.children.length === 0 && (el.textContent || '').trim() === expectedTitle);
+              if (!titleEl) return { ok:false, reason:'title element missing' };
+
+              let node = titleEl;
+              for (let depth=0; node && depth<12; depth++, node=node.parentElement) {
+                const text = (node.innerText || '').replace(/\s+/g,' ').trim();
+                if (!text.includes(expectedTitle)) continue;
+                const buttons = [...node.querySelectorAll('button')];
+                if (!buttons.length) continue;
+                const play = buttons.find(btn => /play|재생/i.test(`${btn.getAttribute('aria-label') || ''} ${btn.title || ''} ${btn.textContent || ''}`)) || buttons[0];
+                play.click();
+                return { ok:true, depth, label:play.getAttribute('aria-label') || '', scopeText:text.slice(0,220) };
+              }
+              return { ok:false, reason:'track-scoped play button missing' };
+            }, EXPECTED_TITLE);
+            console.log('Exact-player click:', clicked);
+            if (!clicked.ok) throw new Error(`Could not click exact track player: ${clicked.reason}`);
+
+            await page.waitForTimeout(5000);
+
+            const media = await page.evaluate(() => [...document.querySelectorAll('audio')].map(a => ({
+              src:a.currentSrc || a.src || '',
+              duration:Number.isFinite(a.duration) ? a.duration : null,
+              paused:a.paused
+            })).filter(x => x.src));
+            console.log('Audio elements after exact click:', media);
+
+            const candidates = [];
+            for (const entry of media) {
+              if (entry.duration && entry.duration >= 120 && entry.duration <= 130) candidates.push(entry.src);
+            }
+            for (const url of network) candidates.push(url);
+            const perf = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(name => /\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(name)));
+            for (const url of perf) candidates.push(url);
+
+            const unique = [...new Set(candidates)].filter(url => /^https?:/i.test(url));
+            console.log(`Exact-click candidate URLs: ${unique.length}`);
+
+            let saved = false;
+            for (let i=0; i<unique.length; i++) {
+              const url = unique[i];
+              try {
+                const response = await context.request.get(url, {
+                  headers:{ Referer:PAGE_URL, Accept:'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' },
+                  timeout:60000
+                });
+                if (!response.ok()) continue;
+                const body = await response.body();
+                if (body.length < 100000) continue;
+                const tmp = `/tmp/bgm-${i}.mp3`;
+                fs.writeFileSync(tmp, body);
+                const duration = durationOf(tmp);
+                console.log(`Candidate ${i}: ${body.length} bytes, ${duration.toFixed?.(3)} sec`);
+                if (duration >= 124 && duration <= 129) {
+                  fs.copyFileSync(tmp, OUT);
+                  saved = true;
+                  console.log(`Selected exact-duration candidate ${i}`);
+                  break;
+                }
+              } catch (error) {
+                console.log(`Candidate ${i} failed: ${error.message}`);
+              }
+            }
+
+            await browser.close();
+            if (!saved || !fs.existsSync(OUT)) throw new Error('Exact Midnight Dreaming audio could not be validated');
+            const finalDuration = durationOf(OUT);
+            const finalSize = fs.statSync(OUT).size;
+            if (!(finalDuration >= 124 && finalDuration <= 129)) throw new Error(`Unexpected final duration ${finalDuration}`);
+            console.log(`FINAL exact track: ${finalSize} bytes / ${finalDuration.toFixed(3)} sec`);
+          })().catch(error => { console.error(error); process.exit(1); });
+          JS
+          node /tmp/fix-bgm.cjs
+
+      - name: Bust audio caches and commit replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('js/bgm.js')
+          s=p.read_text()
+          s=s.replace("const SOURCE = './assets/midnight-dreaming-lofi.mp3';", "const SOURCE = './assets/midnight-dreaming-lofi.mp3?v=2';")
+          p.write_text(s)
+          p=Path('js/landing-safe.js')
+          s=p.read_text().replace("import './bgm.js?v=2';", "import './bgm.js?v=3';")
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text().replace('src="./js/landing-safe.js?v=10"','src="./js/landing-safe.js?v=11"').replace('src="./js/landing-safe.js?v=9"','src="./js/landing-safe.js?v=11"')
+          p.write_text(s)
+          PY
+          rm -f .github/workflows/fix-selected-bgm.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/midnight-dreaming-lofi.mp3 js/bgm.js js/landing-safe.js index.html .github/workflows/fix-selected-bgm.yml
+          git commit -m 'Replace BGM with exact Midnight Dreaming track'
+          git push
