@@ -2,12 +2,17 @@ import { dataAdapter } from './firebase.js?v=064';
 import { esc, toast } from './ui.js';
 
 const MEMBER_KEY = 'camp:myMemberId';
-const DISPLAY_NAME_KEY = 'camp:myName';
+const AUTH_UID_KEY = 'camp:authUid';
 const sharedEntry = new URLSearchParams(location.search).has('trip');
 
 let latestData = null;
 let pickerOpen = false;
 let pickerDismissedThisSession = false;
+
+function isSignedIn() {
+  try { return Boolean(localStorage.getItem(AUTH_UID_KEY)); }
+  catch (_) { return false; }
+}
 
 function members() {
   return Array.isArray(latestData?.members) ? latestData.members : [];
@@ -26,15 +31,6 @@ function resolveMyMember() {
   const id = localStorage.getItem(MEMBER_KEY) || '';
   const byId = candidates.find(member => member.id === id);
   if (byId) return byId;
-
-  // Migration fallback for older sessions where the team name was stored in camp:myName.
-  const legacyName = localStorage.getItem(DISPLAY_NAME_KEY) || '';
-  const byName = candidates.find(member => member.name === legacyName);
-  if (byName) {
-    localStorage.setItem(MEMBER_KEY, byName.id);
-    return byName;
-  }
-
   if (id) localStorage.removeItem(MEMBER_KEY);
   return null;
 }
@@ -104,8 +100,6 @@ function renderHomeCard() {
 }
 
 function saveMember(member) {
-  // Team selection controls preparation filtering only. Never overwrite the
-  // user's personal display name used by the board.
   localStorage.setItem(MEMBER_KEY, member.id);
   pickerDismissedThisSession = true;
   closePicker();
@@ -120,6 +114,7 @@ function closePicker() {
 }
 
 function openPicker({ required = false } = {}) {
+  if (!isSignedIn()) return;
   const candidates = identityMembers();
   if (pickerOpen || !latestData || !candidates.length) return;
   pickerOpen = true;
@@ -151,7 +146,7 @@ function openPicker({ required = false } = {}) {
 }
 
 function showAfterLanding() {
-  if (!sharedEntry || resolveMyMember() || pickerDismissedThisSession || pickerOpen) return;
+  if (!isSignedIn() || !sharedEntry || resolveMyMember() || pickerDismissedThisSession || pickerOpen) return;
   const landing = document.querySelector('.camp-landing');
   if (!landing) {
     openPicker({ required:true });
@@ -161,7 +156,7 @@ function showAfterLanding() {
   const observer = new MutationObserver(() => {
     if (document.querySelector('.camp-landing')) return;
     observer.disconnect();
-    if (!resolveMyMember() && !pickerDismissedThisSession) openPicker({ required:true });
+    if (isSignedIn() && !resolveMyMember() && !pickerDismissedThisSession) openPicker({ required:true });
   });
   observer.observe(document.body, { childList:true });
 }
@@ -209,14 +204,13 @@ document.addEventListener('click', event => {
 
   if (event.target.closest('[data-open-my-prep]')) {
     openMyPrep();
-    return;
-  }
-
-  if (event.target.closest('#saveMyNameBtn')) {
-    // Display-name changes must not alter the selected preparation team.
-    queueMicrotask(renderHomeCard);
   }
 }, true);
+
+window.addEventListener('camp:auth-ready', () => {
+  renderHomeCard();
+  showAfterLanding();
+});
 
 dataAdapter.subscribe(data => {
   latestData = data;
