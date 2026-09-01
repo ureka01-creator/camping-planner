@@ -17,12 +17,14 @@ try {
   await landing.waitFor({ state:'visible', timeout:10000 });
   await page.waitForFunction(() => {
     const image=document.querySelector('.camp-landing .camp-landing-poster');
-    return image instanceof HTMLImageElement && image.complete && image.naturalWidth>0;
-  }, null, {timeout:10000});
+    return image instanceof HTMLImageElement && image.complete && image.naturalWidth>0 && image.classList.contains('loaded');
+  }, null, {timeout:15000});
 
   const landingState=await page.evaluate(() => ({
     id:document.querySelector('.camp-landing')?.id || '',
     imageWidth:document.querySelector('.camp-landing .camp-landing-poster')?.naturalWidth || 0,
+    imageHeight:document.querySelector('.camp-landing .camp-landing-poster')?.naturalHeight || 0,
+    imageLoaded:document.querySelector('.camp-landing .camp-landing-poster')?.classList.contains('loaded') || false,
     version:document.querySelector('#view-settings .version')?.textContent || ''
   }));
 
@@ -49,7 +51,9 @@ try {
 
   console.log(JSON.stringify({landingState,authState,popupUrl,errors},null,2));
   const unauthorized=/허용 도메인|unauthorized-domain/.test(authState.status + ' ' + errors.join(' '));
-  if(landingState.imageWidth<=0 || !landingState.version.includes('v1.0.5') || authState.started!=='1' || unauthorized) process.exitCode=1;
+  const popupStarted = authState.started==='1';
+  const googlePopup = !popupUrl || /accounts\.google\.com|firebaseapp\.com/.test(popupUrl);
+  if(landingState.imageWidth<=0 || landingState.imageHeight<=0 || !landingState.imageLoaded || !landingState.version.includes('v1.0.7') || !popupStarted || !googlePopup || unauthorized) process.exitCode=1;
 } catch(error) {
   console.error('LIVE_ENTRY_AUTH_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
