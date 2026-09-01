@@ -52,6 +52,9 @@ async function startPlayback() {
 function pausePlayback() {
   if (!audio) return;
   audio.pause();
+  // Landing/poster is a hard break in the experience. When the planner is
+  // entered again, start the track from the beginning instead of resuming.
+  try { audio.currentTime = 0; } catch (_) {}
 }
 
 function ensureButton() {
