@@ -5,6 +5,12 @@ const context = await browser.newContext({ viewport:{ width:390, height:844 }, d
 const page = await context.newPage();
 const errors=[];
 const networkWarnings=[];
+const personalDisplayName='QA 개인이름';
+
+await page.addInitScript(name => {
+  localStorage.setItem('camp:myName', name);
+}, personalDisplayName);
+
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 page.on('console', msg => {
   if(msg.type()!=='error') return;
@@ -46,6 +52,7 @@ try {
     id:localStorage.getItem('camp:myMemberId'),
     name:localStorage.getItem('camp:myName')
   }));
+  const displayNamePreserved=stored.name===personalDisplayName;
 
   const card=page.locator('#myPrepQuickCard');
   await card.waitFor({ state:'visible', timeout:5000 });
@@ -66,11 +73,11 @@ try {
   const retainedCardText=(await page.locator('#myPrepQuickCard').textContent()) || '';
   const retained=retainedCardText.includes(firstName);
 
-  const result={teamCount,commonHidden,firstName,stored,cardHasTeam,myPrepAction,assigneeFilterActive,pickerAfterReload,retained,errors,networkWarnings};
+  const result={teamCount,commonHidden,firstName,stored,displayNamePreserved,cardHasTeam,myPrepAction,assigneeFilterActive,pickerAfterReload,retained,errors,networkWarnings};
   console.log(JSON.stringify(result,null,2));
   await page.screenshot({ path:'qa/first-entry-smoke-result.png', fullPage:true });
 
-  if(errors.length || teamCount<1 || !commonHidden || stored.id!==firstId || stored.name!==firstName || !cardHasTeam || !myPrepAction || !assigneeFilterActive || pickerAfterReload!==0 || !retained) process.exitCode=1;
+  if(errors.length || teamCount<1 || !commonHidden || stored.id!==firstId || !displayNamePreserved || !cardHasTeam || !myPrepAction || !assigneeFilterActive || pickerAfterReload!==0 || !retained) process.exitCode=1;
 } catch(error) {
   console.error('FIRST_ENTRY_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
