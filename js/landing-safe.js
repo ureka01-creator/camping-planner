@@ -1,7 +1,7 @@
 import './bgm.js?v=5';
 
-// QA marker: final approved poster + BGM restart-from-beginning v0.9.7.
-const COVER_CACHE_KEY = 'camp:landingCover:v9';
+// QA marker: textless date/location poster + BGM restart-from-beginning v0.9.8.
+const COVER_CACHE_KEY = 'camp:landingCover:v10';
 const COVER_PARTS = [
   './assets/cover-v2.part0?v=2',
   './assets/cover-v2.part1?v=2',
@@ -11,10 +11,9 @@ const COVER_PARTS = [
   './assets/cover-v2.part5?v=2',
   './assets/cover-v2.part6?v=2'
 ];
-const DATE_PATCH = './assets/date-fix-v2.b64?v=6';
+const CLEAN_META_PATCH = './assets/cover-clean-meta-patch.b64?v=1';
 
-// Do not keep a large generated data URL in Safari storage anymore.
-try { localStorage.removeItem(COVER_CACHE_KEY); } catch (_) {}
+try { localStorage.removeItem('camp:landingCover:v9'); } catch (_) {}
 document.body.classList.remove('landing-open', 'landing-cover-active');
 
 const style = document.createElement('style');
@@ -70,54 +69,9 @@ function loadImage(src) {
   });
 }
 
-function averageWarmText(imageData) {
-  const data = imageData.data;
-  let rSum = 0, gSum = 0, bSum = 0, count = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-    const lum = (r + g + b) / 3;
-    if (a > 220 && lum > 115 && r > g + 2 && g > b + 2 && r - b < 90) {
-      rSum += r; gSum += g; bSum += b; count++;
-    }
-  }
-  return count ? [rSum / count, gSum / count, bSum / count] : null;
-}
-
-function matchPatchToneToSecondLine(patchImage, baseCtx, scaleX, scaleY) {
-  const patchCanvas = document.createElement('canvas');
-  patchCanvas.width = patchImage.naturalWidth;
-  patchCanvas.height = patchImage.naturalHeight;
-  const patchCtx = patchCanvas.getContext('2d', { willReadFrequently:true });
-  if (!patchCtx) return patchImage;
-  patchCtx.drawImage(patchImage, 0, 0);
-
-  const patchData = patchCtx.getImageData(0, 0, patchCanvas.width, patchCanvas.height);
-  const sourceTone = averageWarmText(patchData);
-  const targetX = Math.round(717 * scaleX);
-  const targetY = Math.round(735 * scaleY);
-  const targetW = Math.max(1, Math.round(135 * scaleX));
-  const targetH = Math.max(1, Math.round(31 * scaleY));
-  const targetTone = averageWarmText(baseCtx.getImageData(targetX, targetY, targetW, targetH));
-  if (!sourceTone || !targetTone) return patchCanvas;
-
-  const ratio = targetTone.map((value, index) => Math.max(.88, Math.min(1.18, value / sourceTone[index])));
-  const data = patchData.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-    const lum = (r + g + b) / 3;
-    const isWarmGlyph = a > 220 && lum > 105 && r > g + 3 && g > b + 2 && r - b < 105;
-    if (!isWarmGlyph) continue;
-    data[i] = Math.min(255, Math.round(r * ratio[0]));
-    data[i + 1] = Math.min(255, Math.round(g * ratio[1]));
-    data[i + 2] = Math.min(255, Math.round(b * ratio[2]));
-  }
-  patchCtx.putImageData(patchData, 0, 0);
-  return patchCanvas;
-}
-
-async function applyVerifiedDateFix(baseSrc) {
-  const response = await fetch(DATE_PATCH, { cache:'force-cache' });
-  if (!response.ok) throw new Error('date patch load failed');
+async function applyCleanMetaPatch(baseSrc) {
+  const response = await fetch(CLEAN_META_PATCH, { cache:'force-cache' });
+  if (!response.ok) throw new Error('clean cover patch load failed');
   const patchBase64 = (await response.text()).trim();
   const [baseImage, patchImage] = await Promise.all([
     loadImage(baseSrc),
@@ -127,15 +81,23 @@ async function applyVerifiedDateFix(baseSrc) {
   const canvas = document.createElement('canvas');
   canvas.width = baseImage.naturalWidth;
   canvas.height = baseImage.naturalHeight;
-  const ctx = canvas.getContext('2d', { willReadFrequently:true });
+  const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas unavailable');
   ctx.drawImage(baseImage, 0, 0);
 
-  const scaleX = canvas.width / 1024;
-  const scaleY = canvas.height / 1536;
-  const toneMatchedPatch = matchPatchToneToSecondLine(patchImage, ctx, scaleX, scaleY);
-  ctx.drawImage(toneMatchedPatch, 717 * scaleX, 697 * scaleY, 135 * scaleX, 33 * scaleY);
-  return canvas.toDataURL('image/webp', .96);
+  // This patch was sampled from the approved poster itself. It replaces only
+  // the right-side date/time + campground name/address block. The handwritten
+  // title, separator dash, stars, tent, copy and all other artwork stay intact.
+  const scaleX = canvas.width / 1023;
+  const scaleY = canvas.height / 1537;
+  ctx.drawImage(
+    patchImage,
+    570 * scaleX,
+    690 * scaleY,
+    400 * scaleX,
+    290 * scaleY
+  );
+  return canvas.toDataURL('image/webp', .94);
 }
 
 function loadCoverSrc() {
@@ -146,7 +108,7 @@ function loadCoverSrc() {
       return (await response.text()).trim();
     }))
       .then(parts => `data:image/webp;base64,${parts.join('')}`)
-      .then(baseSrc => applyVerifiedDateFix(baseSrc));
+      .then(baseSrc => applyCleanMetaPatch(baseSrc));
   }
   return coverPromise;
 }
@@ -200,8 +162,6 @@ function waitForImage(image, src, timeoutMs = 2500) {
 }
 
 async function openLanding() {
-  // Landing/poster stays silent and rewinds the BGM. The user's mute preference
-  // is preserved, so the next planner entry starts from 0:00 only when enabled.
   window.CampingBgm?.pause?.();
 
   if (overlay instanceof HTMLElement && overlay.isConnected) return;
