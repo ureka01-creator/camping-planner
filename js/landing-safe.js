@@ -1,6 +1,6 @@
 import './bgm.js?v=5';
 
-// Final approved landing poster v1.0.1 — single image, full-bleed.
+// Final approved landing poster v1.0.2 — single image, full-bleed.
 const COVER_SRC = './assets/cover-main-v1.webp?v=1';
 
 document.body.classList.remove('landing-open', 'landing-cover-active');
@@ -42,10 +42,17 @@ style.textContent = `
 document.head.appendChild(style);
 
 let overlay = null;
-let entering = false;
+let suppressClickUntil = 0;
 
 function activateHome() {
   try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
+
+  const homeButton = document.querySelector('[data-nav="home"]');
+  if (homeButton && typeof homeButton.onclick === 'function') {
+    homeButton.click();
+    window.dispatchEvent(new CustomEvent('camp:landing-enter-home'));
+    return;
+  }
 
   document.querySelectorAll('.view').forEach(view => {
     view.classList.toggle('active', view.dataset.view === 'home');
@@ -53,44 +60,35 @@ function activateHome() {
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.nav === 'home');
   });
-
-  const app = document.getElementById('app');
-  app?.classList.add('home-theme');
-  const theme = document.querySelector('meta[name="theme-color"]');
-  if (theme) theme.content = '#071018';
-  try { window.scrollTo({ top:0, behavior:'instant' }); } catch (_) { window.scrollTo(0, 0); }
+  document.getElementById('app')?.classList.add('home-theme');
   window.dispatchEvent(new CustomEvent('camp:landing-enter-home'));
 }
 
-function closeLanding({ goHome = false } = {}) {
-  if (goHome && entering) return;
-  if (goHome) {
-    entering = true;
-    activateHome();
-  }
+function closeLanding() {
+  activateHome();
 
-  const current = overlay instanceof HTMLElement ? overlay : document.querySelector('.camp-landing');
-  overlay = null;
-
-  // Reveal the planner immediately; the poster fades out above it.
   document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
 
-  if (!(current instanceof HTMLElement)) {
-    entering = false;
-    return;
-  }
+  if (!(overlay instanceof HTMLElement)) return;
 
+  const current = overlay;
+  overlay = null;
+  suppressClickUntil = Date.now() + 300;
   current.classList.add('is-exiting');
-  window.setTimeout(() => {
-    current.remove();
-    entering = false;
-  }, 180);
+  window.setTimeout(() => current.remove(), 180);
 }
 
-function enterPlanner(event) {
+function closeFromInput(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
-  closeLanding({ goHome:true });
+  closeLanding();
+}
+
+function releaseSuppressionForFreshInput(event) {
+  if (Date.now() >= suppressClickUntil) return;
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('.camp-landing')) return;
+  suppressClickUntil = 0;
 }
 
 function waitForImage(image, src, timeoutMs = 3500) {
@@ -116,13 +114,12 @@ async function openLanding() {
   window.CampingBgm?.pause?.();
 
   if (overlay instanceof HTMLElement && overlay.isConnected) return;
-  entering = false;
 
   overlay = document.createElement('div');
   overlay.className = 'camp-landing';
   overlay.setAttribute('role', 'button');
   overlay.setAttribute('tabindex', '0');
-  overlay.setAttribute('aria-label', '캠핑 플래너로 들어가기');
+  overlay.setAttribute('aria-label', '캠핑 플래너로 돌아가기');
   overlay.innerHTML = `
     <span class="camp-landing-safe-frame">
       <img class="camp-landing-poster" alt="캠핑 메인 이미지" />
@@ -130,14 +127,19 @@ async function openLanding() {
     </span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
-  // iOS Safari is more reliable when entry is handled on release/click,
-  // not on pointerdown/touchstart.
-  overlay.addEventListener('pointerup', enterPlanner, { passive:false });
-  overlay.addEventListener('touchend', enterPlanner, { passive:false });
-  overlay.addEventListener('click', enterPlanner);
+  // iPhone Safari: finish the tap first, then close. Closing on pointerdown
+  // removed the poster before Home navigation could update app.js state.
+  overlay.addEventListener('pointerup', closeFromInput, { passive:false });
+  overlay.addEventListener('click', event => {
+    if (Date.now() < suppressClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    closeFromInput(event);
+  });
   overlay.addEventListener('keydown', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    enterPlanner(event);
+    closeFromInput(event);
   });
 
   document.body.prepend(overlay);
@@ -160,15 +162,14 @@ async function openLanding() {
   } catch (error) {
     window.clearTimeout(statusTimer);
     console.warn('Landing cover failed.', error);
-    closeLanding({ goHome:false });
+    closeLanding();
   }
 }
 
-window.CampingLandingSafe = {
-  open:openLanding,
-  close:() => closeLanding({ goHome:false }),
-  enter:() => closeLanding({ goHome:true })
-};
+window.CampingLandingSafe = { open:openLanding, close:closeLanding };
+
+window.addEventListener('pointerdown', releaseSuppressionForFreshInput, true);
+window.addEventListener('touchstart', releaseSuppressionForFreshInput, { capture:true, passive:true });
 
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
@@ -177,6 +178,14 @@ document.addEventListener('click', event => {
   event.preventDefault();
   event.stopImmediatePropagation();
   openLanding();
+}, true);
+
+document.addEventListener('click', event => {
+  if (Date.now() >= suppressClickUntil) return;
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('.camp-landing')) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
 }, true);
 
 openLanding();
