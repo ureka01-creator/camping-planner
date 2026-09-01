@@ -49,6 +49,11 @@ async function startPlayback() {
   }
 }
 
+function pausePlayback() {
+  if (!audio) return;
+  audio.pause();
+}
+
 function ensureButton() {
   const actions = document.querySelector('.topbar-actions');
   if (!actions) return null;
@@ -135,6 +140,7 @@ document.addEventListener('visibilitychange', () => {
 
 window.CampingBgm = {
   play: startPlayback,
+  pause: pausePlayback,
   mute() {
     writeMuted(true);
     if (audio) { audio.muted = true; audio.pause(); }
