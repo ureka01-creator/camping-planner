@@ -74,10 +74,7 @@ function ensureAdminCard() {
   card.id = 'adminAccessCard';
   card.className = 'settings-card admin-access-card';
   card.innerHTML = `
-    <div class="admin-access-head">
-      <div><strong>관리자 권한</strong><p id="adminAccessStatus" class="muted"></p></div>
-      <span id="adminAccessBadge" class="admin-access-badge"></span>
-    </div>
+    <strong>관리자</strong>
     <button id="adminAccessBtn" type="button" class="secondary-wide"></button>`;
   devCard?.before(card);
   if (!devCard) settings.appendChild(card);
@@ -129,18 +126,12 @@ function applyAdminUi() {
     if (button.hidden === admin) button.hidden = !admin;
   });
 
-  setText(document.getElementById('adminAccessStatus'), admin
-    ? '캠핑 일정과 참여자/팀을 수정할 수 있어.'
-    : '일반 사용자는 일정과 참여자/팀을 조회만 할 수 있어.');
-  setText(document.getElementById('adminAccessBadge'), admin ? '관리자' : '읽기 전용');
-  setText(document.getElementById('adminAccessBtn'), admin ? '관리자 모드 종료' : '관리자 인증');
+  setText(document.getElementById('adminAccessBtn'), admin ? '관리자 해제' : '관리자 인증');
 }
 
 const style = document.createElement('style');
 style.textContent = `
-  .admin-access-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-  .admin-access-head p { margin:6px 0 0; }
-  .admin-access-badge { flex:none; padding:5px 9px; border:1px solid rgba(210,145,95,.32); border-radius:999px; color:#d2915f; font-size:12px; font-weight:700; }
+  .admin-access-card > strong { display:block; margin-bottom:14px; }
   .user-mode #tripStartDateInput:disabled,
   .user-mode #tripEndDateInput:disabled { opacity:.72; -webkit-text-fill-color:currentColor; }
   .user-mode [data-edit-member],
