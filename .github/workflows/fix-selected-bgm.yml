@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/fix-bgm.cjs <<'JS'
+          cat > fix-bgm.cjs <<'JS'
           const { chromium } = require('playwright');
           const fs = require('fs');
           const cp = require('child_process');
@@ -63,17 +63,14 @@ jobs:
               if (!capture) return;
               const url = response.url();
               const type = response.headers()['content-type'] || '';
-              if (/audio\//i.test(type) || /\.mp3(?:$|[?#])/i.test(url) || /cdn\.pixabay\.com\/download\/audio/i.test(url)) {
-                network.push(url);
-              }
+              if (/audio\//i.test(type) || /\.mp3(?:$|[?#])/i.test(url) || /cdn\.pixabay\.com\/download\/audio/i.test(url)) network.push(url);
             });
 
             const nav = await page.goto(PAGE_URL, { waitUntil:'domcontentloaded', timeout:60000 });
             if (!nav || !nav.ok()) throw new Error(`Pixabay page status ${nav?.status()}`);
             await page.waitForTimeout(3500);
-
-            const pageTitle = await page.locator('body').innerText();
-            if (!pageTitle.includes(EXPECTED_TITLE)) throw new Error('Expected track title not found on page');
+            const bodyText = await page.locator('body').innerText();
+            if (!bodyText.includes(EXPECTED_TITLE)) throw new Error('Expected track title not found on page');
 
             await page.evaluate(() => {
               document.querySelectorAll('audio').forEach(a => { try { a.pause(); a.currentTime = 0; } catch (_) {} });
@@ -85,7 +82,6 @@ jobs:
               const all = [...document.querySelectorAll('*')];
               const titleEl = all.find(el => el.children.length === 0 && (el.textContent || '').trim() === expectedTitle);
               if (!titleEl) return { ok:false, reason:'title element missing' };
-
               let node = titleEl;
               for (let depth=0; node && depth<12; depth++, node=node.parentElement) {
                 const text = (node.innerText || '').replace(/\s+/g,' ').trim();
@@ -100,7 +96,6 @@ jobs:
             }, EXPECTED_TITLE);
             console.log('Exact-player click:', clicked);
             if (!clicked.ok) throw new Error(`Could not click exact track player: ${clicked.reason}`);
-
             await page.waitForTimeout(5000);
 
             const media = await page.evaluate(() => [...document.querySelectorAll('audio')].map(a => ({
@@ -111,13 +106,10 @@ jobs:
             console.log('Audio elements after exact click:', media);
 
             const candidates = [];
-            for (const entry of media) {
-              if (entry.duration && entry.duration >= 120 && entry.duration <= 130) candidates.push(entry.src);
-            }
+            for (const entry of media) if (entry.duration && entry.duration >= 120 && entry.duration <= 130) candidates.push(entry.src);
             for (const url of network) candidates.push(url);
             const perf = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(name => /\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(name)));
             for (const url of perf) candidates.push(url);
-
             const unique = [...new Set(candidates)].filter(url => /^https?:/i.test(url));
             console.log(`Exact-click candidate URLs: ${unique.length}`);
 
@@ -125,10 +117,7 @@ jobs:
             for (let i=0; i<unique.length; i++) {
               const url = unique[i];
               try {
-                const response = await context.request.get(url, {
-                  headers:{ Referer:PAGE_URL, Accept:'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' },
-                  timeout:60000
-                });
+                const response = await context.request.get(url, { headers:{ Referer:PAGE_URL, Accept:'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' }, timeout:60000 });
                 if (!response.ok()) continue;
                 const body = await response.body();
                 if (body.length < 100000) continue;
@@ -155,7 +144,8 @@ jobs:
             console.log(`FINAL exact track: ${finalSize} bytes / ${finalDuration.toFixed(3)} sec`);
           })().catch(error => { console.error(error); process.exit(1); });
           JS
-          node /tmp/fix-bgm.cjs
+          node fix-bgm.cjs
+          rm -f fix-bgm.cjs
 
       - name: Bust audio caches and commit replacement
         shell: bash
