@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/resolve-bgm.cjs <<'JS'
+          cat > resolve-bgm.cjs <<'JS'
           const { chromium } = require('playwright');
           const fs = require('fs');
 
@@ -82,7 +82,8 @@ jobs:
             process.exit(1);
           });
           JS
-          node /tmp/resolve-bgm.cjs
+          node resolve-bgm.cjs
+          rm -f resolve-bgm.cjs
 
       - name: Download and validate MP3
         shell: bash
