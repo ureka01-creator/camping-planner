@@ -1,6 +1,6 @@
-import './bgm.js?v=3';
+import './bgm.js?v=4';
 
-// QA marker: BGM v0.7.8 + quick-navigation landing fix.
+// QA marker: landing cover + BGM pause-on-cover v0.9.5.
 const COVER_CACHE_KEY = 'camp:landingCover:v9';
 const COVER_PARTS = [
   './assets/cover-v2.part0?v=2',
@@ -123,6 +123,11 @@ function waitForImage(image, src, timeoutMs = 2500) {
 }
 
 async function openLanding() {
+  // The landing/poster screen is intentionally silent. This is a temporary
+  // pause only: the user's BGM on/off preference is preserved, and the next
+  // tap that enters the planner resumes playback through the normal gesture path.
+  window.CampingBgm?.pause?.();
+
   if (overlay instanceof HTMLElement && overlay.isConnected) return;
 
   overlay = document.createElement('div');
