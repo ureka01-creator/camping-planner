@@ -2,6 +2,7 @@ const backdrop = document.getElementById('modalBackdrop');
 const viewport = window.visualViewport;
 let activeField = null;
 let settleTimers = [];
+let lockedScrollY = null;
 
 function isModalField(element) {
   return element instanceof HTMLElement &&
@@ -12,6 +13,41 @@ function isModalField(element) {
 function clearTimers() {
   settleTimers.forEach(timer => window.clearTimeout(timer));
   settleTimers = [];
+}
+
+function lockBackgroundScroll() {
+  if (lockedScrollY !== null) return;
+  lockedScrollY = window.scrollY || window.pageYOffset || 0;
+  const body = document.body;
+  body.style.position = 'fixed';
+  body.style.top = `-${lockedScrollY}px`;
+  body.style.left = '0';
+  body.style.right = '0';
+  body.style.width = '100%';
+  body.style.overflow = 'hidden';
+  document.documentElement.classList.add('modal-page-locked');
+}
+
+function unlockBackgroundScroll() {
+  if (lockedScrollY === null) return;
+  const y = lockedScrollY;
+  lockedScrollY = null;
+  const body = document.body;
+  body.style.removeProperty('position');
+  body.style.removeProperty('top');
+  body.style.removeProperty('left');
+  body.style.removeProperty('right');
+  body.style.removeProperty('width');
+  body.style.removeProperty('overflow');
+  document.documentElement.classList.remove('modal-page-locked');
+  window.scrollTo({ top:y, left:0, behavior:'auto' });
+}
+
+function syncBackgroundLock() {
+  if (!backdrop) return;
+  const open = !backdrop.classList.contains('hidden') || document.body.classList.contains('modal-open');
+  if (open) lockBackgroundScroll();
+  else unlockBackgroundScroll();
 }
 
 function resetViewportFit() {
@@ -44,7 +80,6 @@ function fitModalToVisualViewport() {
   requestAnimationFrame(() => {
     if (!activeField || !activeField.isConnected) return;
     const fieldRect = activeField.getBoundingClientRect();
-    const sheetRect = sheet.getBoundingClientRect();
     const safeTop = top + 12;
     const safeBottom = top + height - 18;
 
@@ -73,6 +108,7 @@ document.addEventListener('focusin', event => {
   const target = event.target;
   if (!isModalField(target)) return;
   activeField = target;
+  lockBackgroundScroll();
   settleKeyboard();
 }, true);
 
@@ -87,6 +123,7 @@ document.addEventListener('focusout', () => {
     activeField = null;
     clearTimers();
     resetViewportFit();
+    syncBackgroundLock();
   }, 120);
 }, true);
 
@@ -95,9 +132,13 @@ viewport?.addEventListener('scroll', fitModalToVisualViewport);
 
 if (backdrop) {
   new MutationObserver(() => {
+    syncBackgroundLock();
     if (!backdrop.classList.contains('hidden')) return;
     activeField = null;
     clearTimers();
     resetViewportFit();
   }).observe(backdrop, { attributes: true, attributeFilter: ['class'] });
 }
+
+new MutationObserver(syncBackgroundLock).observe(document.body, { attributes:true, attributeFilter:['class'] });
+syncBackgroundLock();
