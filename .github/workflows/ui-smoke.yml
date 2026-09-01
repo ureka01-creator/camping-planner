@@ -41,6 +41,9 @@ jobs:
       - name: Run Android responsive smoke check
         run: node qa/run-responsive-smoke.mjs
 
+      - name: Run live GitHub Pages landing and Google auth check
+        run: timeout 120s node qa/run-live-entry-auth-smoke.mjs
+
       - name: Run direct URL landing and Google auth check
         run: timeout 120s node qa/run-base-entry-auth-smoke.mjs
 
