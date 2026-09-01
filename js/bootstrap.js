@@ -1,4 +1,4 @@
-// Deployment marker: Header circles + stable board edit order v0.8.0
+// Deployment marker: Google sign-in + Google board identity v0.9.0
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -92,8 +92,8 @@ for (const path of [
   // Load home controls early so the cover/lock buttons cannot be blocked by
   // a later memo or decoration feature.
   './home-order.js?v=096',
-  './name-home-redirect.js?v=097',
-  './home-memo.js?v=098',
+  './google-board-identity.js?v=101',
+  './home-memo.js?v=101',
   './admin-board-delete.js?v=099',
   './home-board-order.js?v=100',
   './home-board-paging.js?v=094',
@@ -104,7 +104,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.8.0';
+if (version) version.textContent = 'Camping Planner v0.9.0';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
