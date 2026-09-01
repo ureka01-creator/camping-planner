@@ -1,4 +1,4 @@
-// Deployment marker: final landing + integrated participant status v1.0.0
+// Deployment marker: landing entry fix + participant user button v1.0.1
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -88,7 +88,7 @@ for (const path of [
   './admin-access.js?v=085',
   './home-order.js?v=096',
   './google-board-identity.js?v=101',
-  './trip-user-presence.js?v=101',
+  './trip-user-presence.js?v=102',
   './home-memo.js?v=101',
   './admin-board-delete.js?v=099',
   './home-board-order.js?v=100',
@@ -100,7 +100,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v1.0.0';
+if (version) version.textContent = 'Camping Planner v1.0.1';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
