@@ -1,4 +1,12 @@
-import { FIREBASE_CONFIG } from './firebase.js?v=064';
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCdBMIYmhomv-B72pzEptpfRIoGiORZZWk',
+  authDomain: 'camping-planner-4c2bd.firebaseapp.com',
+  projectId: 'camping-planner-4c2bd',
+  storageBucket: 'camping-planner-4c2bd.firebasestorage.app',
+  messagingSenderId: '852218628033',
+  appId: '1:852218628033:web:29a2e54a9c81397ae5d140',
+  measurementId: 'G-HEZ3M975RX'
+};
 
 const AUTH_UID_KEY = 'camp:authUid';
 const AUTH_NAME_KEY = 'camp:myName';
@@ -123,15 +131,25 @@ function clearStoredUser({ explicitLogout = false } = {}) {
 function waitUntilLandingCloses() {
   return new Promise(resolve => {
     const done = () => {
-      if (document.querySelector('.camp-landing')) return false;
+      const landing = document.querySelector('.camp-landing');
+      if (landing && !landing.classList.contains('is-exiting')) return false;
       resolve();
       return true;
     };
     if (done()) return;
+
+    const onClosed = () => {
+      window.removeEventListener('camp:landing-closed', onClosed);
+      resolve();
+    };
+    window.addEventListener('camp:landing-closed', onClosed, { once:true });
+
     const observer = new MutationObserver(() => {
-      if (done()) observer.disconnect();
+      if (!done()) return;
+      observer.disconnect();
+      window.removeEventListener('camp:landing-closed', onClosed);
     });
-    observer.observe(document.body, { childList:true, subtree:true });
+    observer.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['class'] });
   });
 }
 
@@ -142,7 +160,7 @@ function ensureStyle() {
   style.textContent = `
     body.google-login-open { overflow:hidden; }
     .google-login-backdrop {
-      position:fixed; inset:0; z-index:9998; display:grid; place-items:center;
+      position:fixed; inset:0; z-index:10000; display:grid; place-items:center;
       padding:24px; background:rgba(7,11,15,.94); backdrop-filter:blur(14px);
     }
     .google-login-card {
@@ -160,7 +178,7 @@ function ensureStyle() {
     }
     .google-login-button:disabled { opacity:.58; }
     .google-login-g { width:20px; height:20px; display:grid; place-items:center; border-radius:50%; font-size:18px; font-weight:900; color:#4285f4; }
-    .google-login-status { min-height:18px; margin-top:12px; color:rgba(234,217,196,.48); font-size:10px; }
+    .google-login-status { min-height:18px; margin-top:12px; color:rgba(234,217,196,.58); font-size:10px; line-height:1.45; }
     .google-account-line { margin:8px 0 0 !important; overflow-wrap:anywhere; }
     .google-account-nickname { margin-top:16px; padding-top:15px; border-top:1px solid rgba(216,160,113,.10); }
     .google-account-nickname label { display:block; margin-bottom:7px; color:rgba(234,217,196,.72); font-size:11px; font-weight:750; }
@@ -186,7 +204,7 @@ function ensureStyle() {
 }
 
 function closeGate() {
-  gate?.remove();
+  document.querySelectorAll('.google-login-backdrop').forEach(node => node.remove());
   gate = null;
   document.body.classList.remove('google-login-open');
 }
@@ -224,22 +242,39 @@ async function signInWithGoogle(event) {
   busy = true;
   const button = event?.currentTarget;
   const status = gate?.querySelector('[data-google-login-status]');
-  if (button instanceof HTMLButtonElement) button.disabled = true;
+  if (button instanceof HTMLButtonElement) {
+    button.disabled = true;
+    button.dataset.authStarted = '1';
+  }
   if (status) status.textContent = 'Google 로그인 중…';
 
+  const provider = new authModRef.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt:'select_account' });
+
   try {
-    const provider = new authModRef.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt:'select_account' });
     const result = await authModRef.signInWithPopup(authRef, provider);
     if (!persistUser(result.user)) throw new Error('Google user unavailable');
     closeGate();
   } catch (error) {
     console.error('Google sign-in failed.', error);
     const code = String(error?.code || '');
+
+    if (code.includes('popup-blocked') && typeof authModRef.signInWithRedirect === 'function') {
+      if (status) status.textContent = 'Safari 로그인 화면으로 이동하는 중…';
+      try {
+        await authModRef.signInWithRedirect(authRef, provider);
+        return;
+      } catch (redirectError) {
+        console.error('Google redirect sign-in failed.', redirectError);
+      }
+    }
+
     if (status) {
       if (code.includes('popup-closed') || code.includes('cancelled-popup')) status.textContent = '로그인을 취소했어. 다시 눌러줘.';
-      else if (code.includes('popup-blocked')) status.textContent = '팝업이 차단됐어. Safari 팝업 차단을 잠시 해제하고 다시 눌러줘.';
-      else status.textContent = '로그인에 실패했어. 잠시 후 다시 눌러줘.';
+      else if (code.includes('unauthorized-domain')) status.textContent = '현재 주소가 Google 로그인 허용 도메인에 등록되지 않았어.';
+      else if (code.includes('web-storage-unsupported')) status.textContent = 'Safari의 쿠키/웹사이트 데이터 설정 때문에 로그인을 시작할 수 없어.';
+      else if (code.includes('popup-blocked')) status.textContent = '팝업이 차단됐어. 다시 눌러줘.';
+      else status.textContent = '로그인에 실패했어. 다시 눌러줘.';
     }
   } finally {
     busy = false;
@@ -248,7 +283,13 @@ async function signInWithGoogle(event) {
 }
 
 function openGate() {
-  if (gate?.isConnected) return;
+  const existing = document.querySelector('.google-login-backdrop');
+  if (existing instanceof HTMLElement) {
+    gate = existing;
+    document.body.classList.add('google-login-open');
+    return;
+  }
+
   ensureStyle();
   gate = document.createElement('div');
   gate.className = 'google-login-backdrop';
@@ -331,6 +372,13 @@ async function boot() {
   try { await authMod.setPersistence(auth, authMod.browserLocalPersistence); } catch (_) {}
   if (typeof auth.authStateReady === 'function') await auth.authStateReady();
 
+  try {
+    const redirectResult = await authMod.getRedirectResult(auth);
+    if (redirectResult?.user) persistUser(redirectResult.user);
+  } catch (error) {
+    console.error('Google redirect result failed.', error);
+  }
+
   if (auth.currentUser?.isAnonymous) {
     try { await authMod.signOut(auth); } catch (_) {}
   }
@@ -367,6 +415,9 @@ async function boot() {
     if (!explicitLogoutInProgress) showLoginGate();
   });
 
+  window.CampingGoogleAuthReady = true;
+  window.dispatchEvent(new CustomEvent('camp:google-auth-module-ready'));
+
   if (persistUser(auth.currentUser)) {
     closeGate();
   } else {
@@ -380,6 +431,6 @@ boot().catch(error => {
   waitUntilLandingCloses().then(() => {
     ensureStyle();
     openGate();
-    resetPendingLoginUi('로그인 모듈을 불러오지 못했어. 잠시 후 새로고침해줘.');
+    resetPendingLoginUi('로그인 모듈을 불러오지 못했어. 새로고침 후 다시 시도해줘.');
   });
 });
