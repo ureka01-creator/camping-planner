@@ -22,10 +22,13 @@ jobs:
         run: |
           cat assets/cover-final-q35.part0 \
               assets/cover-final-q35.part1 \
-              assets/cover-final-q35.part2 \
+              assets/cover-final-q35.part2a \
+              assets/cover-final-q35.part2b \
+              assets/cover-final-q35.part2c \
               assets/cover-final-q35.part3 \
               assets/cover-final-q35.part4 \
-              assets/cover-final-q35.part5 \
+              assets/cover-final-q35.part5a \
+              assets/cover-final-q35.part5b \
             | tr -d '\r\n ' | base64 -d > assets/cover-main-approved.jpg
 
           python3 - <<'PY'
