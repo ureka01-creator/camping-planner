@@ -22,9 +22,11 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y ffmpeg
 
-      - name: Convert WebP to JPEG base64 text
+      - name: Decode and convert cover to JPEG base64 text
         run: |
-          ffmpeg -y -i assets/cover-main-v1.webp -q:v 2 /tmp/cover-main-v1.jpg
+          base64 -d assets/cover-main-v1.webp > /tmp/cover-main-v1.webp
+          file /tmp/cover-main-v1.webp
+          ffmpeg -y -i /tmp/cover-main-v1.webp -q:v 2 /tmp/cover-main-v1.jpg
           base64 -w0 /tmp/cover-main-v1.jpg > assets/cover-main-v1.jpg.b64
           test -s assets/cover-main-v1.jpg.b64
 
