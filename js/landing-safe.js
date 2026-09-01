@@ -11,7 +11,7 @@ const COVER_PARTS = [
 
 // Do not keep a large generated data URL in Safari storage anymore.
 try { localStorage.removeItem(COVER_CACHE_KEY); } catch (_) {}
-document.body.classList.remove('landing-boot', 'landing-open');
+document.body.classList.remove('landing-open');
 
 const style = document.createElement('style');
 style.textContent = `
@@ -35,8 +35,9 @@ style.textContent = `
   .camp-landing-safe-status {
     position:absolute; inset:0; display:grid; place-items:center;
     color:rgba(255,241,218,.58); font-size:12px; letter-spacing:.02em;
-    pointer-events:none;
+    opacity:0; transition:opacity .12s ease; pointer-events:none;
   }
+  .camp-landing-safe-status.visible { opacity:1; }
   .camp-landing-safe-status.hidden { display:none; }
   .camp-landing-hint {
     position:absolute; left:50%; bottom:max(10px,calc(env(safe-area-inset-bottom) + 2px));
@@ -67,12 +68,15 @@ function loadCoverSrc() {
 }
 
 function closeLanding() {
-  if (!(overlay instanceof HTMLElement)) return;
+  if (!(overlay instanceof HTMLElement)) {
+    document.body.classList.remove('landing-boot', 'landing-open');
+    return;
+  }
   const current = overlay;
   overlay = null;
   suppressClickUntil = Date.now() + 650;
   current.classList.add('is-exiting');
-  document.body.classList.remove('landing-open');
+  document.body.classList.remove('landing-boot', 'landing-open');
   window.setTimeout(() => current.remove(), 180);
 }
 
@@ -130,12 +134,17 @@ async function openLanding() {
     closeFromInput(event);
   });
 
+  // Put the cover in the DOM before exposing the app. Combined with the
+  // landing-boot class in index.html this prevents the dashboard from
+  // flashing for a frame during Safari refreshes.
   document.body.prepend(overlay);
   document.body.classList.add('landing-open');
+  document.body.classList.remove('landing-boot');
 
   const image = overlay.querySelector('.camp-landing-poster');
   const status = overlay.querySelector('.camp-landing-safe-status');
   const hint = overlay.querySelector('.camp-landing-hint');
+  const statusTimer = window.setTimeout(() => status?.classList.add('visible'), 650);
 
   try {
     const src = await Promise.race([
@@ -145,10 +154,12 @@ async function openLanding() {
     if (!(image instanceof HTMLImageElement) || !overlay?.isConnected) return;
     await waitForImage(image, src);
     if (!overlay?.isConnected) return;
+    window.clearTimeout(statusTimer);
     image.classList.add('loaded');
     status?.classList.add('hidden');
     hint?.classList.add('loaded');
   } catch (error) {
+    window.clearTimeout(statusTimer);
     console.warn('Safe landing cover failed.', error);
     closeLanding();
   }
@@ -187,6 +198,7 @@ document.addEventListener('click', event => {
   event.stopImmediatePropagation();
 }, true);
 
-// Initial entry: show the cover as an overlay only. The app is already alive
-// underneath, so a cover failure can never hide or block the whole app.
-requestAnimationFrame(() => openLanding());
+// Initial entry: open immediately. index.html keeps the app hidden with
+// landing-boot until this overlay is in place, so refresh never exposes the
+// dashboard underneath.
+openLanding();
