@@ -1,8 +1,8 @@
 import './bgm.js?v=5';
 
-// v1.0.7: use the already verified Safari-safe approved JPEG base64 asset.
-// Keep the image as text in GitHub, then hydrate it into a JPEG data URL in-browser.
-const COVER_TEXT_SRC = './assets/cover-approved-mobile.jpg.b64?v=2';
+// v1.0.7 Safari repair: hydrate the verified full JPEG base64 asset.
+// Asset revision v3 forces clients away from the previously truncated payload.
+const COVER_TEXT_SRC = './assets/cover-approved-mobile.jpg.b64?v=3';
 
 let overlay = null;
 let closing = false;
@@ -21,7 +21,7 @@ function coverDataUrl() {
     })
     .then(text => {
       const base64 = text.replace(/\s+/g, '');
-      if (!base64.startsWith('/9j/') || base64.length < 5000) {
+      if (!base64.startsWith('/9j/') || base64.length < 20000) {
         throw new Error('approved JPEG base64 is invalid');
       }
       const src = `data:image/jpeg;base64,${base64}`;
