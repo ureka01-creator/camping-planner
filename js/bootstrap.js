@@ -1,3 +1,4 @@
+// Deployment marker: Midnight Dreaming BGM v0.7.8
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
