@@ -16,22 +16,13 @@ function currentMemberId() {
   catch (_) { return ''; }
 }
 
-function members() {
-  return Array.isArray(latestData?.members) ? latestData.members : [];
-}
-
-function memberName(memberId) {
-  if (!memberId) return '팀 미선택';
-  return members().find(member => member.id === memberId)?.name || '팀 미선택';
-}
-
 function profiles() {
   return Array.isArray(latestData?.trip?.userProfiles) ? latestData.trip.userProfiles : [];
 }
 
 function formatRecent(timestamp) {
   const value = Number(timestamp || 0);
-  if (!Number.isFinite(value) || value <= 0) return '접속 기록 없음';
+  if (!Number.isFinite(value) || value <= 0) return '';
   const date = new Date(value);
   const now = new Date();
   const sameDay = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
@@ -40,49 +31,43 @@ function formatRecent(timestamp) {
   return new Intl.DateTimeFormat('ko-KR', { month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit' }).format(date);
 }
 
-function ensureCard() {
-  const account = document.getElementById('googleAccountCard');
-  if (!account || document.getElementById('tripUserPresenceCard')) return;
-
-  const card = document.createElement('div');
-  card.id = 'tripUserPresenceCard';
-  card.className = 'settings-card trip-user-presence-card';
-  card.innerHTML = `
-    <div class="trip-user-presence-head">
-      <div><strong>참여 현황</strong><p>Google 로그인 · 선택한 팀</p></div>
-      <span id="tripUserPresenceCount">0명</span>
-    </div>
-    <div id="tripUserPresenceList" class="trip-user-presence-list"></div>`;
-  account.insertAdjacentElement('afterend', card);
-}
-
-function render() {
-  ensureCard();
-  const list = document.getElementById('tripUserPresenceList');
-  const count = document.getElementById('tripUserPresenceCount');
-  if (!list || !count) return;
+function decorateMemberCards() {
+  const list = document.getElementById('memberList');
+  if (!list) return;
 
   const me = currentUser();
-  const rows = [...profiles()].sort((a, b) => Number(b?.lastLoginAt || 0) - Number(a?.lastLoginAt || 0));
-  count.textContent = `${rows.length}명`;
+  list.querySelectorAll('.member-card').forEach(card => {
+    const edit = card.querySelector('[data-edit-member]');
+    const memberId = String(edit?.dataset?.editMember || '');
+    const memberProfiles = profiles()
+      .filter(profile => String(profile?.memberId || '') === memberId)
+      .sort((a, b) => Number(b?.lastLoginAt || 0) - Number(a?.lastLoginAt || 0));
 
-  if (!rows.length) {
-    list.innerHTML = '<p class="trip-user-presence-empty">아직 기록된 사용자가 없어.</p>';
-    return;
-  }
+    const info = card.firstElementChild;
+    if (!(info instanceof HTMLElement)) return;
 
-  list.innerHTML = rows.map(profile => {
-    const name = String(profile?.nickname || profile?.googleName || '캠핑 멤버');
-    const mine = me?.uid && profile?.uid === me.uid;
-    return `
-      <div class="trip-user-presence-row">
-        <div class="trip-user-presence-main">
-          <strong>${esc(name)}${mine ? '<em>나</em>' : ''}</strong>
-          <small>${esc(formatRecent(profile?.lastLoginAt))}</small>
-        </div>
-        <span class="trip-user-presence-team">${esc(memberName(profile?.memberId))}</span>
-      </div>`;
-  }).join('');
+    let slot = info.querySelector('.member-login-presence');
+    if (!memberProfiles.length) {
+      slot?.remove();
+      return;
+    }
+
+    const signature = memberProfiles.map(profile => [profile?.uid, profile?.nickname, profile?.googleName, profile?.lastLoginAt].join(':')).join('|');
+    if (slot?.dataset?.signature === signature) return;
+
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'member-login-presence';
+      info.appendChild(slot);
+    }
+    slot.dataset.signature = signature;
+    slot.innerHTML = memberProfiles.map(profile => {
+      const name = String(profile?.nickname || profile?.googleName || '캠핑 멤버');
+      const mine = Boolean(me?.uid && profile?.uid === me.uid);
+      const recent = formatRecent(profile?.lastLoginAt);
+      return `<span class="member-login-person"><b>${esc(name)}</b>${mine ? '<em>나</em>' : ''}${recent ? `<small>${esc(recent)}</small>` : ''}</span>`;
+    }).join('');
+  });
 }
 
 async function writeProfile({ touchLogin = false } = {}) {
@@ -130,22 +115,24 @@ window.addEventListener('camp:auth-ready', event => {
   const firstForThisPage = Boolean(uid && uid !== lastRecordedUid);
   if (uid) lastRecordedUid = uid;
   queueWrite({ touchLogin:firstForThisPage });
-  render();
+  queueMicrotask(decorateMemberCards);
 });
 
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
   if (!event.target.closest('[data-first-entry-member]')) return;
-  // first-entry.js writes camp:myMemberId during this same click. Waiting until
-  // the next task guarantees we persist the newly selected team, regardless of
-  // listener registration order.
   window.setTimeout(() => queueWrite({ touchLogin:false }), 0);
 }, true);
 
 dataAdapter.subscribe(data => {
   latestData = data;
-  render();
+  queueMicrotask(decorateMemberCards);
 });
+
+const memberList = document.getElementById('memberList');
+if (memberList) {
+  new MutationObserver(() => queueMicrotask(decorateMemberCards)).observe(memberList, { childList:true, subtree:true });
+}
 
 if (currentUser()) {
   lastRecordedUid = currentUser().uid;
@@ -154,17 +141,10 @@ if (currentUser()) {
 
 const style = document.createElement('style');
 style.textContent = `
-  .trip-user-presence-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-  .trip-user-presence-head p { margin:5px 0 0; color:rgba(234,217,196,.46); font-size:11px; }
-  .trip-user-presence-head > span { flex:none; padding:5px 9px; border:1px solid rgba(216,160,113,.14); border-radius:999px; color:#dca77b; font-size:10px; font-weight:800; }
-  .trip-user-presence-list { margin-top:14px; border-top:1px solid rgba(216,160,113,.10); }
-  .trip-user-presence-row { min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid rgba(216,160,113,.08); }
-  .trip-user-presence-row:last-child { border-bottom:0; padding-bottom:0; }
-  .trip-user-presence-main { min-width:0; }
-  .trip-user-presence-main strong { display:flex; align-items:center; gap:6px; color:#ead9c4; font-size:13px; }
-  .trip-user-presence-main em { padding:2px 5px; border-radius:999px; background:rgba(201,137,93,.13); color:#dca77b; font-size:8px; font-style:normal; }
-  .trip-user-presence-main small { display:block; margin-top:4px; color:rgba(234,217,196,.40); font-size:9px; }
-  .trip-user-presence-team { flex:none; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:6px 9px; border-radius:999px; background:rgba(234,217,196,.055); color:rgba(234,217,196,.70); font-size:10px; font-weight:750; }
-  .trip-user-presence-empty { margin:13px 0 0; color:rgba(234,217,196,.40); font-size:10px; }
+  .member-login-presence { display:flex; flex-wrap:wrap; align-items:center; gap:5px 8px; margin-top:7px; }
+  .member-login-person { display:inline-flex; align-items:center; gap:5px; min-width:0; color:rgba(234,217,196,.68); font-size:10px; }
+  .member-login-person b { color:#dca77b; font-size:10px; font-weight:800; }
+  .member-login-person em { padding:1px 5px; border-radius:999px; background:rgba(201,137,93,.13); color:#dca77b; font-size:8px; font-style:normal; font-weight:800; }
+  .member-login-person small { color:rgba(234,217,196,.36); font-size:9px; }
 `;
 document.head.appendChild(style);
