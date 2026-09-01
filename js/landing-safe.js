@@ -1,46 +1,11 @@
 import './bgm.js?v=5';
 
-// Safari-safe landing poster: keep the verified JPEG as plain-text base64 chunks.
-// This avoids the binary upload corruption that caused image decode failures.
-const COVER_PARTS = Array.from({ length: 6 }, (_, index) =>
-  `./assets/cover-live-v2.part${index}?v=20260902a`
-);
-const COVER_BASE64_LENGTH = 24444;
+// Safari repair: load the checksum-verified JPEG directly.
+// assets/cover-main-approved.jpg is 18,857 bytes / 480x720.
+const COVER_SRC = './assets/cover-main-approved.jpg?v=6';
 
 let overlay = null;
 let closing = false;
-let coverDataUrlPromise = null;
-
-async function loadCoverDataUrl() {
-  if (window.CampingCoverDataUrl?.startsWith('data:image/jpeg;base64,')) {
-    return window.CampingCoverDataUrl;
-  }
-  if (coverDataUrlPromise) return coverDataUrlPromise;
-
-  coverDataUrlPromise = Promise.all(COVER_PARTS.map(async url => {
-    const response = await fetch(url, { cache:'no-store' });
-    if (!response.ok) throw new Error(`cover chunk fetch failed: ${response.status}`);
-    return (await response.text()).replace(/\s+/g, '');
-  })).then(parts => {
-    const base64 = parts.join('');
-    if (
-      base64.length !== COVER_BASE64_LENGTH ||
-      !base64.startsWith('/9j/') ||
-      !base64.endsWith('/9k=')
-    ) {
-      throw new Error(`cover chunk validation failed: ${base64.length}`);
-    }
-    const src = `data:image/jpeg;base64,${base64}`;
-    window.CampingCoverDataUrl = src;
-    return src;
-  }).catch(error => {
-    coverDataUrlPromise = null;
-    window.CampingCoverDataUrl = null;
-    throw error;
-  });
-
-  return coverDataUrlPromise;
-}
 
 async function hydratePoster(root) {
   const image = root?.querySelector?.('.camp-landing-poster');
@@ -55,19 +20,18 @@ async function hydratePoster(root) {
   if (loading) loading.textContent = '메인 이미지를 불러오는 중…';
 
   try {
-    const src = await loadCoverDataUrl();
     await new Promise((resolve, reject) => {
       let settled = false;
-      const done = (ok) => {
+      const done = ok => {
         if (settled) return;
         settled = true;
         image.onload = null;
         image.onerror = null;
-        ok ? resolve() : reject(new Error('verified JPEG decode failed'));
+        ok ? resolve() : reject(new Error('verified JPEG file decode failed'));
       };
       image.onload = () => done(true);
       image.onerror = () => done(false);
-      image.src = src;
+      image.src = COVER_SRC;
       if (image.complete && image.naturalWidth > 0) done(true);
     });
 
