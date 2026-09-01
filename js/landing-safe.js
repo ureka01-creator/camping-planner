@@ -1,14 +1,16 @@
 import './bgm.js?v=5';
 
-// Final approved landing poster v1.0.3 — stable enter flow, no global click suppression.
+// Final approved landing poster v1.0.4 — stable enter + refresh hydration guard.
 const COVER_SRC = './assets/cover-main-v1.webp?v=2';
 
+document.body.classList.add('home-hydrating');
 document.body.classList.remove('landing-open', 'landing-cover-active');
 
 const style = document.createElement('style');
 style.textContent = `
   body.landing-open { overflow:hidden; }
   body.landing-cover-active #app { visibility:hidden !important; }
+  body.home-hydrating #view-home { visibility:hidden !important; }
   .camp-landing {
     position:fixed; inset:0; z-index:9999; width:100vw; height:100dvh;
     margin:0; padding:0; border:0; background:#070b0f; overflow:hidden;
@@ -37,7 +39,7 @@ style.textContent = `
     text-shadow:0 1px 8px rgba(0,0,0,.35); opacity:0; pointer-events:none;
   }
   .camp-landing-hint.loaded { opacity:.72; }
-  .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:auto; }
+  .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:none; }
 `;
 document.head.appendChild(style);
 
@@ -50,17 +52,16 @@ function activateHome() {
   const homeButton = document.querySelector('[data-nav="home"]');
   if (homeButton && typeof homeButton.onclick === 'function') {
     homeButton.click();
-  } else {
-    document.querySelectorAll('.view').forEach(view => {
-      view.classList.toggle('active', view.dataset.view === 'home');
-    });
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.classList.toggle('active', item.dataset.nav === 'home');
-    });
-    document.getElementById('app')?.classList.add('home-theme');
+    return;
   }
 
-  window.dispatchEvent(new CustomEvent('camp:landing-enter-home'));
+  document.querySelectorAll('.view').forEach(view => {
+    view.classList.toggle('active', view.dataset.view === 'home');
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.nav === 'home');
+  });
+  document.getElementById('app')?.classList.add('home-theme');
 }
 
 function closeLanding() {
@@ -128,7 +129,6 @@ async function openLanding() {
     </span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
-  // Release 시점에 진입시켜 overlay가 사라진 뒤 첫 메뉴 탭을 막는 ghost-click 방지 로직이 필요 없게 한다.
   overlay.addEventListener('pointerup', closeFromInput, { passive:false });
   overlay.addEventListener('touchend', closeFromInput, { passive:false });
   overlay.addEventListener('click', closeFromInput);
