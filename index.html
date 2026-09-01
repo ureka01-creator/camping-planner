@@ -21,16 +21,39 @@
   <link rel="stylesheet" href="./css/home-dashboard.css?v=081" />
   <link rel="stylesheet" href="./css/header-v0.8.css?v=080" />
   <style>
-    html, body { background:#070b0f; }
-    body.landing-boot { overflow:hidden; }
-    body.landing-boot #app { visibility:hidden; }
+    html, body { margin:0; background:#070b0f; }
+    body.landing-boot, body.landing-open { overflow:hidden; }
+    body.landing-boot #app, body.landing-cover-active #app { visibility:hidden; }
     body.home-hydrating #view-home { visibility:hidden; }
+    .camp-landing {
+      position:fixed; inset:0; z-index:9999; width:100vw; height:100dvh;
+      margin:0; padding:0; border:0; background:#070b0f; overflow:hidden;
+      display:block; appearance:none; -webkit-appearance:none;
+      -webkit-tap-highlight-color:transparent; color:inherit; touch-action:manipulation;
+    }
+    .camp-landing-safe-frame { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+    .camp-landing-poster {
+      display:block; width:100%; height:100%; object-fit:cover; object-position:center center;
+      opacity:1; box-shadow:none; pointer-events:none;
+    }
+    .camp-landing-hint {
+      position:absolute; left:50%; bottom:max(10px,calc(env(safe-area-inset-bottom) + 2px));
+      transform:translateX(-50%); color:rgba(255,241,218,.62); font-size:19px;
+      text-shadow:0 1px 8px rgba(0,0,0,.35); opacity:.72; pointer-events:none;
+    }
   </style>
   <script type="importmap">
     {"imports":{"./js/firebase.js?v=064":"./js/firebase.js?v=087"}}
   </script>
 </head>
-<body class="landing-boot home-hydrating">
+<body class="landing-boot home-hydrating landing-open landing-cover-active">
+  <button id="initialLanding" type="button" class="camp-landing" aria-label="캠핑 플래너로 들어가기">
+    <span class="camp-landing-safe-frame">
+      <img class="camp-landing-poster" src="./assets/cover-main-v1.webp?v=3" alt="캠핑 메인 이미지" />
+    </span>
+    <span class="camp-landing-hint" aria-hidden="true">⌄</span>
+  </button>
+
   <div id="app" class="app-shell">
     <header class="topbar">
       <div class="trip-heading">
@@ -163,7 +186,7 @@
         <div class="settings-card dev-card">
           <p id="connectionText" class="muted">Firebase 연결 중…</p>
         </div>
-        <p class="version">Camping Planner v1.0.4</p>
+        <p class="version">Camping Planner v1.0.5</p>
       </section>
     </main>
 
@@ -183,10 +206,10 @@
   </div>
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script type="module" src="./js/landing-safe.js?v=24"></script>
-  <script type="module" src="./js/google-login.js?v=105"></script>
+  <script type="module" src="./js/landing-safe.js?v=25"></script>
+  <script type="module" src="./js/google-login.js?v=106"></script>
   <script type="module" src="./js/entry-guard.js?v=055"></script>
-  <script type="module" src="./js/bootstrap.js?v=123"></script>
+  <script type="module" src="./js/bootstrap.js?v=124"></script>
   <script type="module" src="./js/first-entry.js?v=102"></script>
   <script type="module" src="./js/home-dashboard.js?v=091"></script>
   <script type="module" src="./js/items-cost.js?v=068"></script>
