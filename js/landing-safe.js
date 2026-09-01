@@ -1,21 +1,17 @@
 import './bgm.js?v=5';
 
-// QA marker: textless date/location poster without patch seams v0.9.9.
-const COVER_CACHE_KEY = 'camp:landingCover:v11';
+// QA marker: approved clean full-screen poster v1.0.0.
 const COVER_PARTS = [
-  './assets/cover-v2.part0?v=2',
-  './assets/cover-v2.part1?v=2',
-  './assets/cover-v2.part2?v=2',
-  './assets/cover-v2.part3?v=2',
-  './assets/cover-v2.part4?v=2',
-  './assets/cover-v2.part5?v=2',
-  './assets/cover-v2.part6?v=2'
+  './assets/landing-approved.part0?v=1',
+  './assets/landing-approved.part1?v=1',
+  './assets/landing-approved.part2?v=1',
+  './assets/landing-approved.part3?v=1'
 ];
-const CLEAN_META_PATCH = './assets/cover-clean-meta-patch-v2.b64?v=1';
 
 try {
   localStorage.removeItem('camp:landingCover:v9');
   localStorage.removeItem('camp:landingCover:v10');
+  localStorage.removeItem('camp:landingCover:v11');
 } catch (_) {}
 document.body.classList.remove('landing-open', 'landing-cover-active');
 
@@ -24,19 +20,15 @@ style.textContent = `
   body.landing-open { overflow:hidden; }
   body.landing-cover-active #app { visibility:hidden !important; }
   .camp-landing {
-    position:fixed; inset:0; z-index:9999; width:100%; height:100dvh;
+    position:fixed; inset:0; z-index:9999; width:100vw; height:100dvh;
     margin:0; padding:0; border:0; background:#070b0f; overflow:hidden;
-    display:grid; place-items:center; appearance:none; -webkit-appearance:none;
-    -webkit-tap-highlight-color:transparent; color:inherit; touch-action:manipulation;
-  }
-  .camp-landing-safe-frame {
-    position:relative; width:min(100vw,460px); max-width:100%; max-height:100dvh;
-    aspect-ratio:2 / 3; display:grid; place-items:center; pointer-events:none;
+    appearance:none; -webkit-appearance:none; -webkit-tap-highlight-color:transparent;
+    color:inherit; touch-action:manipulation;
   }
   .camp-landing-poster {
-    display:block; width:100%; height:100%; object-fit:contain;
-    opacity:0; transition:opacity .16s ease;
-    box-shadow:0 18px 70px rgba(0,0,0,.30); pointer-events:none;
+    position:absolute; inset:0; display:block; width:100%; height:100%;
+    object-fit:cover; object-position:20% center;
+    opacity:0; transition:opacity .16s ease; pointer-events:none;
   }
   .camp-landing-poster.loaded { opacity:1; }
   .camp-landing-safe-status {
@@ -53,9 +45,6 @@ style.textContent = `
   }
   .camp-landing-hint.loaded { opacity:.72; }
   .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:none; }
-  @media (min-aspect-ratio:2/3) {
-    .camp-landing-safe-frame { height:100dvh; width:auto; max-width:100vw; }
-  }
 `;
 document.head.appendChild(style);
 
@@ -63,83 +52,13 @@ let coverPromise = null;
 let overlay = null;
 let suppressClickUntil = 0;
 
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-}
-
-function featherPatchEdges(patchImage, featherPx = 14) {
-  const patchCanvas = document.createElement('canvas');
-  patchCanvas.width = patchImage.naturalWidth;
-  patchCanvas.height = patchImage.naturalHeight;
-  const patchCtx = patchCanvas.getContext('2d', { willReadFrequently:true });
-  if (!patchCtx) return patchImage;
-  patchCtx.drawImage(patchImage, 0, 0);
-
-  const imageData = patchCtx.getImageData(0, 0, patchCanvas.width, patchCanvas.height);
-  const data = imageData.data;
-  const width = patchCanvas.width;
-  const height = patchCanvas.height;
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const edge = Math.min(x, y, width - 1 - x, height - 1 - y);
-      const raw = Math.max(0, Math.min(1, edge / featherPx));
-      const smooth = raw * raw * (3 - 2 * raw);
-      const i = (y * width + x) * 4 + 3;
-      data[i] = Math.round(data[i] * smooth);
-    }
-  }
-
-  patchCtx.putImageData(imageData, 0, 0);
-  return patchCanvas;
-}
-
-async function applyCleanMetaPatch(baseSrc) {
-  const response = await fetch(CLEAN_META_PATCH, { cache:'force-cache' });
-  if (!response.ok) throw new Error('clean cover patch load failed');
-  const patchBase64 = (await response.text()).trim();
-  const [baseImage, patchImage] = await Promise.all([
-    loadImage(baseSrc),
-    loadImage(`data:image/webp;base64,${patchBase64}`)
-  ]);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = baseImage.naturalWidth;
-  canvas.height = baseImage.naturalHeight;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('canvas unavailable');
-  ctx.drawImage(baseImage, 0, 0);
-
-  // The cleanup patch only covers the old date/time + campground metadata.
-  // Feather its outer 14 px before compositing so there is no visible rectangular edge.
-  // The handwritten title, separator dash, stars, tent, copy and all other artwork stay intact.
-  const scaleX = canvas.width / 1023;
-  const scaleY = canvas.height / 1537;
-  const softPatch = featherPatchEdges(patchImage, 14);
-  ctx.drawImage(
-    softPatch,
-    570 * scaleX,
-    690 * scaleY,
-    400 * scaleX,
-    290 * scaleY
-  );
-  return canvas.toDataURL('image/webp', .94);
-}
-
 function loadCoverSrc() {
   if (!coverPromise) {
     coverPromise = Promise.all(COVER_PARTS.map(async url => {
       const response = await fetch(url, { cache:'force-cache' });
       if (!response.ok) throw new Error(`cover load failed: ${url}`);
       return (await response.text()).trim();
-    }))
-      .then(parts => `data:image/webp;base64,${parts.join('')}`)
-      .then(baseSrc => applyCleanMetaPatch(baseSrc));
+    })).then(parts => `data:image/webp;base64,${parts.join('')}`);
   }
   return coverPromise;
 }
@@ -173,7 +92,7 @@ function releaseSuppressionForFreshInput(event) {
   suppressClickUntil = 0;
 }
 
-function waitForImage(image, src, timeoutMs = 2500) {
+function waitForImage(image, src, timeoutMs = 3000) {
   return new Promise((resolve, reject) => {
     let settled = false;
     const finish = (ok, error) => {
@@ -194,7 +113,6 @@ function waitForImage(image, src, timeoutMs = 2500) {
 
 async function openLanding() {
   window.CampingBgm?.pause?.();
-
   if (overlay instanceof HTMLElement && overlay.isConnected) return;
 
   overlay = document.createElement('div');
@@ -203,10 +121,8 @@ async function openLanding() {
   overlay.setAttribute('tabindex', '0');
   overlay.setAttribute('aria-label', '캠핑 플래너로 돌아가기');
   overlay.innerHTML = `
-    <span class="camp-landing-safe-frame">
-      <img class="camp-landing-poster" alt="캠핑 메인 이미지" />
-      <span class="camp-landing-safe-status">메인 이미지를 불러오는 중…</span>
-    </span>
+    <img class="camp-landing-poster" alt="캠핑 메인 이미지" />
+    <span class="camp-landing-safe-status">메인 이미지를 불러오는 중…</span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
   overlay.addEventListener('touchstart', closeFromInput, { passive:false });
@@ -266,20 +182,18 @@ document.addEventListener('click', event => {
 }, true);
 
 document.addEventListener('touchstart', event => {
-  if (!(event.target instanceof Element)) return;
-  if (!event.target.closest('.camp-landing')) return;
+  if (!(event.target instanceof Element) || !event.target.closest('.camp-landing')) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   closeLanding();
 }, { capture:true, passive:false });
 
 document.addEventListener('pointerdown', event => {
-  if (!(event.target instanceof Element)) return;
-  if (!event.target.closest('.camp-landing')) return;
+  if (!(event.target instanceof Element) || !event.target.closest('.camp-landing')) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   closeLanding();
-}, { capture:true, passive:false });
+}, true);
 
 document.addEventListener('click', event => {
   if (Date.now() >= suppressClickUntil) return;
