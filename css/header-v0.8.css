@@ -1,0 +1,53 @@
+/* v0.8.0 — keep the compact header actions perfectly circular. */
+.home-theme .topbar-actions,
+.unified-night-theme .topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.home-theme .topbar-actions > .icon-btn,
+.unified-night-theme .topbar-actions > .icon-btn {
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  aspect-ratio: 1 / 1;
+  padding: 0 !important;
+  box-sizing: border-box;
+  border-radius: 50% !important;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.home-theme .topbar-actions > .icon-btn svg,
+.unified-night-theme .topbar-actions > .icon-btn svg {
+  display: block;
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.home-theme .topbar-actions > .settings-shortcut,
+.unified-night-theme .topbar-actions > .settings-shortcut {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+/* The address should only wrap when the viewport itself cannot fit the row. */
+.home-theme .trip-address-row,
+.unified-night-theme .trip-address-row {
+  width: 100%;
+  max-width: 100%;
+}
+
+.home-theme .trip-address,
+.unified-night-theme .trip-address {
+  white-space: nowrap;
+}
