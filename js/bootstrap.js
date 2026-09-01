@@ -102,7 +102,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.7.6';
+if (version) version.textContent = 'Camping Planner v0.7.7';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
