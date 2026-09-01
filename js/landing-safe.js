@@ -1,6 +1,6 @@
 import './bgm.js?v=5';
 
-// Final approved landing poster v1.0.2 — single image, full-bleed.
+// Final approved landing poster v1.0.3 — stable enter flow, no global click suppression.
 const COVER_SRC = './assets/cover-main-v1.webp?v=2';
 
 document.body.classList.remove('landing-open', 'landing-cover-active');
@@ -37,13 +37,12 @@ style.textContent = `
     text-shadow:0 1px 8px rgba(0,0,0,.35); opacity:0; pointer-events:none;
   }
   .camp-landing-hint.loaded { opacity:.72; }
-  .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:none; }
+  .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:auto; }
 `;
 document.head.appendChild(style);
 
 let overlay = null;
 let closing = false;
-let suppressClickUntil = 0;
 
 function activateHome() {
   try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -67,13 +66,12 @@ function activateHome() {
 function closeLanding() {
   if (closing) return;
   closing = true;
-  activateHome();
 
+  activateHome();
   document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
 
   const current = overlay instanceof HTMLElement ? overlay : document.querySelector('.camp-landing');
   overlay = null;
-  suppressClickUntil = Date.now() + 350;
 
   if (!(current instanceof HTMLElement)) {
     closing = false;
@@ -91,13 +89,6 @@ function closeFromInput(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
   closeLanding();
-}
-
-function releaseSuppressionForFreshInput(event) {
-  if (Date.now() >= suppressClickUntil) return;
-  const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest('.camp-landing')) return;
-  suppressClickUntil = 0;
 }
 
 function waitForImage(image, src, timeoutMs = 3500) {
@@ -137,16 +128,10 @@ async function openLanding() {
     </span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
-  // iPhone Safari에서 release 이벤트가 누락되는 경우가 있어 press 시점에 바로 진입한다.
-  overlay.addEventListener('pointerdown', closeFromInput, { passive:false });
-  overlay.addEventListener('touchstart', closeFromInput, { passive:false });
-  overlay.addEventListener('click', event => {
-    if (Date.now() < suppressClickUntil) {
-      event.preventDefault();
-      return;
-    }
-    closeFromInput(event);
-  });
+  // Release 시점에 진입시켜 overlay가 사라진 뒤 첫 메뉴 탭을 막는 ghost-click 방지 로직이 필요 없게 한다.
+  overlay.addEventListener('pointerup', closeFromInput, { passive:false });
+  overlay.addEventListener('touchend', closeFromInput, { passive:false });
+  overlay.addEventListener('click', closeFromInput);
   overlay.addEventListener('keydown', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     closeFromInput(event);
@@ -178,9 +163,6 @@ async function openLanding() {
 
 window.CampingLandingSafe = { open:openLanding, close:closeLanding };
 
-window.addEventListener('pointerdown', releaseSuppressionForFreshInput, true);
-window.addEventListener('touchstart', releaseSuppressionForFreshInput, { capture:true, passive:true });
-
 document.addEventListener('click', event => {
   if (!(event.target instanceof Element)) return;
   const button = event.target.closest('#landingShortcutBtn');
@@ -188,14 +170,6 @@ document.addEventListener('click', event => {
   event.preventDefault();
   event.stopImmediatePropagation();
   openLanding();
-}, true);
-
-document.addEventListener('click', event => {
-  if (Date.now() >= suppressClickUntil) return;
-  const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest('.camp-landing')) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
 }, true);
 
 openLanding();
