@@ -1,4 +1,4 @@
-// Deployment marker: restart BGM after landing cover v0.9.6
+// Deployment marker: meal item reorder + restored final poster v0.9.7
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -87,6 +87,7 @@ for (const path of [
   './trip-settings.js?v=064',
   './home-meal-progress.js?v=065',
   './meal-reorder.js?v=065',
+  './meal-item-reorder.js?v=097',
   './meal-edit-focus.js?v=066',
   './items-hub.js?v=089',
   './item-edit-fix.js?v=082',
@@ -107,7 +108,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.6';
+if (version) version.textContent = 'Camping Planner v0.9.7';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
