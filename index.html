@@ -162,7 +162,7 @@
         <div class="settings-card dev-card">
           <p id="connectionText" class="muted">Firebase 연결 중…</p>
         </div>
-        <p class="version">Camping Planner v0.9.9</p>
+        <p class="version">Camping Planner v1.0.0</p>
       </section>
     </main>
 
@@ -182,10 +182,10 @@
   </div>
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script type="module" src="./js/landing-safe.js?v=17"></script>
+  <script type="module" src="./js/landing-safe.js?v=18"></script>
   <script type="module" src="./js/google-login.js?v=105"></script>
   <script type="module" src="./js/entry-guard.js?v=053"></script>
-  <script type="module" src="./js/bootstrap.js?v=119"></script>
+  <script type="module" src="./js/bootstrap.js?v=120"></script>
   <script type="module" src="./js/first-entry.js?v=102"></script>
   <script type="module" src="./js/home-dashboard.js?v=090"></script>
   <script type="module" src="./js/items-cost.js?v=068"></script>
@@ -209,13 +209,12 @@
           title.classList.add('dday-composed');
           title.innerHTML = `<span>D</span><span class="dday-dash" aria-hidden="true"></span><span class="dday-number">${match[1]}</span>`;
         };
-
         const composeDday = () => {
           if (title.querySelector('.dday-dash')) return;
           const text = title.textContent.trim();
           if (/^D-(\d+)$/.test(text)) buildDday(text);
         };
-        new MutationObserver(composeDday).observe(title, { childList: true, characterData: true, subtree: true });
+        new MutationObserver(composeDday).observe(title, { childList:true, characterData:true, subtree:true });
       }
 
       const button = document.getElementById('copyAddressBtn');
