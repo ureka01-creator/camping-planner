@@ -1,0 +1,42 @@
+name: Fix landing tap delay
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-landing-tap-delay.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Shorten ghost-click guard and bust cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          landing = Path('js/landing-safe.js')
+          text = landing.read_text()
+          assert 'suppressClickUntil = Date.now() + 650;' in text
+          text = text.replace('suppressClickUntil = Date.now() + 650;', 'suppressClickUntil = Date.now() + 350;')
+          landing.write_text(text)
+
+          index = Path('index.html')
+          text = index.read_text()
+          assert './js/landing-safe.js?v=8' in text
+          text = text.replace('./js/landing-safe.js?v=8', './js/landing-safe.js?v=9')
+          index.write_text(text)
+          PY
+          git rm .github/workflows/fix-landing-tap-delay.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/landing-safe.js
+          git commit -m 'Fix quick navigation after landing cover'
+          git push
