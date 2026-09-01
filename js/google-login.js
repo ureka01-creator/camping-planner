@@ -12,6 +12,8 @@ let gate = null;
 let busy = false;
 let authRef = null;
 let authModRef = null;
+let explicitLogoutInProgress = false;
+let authResumeTimer = null;
 
 function googleProfileName(user) {
   const display = String(user?.displayName || '').trim();
@@ -102,14 +104,12 @@ function persistUser(user) {
   return true;
 }
 
-function clearStoredUser({ explicitLogout = false, uid = '' } = {}) {
+function clearStoredUser({ explicitLogout = false } = {}) {
   try {
     localStorage.removeItem(AUTH_UID_KEY);
     localStorage.removeItem(AUTH_NAME_KEY);
     localStorage.removeItem(AUTH_EMAIL_KEY);
     if (explicitLogout) {
-      // A different Google account on the same device must select its own team
-      // and must never inherit the previous account's board ownership.
       localStorage.removeItem(MEMBER_KEY);
       localStorage.removeItem(AUTHOR_ID_KEY);
       localStorage.removeItem(LEGACY_AUTHOR_ID_KEY);
@@ -191,6 +191,34 @@ function closeGate() {
   document.body.classList.remove('google-login-open');
 }
 
+function resetPendingLoginUi(message = '') {
+  const activeGate = gate?.isConnected ? gate : document.querySelector('.google-login-backdrop');
+  if (!(activeGate instanceof HTMLElement)) return;
+  const button = activeGate.querySelector('[data-google-login]');
+  const status = activeGate.querySelector('[data-google-login-status]');
+  busy = false;
+  if (button instanceof HTMLButtonElement) button.disabled = false;
+  if (status) status.textContent = message;
+}
+
+function recoverAfterSafariReturn(delay = 450) {
+  window.clearTimeout(authResumeTimer);
+  authResumeTimer = window.setTimeout(() => {
+    if (document.visibilityState === 'hidden' || explicitLogoutInProgress) return;
+    const user = authRef?.currentUser;
+    if (user && !user.isAnonymous) {
+      persistUser(user);
+      closeGate();
+      busy = false;
+      return;
+    }
+    const status = gate?.querySelector('[data-google-login-status]');
+    if (busy || String(status?.textContent || '').includes('Google 로그인 중')) {
+      resetPendingLoginUi('로그인이 완료되지 않았어. 다시 눌러줘.');
+    }
+  }, delay);
+}
+
 async function signInWithGoogle(event) {
   if (busy || !authRef || !authModRef) return;
   busy = true;
@@ -209,7 +237,7 @@ async function signInWithGoogle(event) {
     console.error('Google sign-in failed.', error);
     const code = String(error?.code || '');
     if (status) {
-      if (code.includes('popup-closed')) status.textContent = '로그인을 취소했어. 다시 눌러줘.';
+      if (code.includes('popup-closed') || code.includes('cancelled-popup')) status.textContent = '로그인을 취소했어. 다시 눌러줘.';
       else if (code.includes('popup-blocked')) status.textContent = '팝업이 차단됐어. Safari 팝업 차단을 잠시 해제하고 다시 눌러줘.';
       else status.textContent = '로그인에 실패했어. 잠시 후 다시 눌러줘.';
     }
@@ -258,8 +286,6 @@ function saveNickname() {
   try { localStorage.setItem(nicknameKey(user.uid), nickname); } catch (_) {}
   persistUser(user);
 
-  // Keep legacy modules that still cache camp:myName in sync without exposing
-  // the old manual display-name UI again.
   const legacyInput = document.getElementById('myNameInput');
   if (legacyInput instanceof HTMLInputElement) legacyInput.value = nickname;
   document.getElementById('saveMyNameBtn')?.click();
@@ -272,16 +298,21 @@ async function logoutGoogle() {
 
   const button = document.getElementById('googleLogoutBtn');
   if (button instanceof HTMLButtonElement) button.disabled = true;
-  const uid = user.uid;
+  explicitLogoutInProgress = true;
   try {
     await authModRef.signOut(authRef);
-    clearStoredUser({ explicitLogout:true, uid });
+    clearStoredUser({ explicitLogout:true });
     closeGate();
-    showLoginGate();
+    await window.CampingLandingSafe?.open?.();
   } catch (error) {
     console.error('Google sign-out failed.', error);
     if (button instanceof HTMLButtonElement) button.disabled = false;
+    return;
+  } finally {
+    explicitLogoutInProgress = false;
   }
+
+  showLoginGate();
 }
 
 async function boot() {
@@ -320,13 +351,20 @@ async function boot() {
     saveNickname();
   });
 
+  window.addEventListener('pageshow', () => recoverAfterSafariReturn(300));
+  window.addEventListener('focus', () => recoverAfterSafariReturn(800));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') recoverAfterSafariReturn(500);
+  });
+
   authMod.onAuthStateChanged(auth, user => {
     if (persistUser(user)) {
       closeGate();
+      busy = false;
       return;
     }
     clearStoredUser();
-    showLoginGate();
+    if (!explicitLogoutInProgress) showLoginGate();
   });
 
   if (persistUser(auth.currentUser)) {
@@ -342,7 +380,6 @@ boot().catch(error => {
   waitUntilLandingCloses().then(() => {
     ensureStyle();
     openGate();
-    const status = gate?.querySelector('[data-google-login-status]');
-    if (status) status.textContent = '로그인 모듈을 불러오지 못했어. 잠시 후 새로고침해줘.';
+    resetPendingLoginUi('로그인 모듈을 불러오지 못했어. 잠시 후 새로고침해줘.');
   });
 });
