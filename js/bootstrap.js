@@ -1,11 +1,8 @@
-// Deployment marker: landing poster seam cleanup v0.9.9
+// Deployment marker: final landing + integrated participant status v1.0.0
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
 
-// The top-right share button was removed from the visible UI in v0.5.7.
-// app.js still binds the legacy control during boot, so provide an invisible
-// compatibility target until that older binding is retired.
 if (!document.getElementById('shareBtn')) {
   const legacyShare = document.createElement('button');
   legacyShare.id = 'shareBtn';
@@ -74,11 +71,7 @@ async function safeImport(path) {
   }
 }
 
-// Register login-return and board-layout fixes before the rest of the app UI.
 await safeImport('./v0.9.4-fixes.js?v=104');
-
-// Core app must load. Enhancements are isolated so one bad optional feature
-// can never stop the rest of the UI from booting.
 await import('./app.js?v=064');
 
 for (const path of [
@@ -92,12 +85,10 @@ for (const path of [
   './items-hub.js?v=089',
   './item-edit-fix.js?v=082',
   './edit-icons.js?v=081',
-  './admin-access.js?v=084',
-  // Load home controls early so the cover/lock buttons cannot be blocked by
-  // a later memo or decoration feature.
+  './admin-access.js?v=085',
   './home-order.js?v=096',
   './google-board-identity.js?v=101',
-  './trip-user-presence.js?v=100',
+  './trip-user-presence.js?v=101',
   './home-memo.js?v=101',
   './admin-board-delete.js?v=099',
   './home-board-order.js?v=100',
@@ -109,7 +100,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.9';
+if (version) version.textContent = 'Camping Planner v1.0.0';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
