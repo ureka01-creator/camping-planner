@@ -16,26 +16,6 @@ function activateHome() {
   document.getElementById('app')?.classList.add('home-theme');
 }
 
-function enterFromLanding(event) {
-  const target = event.target instanceof Element ? event.target : null;
-  const landing = target?.closest('.camp-landing');
-  if (!landing || landing.classList.contains('is-exiting')) return;
-
-  activateHome();
-
-  // Keep one owner for closing the poster so body visibility classes cannot be left behind.
-  if (window.CampingLandingSafe?.close) {
-    window.CampingLandingSafe.close();
-    return;
-  }
-
-  document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
-  landing.classList.add('is-exiting');
-  window.setTimeout(() => landing.remove(), 180);
-}
-
-document.addEventListener('pointerup', enterFromLanding, true);
-document.addEventListener('touchend', enterFromLanding, { capture: true, passive: true });
-document.addEventListener('click', enterFromLanding, true);
-
+// landing-safe.js is the single owner of poster input/close behavior.
+// This module only guarantees that entering from the poster resolves to Home.
 window.addEventListener('camp:landing-enter-home', activateHome);
