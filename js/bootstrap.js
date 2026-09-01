@@ -1,4 +1,4 @@
-// Deployment marker: iOS modal lock + stable Google auth return v0.9.3
+// Deployment marker: post-login home + board action alignment v0.9.4
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -74,6 +74,9 @@ async function safeImport(path) {
   }
 }
 
+// Register login-return and board-layout fixes before the rest of the app UI.
+await safeImport('./v0.9.4-fixes.js?v=104');
+
 // Core app must load. Enhancements are isolated so one bad optional feature
 // can never stop the rest of the UI from booting.
 await import('./app.js?v=064');
@@ -104,7 +107,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.3';
+if (version) version.textContent = 'Camping Planner v0.9.4';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
