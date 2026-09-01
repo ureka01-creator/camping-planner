@@ -48,6 +48,7 @@
       text-shadow:0 1px 8px rgba(0,0,0,.35); opacity:0; pointer-events:none;
     }
     .camp-landing-hint.loaded { opacity:.72; }
+    .camp-landing.is-exiting { opacity:0; transition:opacity .16s ease; pointer-events:none; }
   </style>
   <script type="importmap">
     {"imports":{"./js/firebase.js?v=064":"./js/firebase.js?v=087"}}
@@ -194,7 +195,7 @@
         <div class="settings-card dev-card">
           <p id="connectionText" class="muted">Firebase 연결 중…</p>
         </div>
-        <p class="version">Camping Planner v1.0.6</p>
+        <p class="version">Camping Planner v1.0.7</p>
       </section>
     </main>
 
@@ -214,7 +215,7 @@
   </div>
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <script type="module" src="./js/landing-safe.js?v=26"></script>
+  <script type="module" src="./js/landing-safe.js?v=27"></script>
   <script type="module" src="./js/google-login.js?v=106"></script>
   <script type="module" src="./js/entry-guard.js?v=055"></script>
   <script type="module" src="./js/bootstrap.js?v=124"></script>
