@@ -1,4 +1,4 @@
-// Deployment marker: iOS Google return recovery + logout landing v0.9.2
+// Deployment marker: iOS modal lock + stable Google auth return v0.9.3
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -79,7 +79,7 @@ async function safeImport(path) {
 await import('./app.js?v=064');
 
 for (const path of [
-  './modal-keyboard-fix.js?v=100',
+  './modal-keyboard-fix.js?v=101',
   './inline-meal-add.js?v=071',
   './trip-settings.js?v=064',
   './home-meal-progress.js?v=065',
@@ -104,7 +104,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.2';
+if (version) version.textContent = 'Camping Planner v0.9.3';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
