@@ -41,6 +41,9 @@ jobs:
       - name: Run Android responsive smoke check
         run: node qa/run-responsive-smoke.mjs
 
+      - name: Run direct URL landing and Google auth check
+        run: timeout 120s node qa/run-base-entry-auth-smoke.mjs
+
       - name: Run home refresh stability check
         run: timeout 120s node qa/run-home-refresh-stability.mjs
 
@@ -86,6 +89,7 @@ jobs:
         with:
           name: ui-smoke-results
           path: |
+            qa/base-entry-auth-smoke-result.png
             qa/header-smoke-result.png
             qa/first-entry-smoke-result.png
             qa/home-dashboard-smoke-result.png
