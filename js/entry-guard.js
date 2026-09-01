@@ -22,11 +22,20 @@ function enterFromLanding(event) {
   if (!landing || landing.classList.contains('is-exiting')) return;
 
   activateHome();
-  document.body.classList.remove('landing-boot', 'landing-open');
+
+  // Keep one owner for closing the poster so body visibility classes cannot be left behind.
+  if (window.CampingLandingSafe?.close) {
+    window.CampingLandingSafe.close();
+    return;
+  }
+
+  document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
   landing.classList.add('is-exiting');
-  window.setTimeout(() => landing.remove(), 320);
+  window.setTimeout(() => landing.remove(), 180);
 }
 
 document.addEventListener('pointerup', enterFromLanding, true);
 document.addEventListener('touchend', enterFromLanding, { capture: true, passive: true });
 document.addEventListener('click', enterFromLanding, true);
+
+window.addEventListener('camp:landing-enter-home', activateHome);
