@@ -189,6 +189,25 @@ class FirebaseAdapter {
     throw lastError || new Error('Firebase auth persistence unavailable');
   }
 
+  async waitForGoogleUser(authMod){
+    if (this.auth.currentUser && !this.auth.currentUser.isAnonymous) return this.auth.currentUser;
+
+    // Old builds used anonymous auth. Clear a cached anonymous session so the
+    // app now has exactly one identity path: Google sign-in.
+    if (this.auth.currentUser?.isAnonymous) {
+      try { await authMod.signOut(this.auth); } catch (_) {}
+    }
+
+    this.setStatus('auth-required');
+    return new Promise(resolve => {
+      const unsubscribe = authMod.onAuthStateChanged(this.auth, user => {
+        if (!user || user.isAnonymous) return;
+        unsubscribe();
+        resolve(user);
+      });
+    });
+  }
+
   async initOnce(){
     const [appMod, authMod, firestore] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
@@ -200,12 +219,11 @@ class FirebaseAdapter {
     this.app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(FIREBASE_CONFIG);
     this.auth = authMod.getAuth(this.app);
 
-    // Reuse one anonymous account across normal reloads. This avoids creating a new
-    // Firebase anonymous user on every refresh, which can hit per-IP signup limits.
-    // iOS private/restricted storage falls back to session and then memory persistence.
+    // Google is the only supported Firebase identity. The data connection waits
+    // here until google-login.js completes sign-in; anonymous auth is not needed.
     await this.configureAuthPersistence(authMod);
     if (typeof this.auth.authStateReady === 'function') await this.auth.authStateReady();
-    if (!this.auth.currentUser) await authMod.signInAnonymously(this.auth);
+    await this.waitForGoogleUser(authMod);
 
     // Auto-detect long polling helps Safari/iOS networks where Firestore's default
     // streaming transport can be interrupted. Reconnect retries reuse this instance.
