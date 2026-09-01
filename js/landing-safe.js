@@ -11,11 +11,12 @@ const COVER_PARTS = [
 
 // Do not keep a large generated data URL in Safari storage anymore.
 try { localStorage.removeItem(COVER_CACHE_KEY); } catch (_) {}
-document.body.classList.remove('landing-open');
+document.body.classList.remove('landing-open', 'landing-cover-active');
 
 const style = document.createElement('style');
 style.textContent = `
   body.landing-open { overflow:hidden; }
+  body.landing-cover-active #app { visibility:hidden !important; }
   .camp-landing {
     position:fixed; inset:0; z-index:9999; width:100%; height:100dvh;
     margin:0; padding:0; border:0; background:#070b0f; overflow:hidden;
@@ -69,7 +70,7 @@ function loadCoverSrc() {
 
 function closeLanding() {
   if (!(overlay instanceof HTMLElement)) {
-    document.body.classList.remove('landing-boot', 'landing-open');
+    document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
     return;
   }
   const current = overlay;
@@ -77,7 +78,10 @@ function closeLanding() {
   suppressClickUntil = Date.now() + 650;
   current.classList.add('is-exiting');
   document.body.classList.remove('landing-boot', 'landing-open');
-  window.setTimeout(() => current.remove(), 180);
+  window.setTimeout(() => {
+    current.remove();
+    document.body.classList.remove('landing-cover-active');
+  }, 180);
 }
 
 function closeFromInput(event) {
@@ -134,11 +138,11 @@ async function openLanding() {
     closeFromInput(event);
   });
 
-  // Put the cover in the DOM before exposing the app. Combined with the
-  // landing-boot class in index.html this prevents the dashboard from
-  // flashing for a frame during Safari refreshes.
+  // Keep the dashboard hidden for the entire lifetime of the cover. Safari's
+  // translucent bottom toolbar samples the page underneath fixed overlays, so
+  // this prevents home cards from bleeding through the browser chrome.
   document.body.prepend(overlay);
-  document.body.classList.add('landing-open');
+  document.body.classList.add('landing-open', 'landing-cover-active');
   document.body.classList.remove('landing-boot');
 
   const image = overlay.querySelector('.camp-landing-poster');
