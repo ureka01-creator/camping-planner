@@ -1,7 +1,7 @@
 import './bgm.js?v=5';
 
-// QA marker: textless date/location poster + BGM restart-from-beginning v0.9.8.
-const COVER_CACHE_KEY = 'camp:landingCover:v10';
+// QA marker: textless date/location poster without patch seams v0.9.9.
+const COVER_CACHE_KEY = 'camp:landingCover:v11';
 const COVER_PARTS = [
   './assets/cover-v2.part0?v=2',
   './assets/cover-v2.part1?v=2',
@@ -13,7 +13,10 @@ const COVER_PARTS = [
 ];
 const CLEAN_META_PATCH = './assets/cover-clean-meta-patch-v2.b64?v=1';
 
-try { localStorage.removeItem('camp:landingCover:v9'); } catch (_) {}
+try {
+  localStorage.removeItem('camp:landingCover:v9');
+  localStorage.removeItem('camp:landingCover:v10');
+} catch (_) {}
 document.body.classList.remove('landing-open', 'landing-cover-active');
 
 const style = document.createElement('style');
@@ -69,6 +72,33 @@ function loadImage(src) {
   });
 }
 
+function featherPatchEdges(patchImage, featherPx = 14) {
+  const patchCanvas = document.createElement('canvas');
+  patchCanvas.width = patchImage.naturalWidth;
+  patchCanvas.height = patchImage.naturalHeight;
+  const patchCtx = patchCanvas.getContext('2d', { willReadFrequently:true });
+  if (!patchCtx) return patchImage;
+  patchCtx.drawImage(patchImage, 0, 0);
+
+  const imageData = patchCtx.getImageData(0, 0, patchCanvas.width, patchCanvas.height);
+  const data = imageData.data;
+  const width = patchCanvas.width;
+  const height = patchCanvas.height;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const edge = Math.min(x, y, width - 1 - x, height - 1 - y);
+      const raw = Math.max(0, Math.min(1, edge / featherPx));
+      const smooth = raw * raw * (3 - 2 * raw);
+      const i = (y * width + x) * 4 + 3;
+      data[i] = Math.round(data[i] * smooth);
+    }
+  }
+
+  patchCtx.putImageData(imageData, 0, 0);
+  return patchCanvas;
+}
+
 async function applyCleanMetaPatch(baseSrc) {
   const response = await fetch(CLEAN_META_PATCH, { cache:'force-cache' });
   if (!response.ok) throw new Error('clean cover patch load failed');
@@ -85,13 +115,14 @@ async function applyCleanMetaPatch(baseSrc) {
   if (!ctx) throw new Error('canvas unavailable');
   ctx.drawImage(baseImage, 0, 0);
 
-  // This patch was sampled from the approved poster itself. It replaces only
-  // the right-side date/time + campground name/address block. The handwritten
-  // title, separator dash, stars, tent, copy and all other artwork stay intact.
+  // The cleanup patch only covers the old date/time + campground metadata.
+  // Feather its outer 14 px before compositing so there is no visible rectangular edge.
+  // The handwritten title, separator dash, stars, tent, copy and all other artwork stay intact.
   const scaleX = canvas.width / 1023;
   const scaleY = canvas.height / 1537;
+  const softPatch = featherPatchEdges(patchImage, 14);
   ctx.drawImage(
-    patchImage,
+    softPatch,
     570 * scaleX,
     690 * scaleY,
     400 * scaleX,
