@@ -1,4 +1,4 @@
-// Deployment marker: Google logout + per-account nickname v0.9.1
+// Deployment marker: iOS Google return recovery + logout landing v0.9.2
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -104,7 +104,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.1';
+if (version) version.textContent = 'Camping Planner v0.9.2';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
