@@ -1,36 +1,11 @@
 import './bgm.js?v=5';
 
-// v1.0.7 Safari repair: hydrate the verified full JPEG base64 asset.
-// Asset revision v3 forces clients away from the previously truncated payload.
-const COVER_TEXT_SRC = './assets/cover-approved-mobile.jpg.b64?v=3';
+// v1.0.7 Safari repair: load the verified JPEG as a normal image file.
+// No WebP, canvas patching, chunk assembly, or base64 hydration remains here.
+const COVER_SRC = './assets/cover-main-approved.jpg?v=4';
 
 let overlay = null;
 let closing = false;
-let coverDataUrlPromise = null;
-
-function coverDataUrl() {
-  if (window.CampingCoverDataUrl?.startsWith('data:image/jpeg')) {
-    return Promise.resolve(window.CampingCoverDataUrl);
-  }
-  if (coverDataUrlPromise) return coverDataUrlPromise;
-
-  coverDataUrlPromise = fetch(COVER_TEXT_SRC, { cache:'no-store' })
-    .then(response => {
-      if (!response.ok) throw new Error(`cover fetch ${response.status}`);
-      return response.text();
-    })
-    .then(text => {
-      const base64 = text.replace(/\s+/g, '');
-      if (!base64.startsWith('/9j/') || base64.length < 20000) {
-        throw new Error('approved JPEG base64 is invalid');
-      }
-      const src = `data:image/jpeg;base64,${base64}`;
-      window.CampingCoverDataUrl = src;
-      return src;
-    });
-
-  return coverDataUrlPromise;
-}
 
 async function hydratePoster(root) {
   const image = root?.querySelector?.('.camp-landing-poster');
@@ -45,11 +20,10 @@ async function hydratePoster(root) {
   if (loading) loading.textContent = '메인 이미지를 불러오는 중…';
 
   try {
-    const src = await coverDataUrl();
     await new Promise((resolve, reject) => {
       image.onload = () => resolve();
-      image.onerror = () => reject(new Error('approved JPEG decode failed'));
-      image.src = src;
+      image.onerror = () => reject(new Error('approved JPEG file decode failed'));
+      image.src = COVER_SRC;
       if (image.complete && image.naturalWidth > 0) resolve();
     });
     if (!root?.isConnected) return;
@@ -59,8 +33,6 @@ async function hydratePoster(root) {
   } catch (error) {
     console.error('Landing cover failed.', error);
     if (loading) loading.textContent = '메인 이미지 로딩 실패 · 새로고침해줘.';
-    coverDataUrlPromise = null;
-    window.CampingCoverDataUrl = null;
   }
 }
 
