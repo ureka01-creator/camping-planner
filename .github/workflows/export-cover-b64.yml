@@ -1,0 +1,36 @@
+name: Build Safari-safe landing poster
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/export-cover-b64.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-cover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Convert WebP to JPEG base64 text
+        run: |
+          ffmpeg -y -i assets/cover-main-v1.webp -q:v 2 /tmp/cover-main-v1.jpg
+          base64 -w0 /tmp/cover-main-v1.jpg > assets/cover-main-v1.jpg.b64
+          test -s assets/cover-main-v1.jpg.b64
+
+      - name: Commit generated text asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/cover-main-v1.jpg.b64
+          if git diff --cached --quiet; then
+            echo "No asset changes"
+            exit 0
+          fi
+          git commit -m "Add Safari-safe landing poster data"
+          git push
