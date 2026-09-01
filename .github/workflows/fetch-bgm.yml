@@ -17,56 +17,80 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download official Pixabay MP3
+      - name: Prepare browser
         shell: bash
         run: |
           set -euo pipefail
-          PAGE='https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/'
-          HTML="$(curl -fsSL -A 'Mozilla/5.0' "$PAGE")"
-          printf '%s' "$HTML" > /tmp/pixabay-track.html
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium --with-deps
 
-          python3 - <<'PY'
-          import html, json, re
-          from pathlib import Path
+      - name: Resolve official Pixabay MP3 URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/resolve-bgm.cjs <<'JS'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
 
-          text = Path('/tmp/pixabay-track.html').read_text(errors='ignore')
-          scripts = re.findall(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', text, flags=re.I|re.S)
-          content_url = None
-          for raw in scripts:
-              raw = html.unescape(raw).strip()
-              try:
-                  data = json.loads(raw)
-              except Exception:
-                  continue
-              stack = [data]
-              while stack:
-                  item = stack.pop()
-                  if isinstance(item, dict):
-                      if item.get('contentUrl'):
-                          content_url = item['contentUrl']
-                          break
-                      stack.extend(item.values())
-                  elif isinstance(item, list):
-                      stack.extend(item)
-              if content_url:
-                  break
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({
+              userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'
+            });
+            await page.goto('https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/', {
+              waitUntil: 'domcontentloaded', timeout: 60000
+            });
+            await page.waitForTimeout(3500);
 
-          if not content_url:
-              match = re.search(r'"contentUrl"\s*:\s*"([^"]+)"', text)
-              if match:
-                  content_url = match.group(1).replace('\\u0026', '&').replace('\\/', '/')
+            const contentUrl = await page.evaluate(() => {
+              const scripts = [...document.querySelectorAll('script[type="application/ld+json"]')];
+              const find = value => {
+                if (!value) return null;
+                if (Array.isArray(value)) {
+                  for (const entry of value) {
+                    const hit = find(entry);
+                    if (hit) return hit;
+                  }
+                  return null;
+                }
+                if (typeof value === 'object') {
+                  if (typeof value.contentUrl === 'string' && value.contentUrl) return value.contentUrl;
+                  for (const entry of Object.values(value)) {
+                    const hit = find(entry);
+                    if (hit) return hit;
+                  }
+                }
+                return null;
+              };
 
-          if not content_url:
-              raise SystemExit('Pixabay MP3 contentUrl not found')
+              for (const script of scripts) {
+                try {
+                  const hit = find(JSON.parse(script.textContent || '{}'));
+                  if (hit) return hit;
+                } catch (_) {}
+              }
+              return null;
+            });
 
-          Path('/tmp/bgm-url.txt').write_text(content_url)
-          print('Found official Pixabay audio URL')
-          PY
+            await browser.close();
+            if (!contentUrl) throw new Error('Pixabay MP3 contentUrl not found');
+            fs.writeFileSync('/tmp/bgm-url.txt', contentUrl);
+            console.log('Resolved official Pixabay audio URL.');
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          JS
+          node /tmp/resolve-bgm.cjs
 
+      - name: Download and validate MP3
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p assets
           URL="$(cat /tmp/bgm-url.txt)"
           curl -fL --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o assets/midnight-dreaming-lofi.mp3 "$URL"
-
           test -s assets/midnight-dreaming-lofi.mp3
           SIZE="$(wc -c < assets/midnight-dreaming-lofi.mp3)"
           if [ "$SIZE" -lt 100000 ]; then
