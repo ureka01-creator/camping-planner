@@ -1,0 +1,90 @@
+name: Fetch selected BGM
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch-bgm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-bgm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download official Pixabay MP3
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAGE='https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/'
+          HTML="$(curl -fsSL -A 'Mozilla/5.0' "$PAGE")"
+          printf '%s' "$HTML" > /tmp/pixabay-track.html
+
+          python3 - <<'PY'
+          import html, json, re
+          from pathlib import Path
+
+          text = Path('/tmp/pixabay-track.html').read_text(errors='ignore')
+          scripts = re.findall(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', text, flags=re.I|re.S)
+          content_url = None
+          for raw in scripts:
+              raw = html.unescape(raw).strip()
+              try:
+                  data = json.loads(raw)
+              except Exception:
+                  continue
+              stack = [data]
+              while stack:
+                  item = stack.pop()
+                  if isinstance(item, dict):
+                      if item.get('contentUrl'):
+                          content_url = item['contentUrl']
+                          break
+                      stack.extend(item.values())
+                  elif isinstance(item, list):
+                      stack.extend(item)
+              if content_url:
+                  break
+
+          if not content_url:
+              match = re.search(r'"contentUrl"\s*:\s*"([^"]+)"', text)
+              if match:
+                  content_url = match.group(1).replace('\\u0026', '&').replace('\\/', '/')
+
+          if not content_url:
+              raise SystemExit('Pixabay MP3 contentUrl not found')
+
+          Path('/tmp/bgm-url.txt').write_text(content_url)
+          print('Found official Pixabay audio URL')
+          PY
+
+          mkdir -p assets
+          URL="$(cat /tmp/bgm-url.txt)"
+          curl -fL --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o assets/midnight-dreaming-lofi.mp3 "$URL"
+
+          test -s assets/midnight-dreaming-lofi.mp3
+          SIZE="$(wc -c < assets/midnight-dreaming-lofi.mp3)"
+          if [ "$SIZE" -lt 100000 ]; then
+            echo "Downloaded file is unexpectedly small: $SIZE bytes"
+            exit 1
+          fi
+          file assets/midnight-dreaming-lofi.mp3
+
+      - name: Commit BGM asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/midnight-dreaming-lofi.mp3
+          if git diff --cached --quiet; then
+            echo 'BGM asset already exists.'
+            exit 0
+          fi
+          git commit -m 'Add Midnight Dreaming Lofi BGM asset'
+          git push
