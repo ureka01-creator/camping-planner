@@ -1,4 +1,4 @@
-// Deployment marker: landing poster seam cleanup v0.9.9
+// Deployment marker: approved full-screen landing poster v1.0.0
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -47,15 +47,11 @@ function firstData(timeoutMs = 6000) {
 async function repairTripDatesIfNeeded() {
   const data = await firstData();
   const trip = data?.trip || {};
-  const mealDates = (data?.meals || [])
-    .map(meal => meal?.date)
-    .filter(isIsoDate)
-    .sort();
+  const mealDates = (data?.meals || []).map(meal => meal?.date).filter(isIsoDate).sort();
 
   let startDate = isIsoDate(trip.startDate) ? trip.startDate : (mealDates[0] || seedData.trip.startDate);
   let endDate = isIsoDate(trip.endDate) ? trip.endDate : (mealDates.at(-1) || startDate);
   if (endDate < startDate) endDate = startDate;
-
   if (trip.startDate === startDate && trip.endDate === endDate) return;
 
   await dataAdapter.mutate(current => {
@@ -66,19 +62,14 @@ async function repairTripDatesIfNeeded() {
 }
 
 async function safeImport(path) {
-  try {
-    return await import(path);
-  } catch (error) {
+  try { return await import(path); }
+  catch (error) {
     console.error(`Optional module failed: ${path}`, error);
     return null;
   }
 }
 
-// Register login-return and board-layout fixes before the rest of the app UI.
 await safeImport('./v0.9.4-fixes.js?v=104');
-
-// Core app must load. Enhancements are isolated so one bad optional feature
-// can never stop the rest of the UI from booting.
 await import('./app.js?v=064');
 
 for (const path of [
@@ -93,8 +84,6 @@ for (const path of [
   './item-edit-fix.js?v=082',
   './edit-icons.js?v=081',
   './admin-access.js?v=084',
-  // Load home controls early so the cover/lock buttons cannot be blocked by
-  // a later memo or decoration feature.
   './home-order.js?v=096',
   './google-board-identity.js?v=101',
   './trip-user-presence.js?v=100',
@@ -109,7 +98,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.9';
+if (version) version.textContent = 'Camping Planner v1.0.0';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
