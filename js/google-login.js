@@ -117,8 +117,11 @@ async function boot() {
   const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(FIREBASE_CONFIG);
   const auth = authMod.getAuth(app);
   try { await authMod.setPersistence(auth, authMod.browserLocalPersistence); } catch (_) {}
-  try { await authMod.getRedirectResult(auth); } catch (error) { console.warn('Google redirect result skipped.', error); }
   if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+
+  if (auth.currentUser?.isAnonymous) {
+    try { await authMod.signOut(auth); } catch (_) {}
+  }
 
   if (persistUser(auth.currentUser)) {
     closeGate();
@@ -143,16 +146,11 @@ async function boot() {
     } catch (error) {
       console.error('Google sign-in failed.', error);
       const code = String(error?.code || '');
-      if (code.includes('popup-blocked') || code.includes('operation-not-supported')) {
-        try {
-          const provider = new authMod.GoogleAuthProvider();
-          await authMod.signInWithRedirect(auth, provider);
-          return;
-        } catch (redirectError) {
-          console.error('Google redirect sign-in failed.', redirectError);
-        }
+      if (status) {
+        if (code.includes('popup-closed')) status.textContent = '로그인을 취소했어. 다시 눌러줘.';
+        else if (code.includes('popup-blocked')) status.textContent = '팝업이 차단됐어. Safari 팝업 차단을 잠시 해제하고 다시 눌러줘.';
+        else status.textContent = '로그인에 실패했어. 잠시 후 다시 눌러줘.';
       }
-      if (status) status.textContent = code.includes('popup-closed') ? '로그인을 취소했어. 다시 눌러줘.' : '로그인에 실패했어. Firebase의 Google 로그인을 확인해줘.';
     } finally {
       busy = false;
       if (button instanceof HTMLButtonElement && button.isConnected) button.disabled = false;
