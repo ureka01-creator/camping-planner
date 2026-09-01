@@ -5,6 +5,7 @@ const mealLabels = { breakfast:'아침', lunch:'점심', dinner:'저녁', snack:
 const mealOrder = { breakfast:1, lunch:2, dinner:3, snack:4 };
 const weekdayLabels = ['일','월','화','수','목','금','토'];
 let latestData = null;
+let homeRevealQueued = false;
 
 function formatShortDate(iso='') {
   const [,m,d] = iso.split('-').map(Number);
@@ -167,21 +168,41 @@ function arrangeHome() {
   const todoSection = document.getElementById('homeTodo')?.closest('.home-section');
   todoSection?.classList.add('home-todo-hidden');
 
+  // Card order is owned exclusively by home-order.js. This module only decorates cards.
   const memberSection = document.getElementById('memberProgress')?.closest('.home-section');
   const mealSection = document.getElementById('nextMealCard')?.closest('.home-section');
-  const myPrep = document.getElementById('myPrepQuickCard');
-  const anchor = myPrep || home.querySelector('.hero-card');
-  if (!memberSection || !mealSection || !anchor) return;
+  memberSection?.classList.add('home-prep-member-section');
+  mealSection?.classList.add('home-meal-section');
+}
 
-  if (anchor.nextElementSibling !== memberSection) {
-    anchor.insertAdjacentElement('afterend', memberSection);
-  }
-  if (memberSection.nextElementSibling !== mealSection) {
-    memberSection.insertAdjacentElement('afterend', mealSection);
+function revealStableHome(attempt = 0) {
+  if (!document.body.classList.contains('home-hydrating')) return;
+  const meals = sortedMeals();
+  const mealReady = !meals.length || Boolean(document.querySelector('#nextMealCard .home-food-plan'));
+  const prepReady = Boolean(document.getElementById('progressCaption')?.textContent.startsWith('전체 준비 ')) || !allPrepItems().length;
+  const orderReady = Boolean(window.CampingHomeOrder?.apply);
+
+  if (mealReady && prepReady && orderReady) {
+    window.CampingHomeOrder.apply();
+    requestAnimationFrame(() => document.body.classList.remove('home-hydrating'));
+    return;
   }
 
-  memberSection.classList.add('home-prep-member-section');
-  mealSection.classList.add('home-meal-section');
+  if (attempt < 90) {
+    requestAnimationFrame(() => revealStableHome(attempt + 1));
+  } else {
+    window.CampingHomeOrder?.apply?.();
+    document.body.classList.remove('home-hydrating');
+  }
+}
+
+function queueStableReveal() {
+  if (homeRevealQueued) return;
+  homeRevealQueued = true;
+  requestAnimationFrame(() => {
+    homeRevealQueued = false;
+    revealStableHome();
+  });
 }
 
 function openMealDate(date) {
@@ -203,6 +224,8 @@ function apply() {
   arrangeHome();
   renderCombinedPrep();
   renderNextMeals();
+  window.CampingHomeOrder?.apply?.();
+  queueStableReveal();
 }
 
 dataAdapter.subscribe(data => {
