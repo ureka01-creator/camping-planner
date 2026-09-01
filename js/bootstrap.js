@@ -1,4 +1,4 @@
-// Deployment marker: user presence tracking + clean poster metadata v0.9.8
+// Deployment marker: landing poster seam cleanup v0.9.9
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -109,7 +109,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.8';
+if (version) version.textContent = 'Camping Planner v0.9.9';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
