@@ -1,4 +1,4 @@
-// Deployment marker: silent landing cover after logout v0.9.5
+// Deployment marker: restart BGM after landing cover v0.9.6
 import { dataAdapter, seedData } from './firebase.js?v=064';
 
 try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
@@ -107,7 +107,7 @@ for (const path of [
 }
 
 const version = document.querySelector('#view-settings .version');
-if (version) version.textContent = 'Camping Planner v0.9.5';
+if (version) version.textContent = 'Camping Planner v0.9.6';
 
 repairTripDatesIfNeeded().catch(error => {
   if (error?.code === 'ADMIN_REQUIRED') return;
