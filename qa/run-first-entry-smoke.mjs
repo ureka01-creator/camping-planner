@@ -29,6 +29,10 @@ async function enterLanding() {
   }
 }
 
+async function waitForFirstEntryModule() {
+  await page.locator('#myPrepQuickCard').waitFor({ state:'attached', timeout:15000 });
+}
+
 async function simulateSignedIn() {
   await page.evaluate(name => {
     const user={uid:'qa-google-user',name,email:'qa@example.com',googleName:'QA User'};
@@ -44,7 +48,8 @@ async function simulateSignedIn() {
 try {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:30000 });
   await enterLanding();
-  await page.locator('#view-home.active').waitFor({ state:'visible', timeout:15000 });
+  await page.locator('#view-home.active').waitFor({ state:'attached', timeout:15000 });
+  await waitForFirstEntryModule();
   await simulateSignedIn();
   await page.locator('#firstEntryBackdrop').waitFor({ state:'visible', timeout:15000 });
 
@@ -80,7 +85,8 @@ try {
 
   await page.reload({ waitUntil:'domcontentloaded', timeout:30000 });
   await enterLanding();
-  await page.locator('#view-home.active').waitFor({ state:'visible', timeout:15000 });
+  await page.locator('#view-home.active').waitFor({ state:'attached', timeout:15000 });
+  await waitForFirstEntryModule();
   await simulateSignedIn();
   await page.waitForTimeout(700);
   const pickerAfterReload=await page.locator('#firstEntryBackdrop').count();
