@@ -11,7 +11,7 @@ const COVER_PARTS = [
   './assets/cover-v2.part5?v=2',
   './assets/cover-v2.part6?v=2'
 ];
-const CLEAN_META_PATCH = './assets/cover-clean-meta-patch.b64?v=1';
+const CLEAN_META_PATCH = './assets/cover-clean-meta-patch-v2.b64?v=1';
 
 try { localStorage.removeItem('camp:landingCover:v9'); } catch (_) {}
 document.body.classList.remove('landing-open', 'landing-cover-active');
