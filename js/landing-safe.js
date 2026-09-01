@@ -1,6 +1,6 @@
 import './bgm.js?v=5';
 
-// Final approved landing poster v1.0.0 — single image, full-bleed.
+// Final approved landing poster v1.0.1 — single image, full-bleed.
 const COVER_SRC = './assets/cover-main-v1.webp?v=1';
 
 document.body.classList.remove('landing-open', 'landing-cover-active');
@@ -44,7 +44,27 @@ document.head.appendChild(style);
 let overlay = null;
 let suppressClickUntil = 0;
 
+function activateHome() {
+  try { localStorage.setItem('camp:lastView', 'home'); } catch (_) {}
+
+  document.querySelectorAll('.view').forEach(view => {
+    view.classList.toggle('active', view.dataset.view === 'home');
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.nav === 'home');
+  });
+
+  const app = document.getElementById('app');
+  app?.classList.add('home-theme');
+  window.dispatchEvent(new CustomEvent('camp:landing-enter-home'));
+}
+
 function closeLanding() {
+  // Entering from the poster must always resolve to the app Home view.
+  // Previously the poster closed on pointerdown before entry-guard's pointerup,
+  // so the guard skipped activation and the user could remain stuck outside Home.
+  activateHome();
+
   if (!(overlay instanceof HTMLElement)) {
     document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
     return;
