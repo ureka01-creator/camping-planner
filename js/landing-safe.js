@@ -1,7 +1,7 @@
 import './bgm.js?v=5';
 
 // Final approved landing poster v1.0.2 — single image, full-bleed.
-const COVER_SRC = './assets/cover-main-v1.webp?v=1';
+const COVER_SRC = './assets/cover-main-v1.webp?v=2';
 
 document.body.classList.remove('landing-open', 'landing-cover-active');
 
@@ -42,6 +42,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 let overlay = null;
+let closing = false;
 let suppressClickUntil = 0;
 
 function activateHome() {
@@ -50,32 +51,40 @@ function activateHome() {
   const homeButton = document.querySelector('[data-nav="home"]');
   if (homeButton && typeof homeButton.onclick === 'function') {
     homeButton.click();
-    window.dispatchEvent(new CustomEvent('camp:landing-enter-home'));
-    return;
+  } else {
+    document.querySelectorAll('.view').forEach(view => {
+      view.classList.toggle('active', view.dataset.view === 'home');
+    });
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.nav === 'home');
+    });
+    document.getElementById('app')?.classList.add('home-theme');
   }
 
-  document.querySelectorAll('.view').forEach(view => {
-    view.classList.toggle('active', view.dataset.view === 'home');
-  });
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.toggle('active', item.dataset.nav === 'home');
-  });
-  document.getElementById('app')?.classList.add('home-theme');
   window.dispatchEvent(new CustomEvent('camp:landing-enter-home'));
 }
 
 function closeLanding() {
+  if (closing) return;
+  closing = true;
   activateHome();
 
   document.body.classList.remove('landing-boot', 'landing-open', 'landing-cover-active');
 
-  if (!(overlay instanceof HTMLElement)) return;
-
-  const current = overlay;
+  const current = overlay instanceof HTMLElement ? overlay : document.querySelector('.camp-landing');
   overlay = null;
-  suppressClickUntil = Date.now() + 300;
+  suppressClickUntil = Date.now() + 350;
+
+  if (!(current instanceof HTMLElement)) {
+    closing = false;
+    return;
+  }
+
   current.classList.add('is-exiting');
-  window.setTimeout(() => current.remove(), 180);
+  window.setTimeout(() => {
+    current.remove();
+    closing = false;
+  }, 180);
 }
 
 function closeFromInput(event) {
@@ -114,12 +123,13 @@ async function openLanding() {
   window.CampingBgm?.pause?.();
 
   if (overlay instanceof HTMLElement && overlay.isConnected) return;
+  closing = false;
 
   overlay = document.createElement('div');
   overlay.className = 'camp-landing';
   overlay.setAttribute('role', 'button');
   overlay.setAttribute('tabindex', '0');
-  overlay.setAttribute('aria-label', '캠핑 플래너로 돌아가기');
+  overlay.setAttribute('aria-label', '캠핑 플래너로 들어가기');
   overlay.innerHTML = `
     <span class="camp-landing-safe-frame">
       <img class="camp-landing-poster" alt="캠핑 메인 이미지" />
@@ -127,9 +137,9 @@ async function openLanding() {
     </span>
     <span class="camp-landing-hint" aria-hidden="true">⌄</span>`;
 
-  // iPhone Safari: finish the tap first, then close. Closing on pointerdown
-  // removed the poster before Home navigation could update app.js state.
-  overlay.addEventListener('pointerup', closeFromInput, { passive:false });
+  // iPhone Safari에서 release 이벤트가 누락되는 경우가 있어 press 시점에 바로 진입한다.
+  overlay.addEventListener('pointerdown', closeFromInput, { passive:false });
+  overlay.addEventListener('touchstart', closeFromInput, { passive:false });
   overlay.addEventListener('click', event => {
     if (Date.now() < suppressClickUntil) {
       event.preventDefault();
