@@ -29,10 +29,23 @@ async function enterLanding() {
   }
 }
 
+async function simulateSignedIn() {
+  await page.evaluate(name => {
+    const user={uid:'qa-google-user',name,email:'qa@example.com',googleName:'QA User'};
+    localStorage.setItem('camp:authUid', user.uid);
+    localStorage.setItem('camp:myName', name);
+    window.CampingGoogleUser=user;
+    document.querySelectorAll('.google-login-backdrop').forEach(node=>node.remove());
+    document.body.classList.remove('google-login-open');
+    window.dispatchEvent(new CustomEvent('camp:auth-ready',{detail:user}));
+  }, personalDisplayName);
+}
+
 try {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:30000 });
   await enterLanding();
   await page.locator('#view-home.active').waitFor({ state:'visible', timeout:15000 });
+  await simulateSignedIn();
   await page.locator('#firstEntryBackdrop').waitFor({ state:'visible', timeout:15000 });
 
   const teams=page.locator('.first-entry-team');
@@ -68,6 +81,7 @@ try {
   await page.reload({ waitUntil:'domcontentloaded', timeout:30000 });
   await enterLanding();
   await page.locator('#view-home.active').waitFor({ state:'visible', timeout:15000 });
+  await simulateSignedIn();
   await page.waitForTimeout(700);
   const pickerAfterReload=await page.locator('#firstEntryBackdrop').count();
   const retainedCardText=(await page.locator('#myPrepQuickCard').textContent()) || '';
