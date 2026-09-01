@@ -77,7 +77,7 @@ function closeLanding() {
   }
   const current = overlay;
   overlay = null;
-  suppressClickUntil = Date.now() + 650;
+  suppressClickUntil = Date.now() + 350;
   current.classList.add('is-exiting');
   document.body.classList.remove('landing-boot', 'landing-open');
   window.setTimeout(() => {
