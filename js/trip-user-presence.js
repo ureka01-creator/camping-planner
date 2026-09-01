@@ -25,41 +25,39 @@ function memberById(memberId) {
 }
 
 function memberProfiles(memberId) {
-  return profiles().filter(profile => String(profile?.memberId || '') === String(memberId || ''));
+  const seen = new Set();
+  return profiles()
+    .filter(profile => String(profile?.memberId || '') === String(memberId || ''))
+    .filter(profile => {
+      const key = String(profile?.uid || profile?.nickname || '');
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function openMemberUsers(memberId) {
   const member = memberById(memberId);
   const rows = memberProfiles(memberId);
-  const me = currentUser();
   const teamName = String(member?.name || '참여자 / 팀');
 
   openModal(`
     <div class="modal-title member-users-modal-title">
-      <div><h3>${esc(teamName)}</h3><p>연결된 사용자</p></div>
+      <h3>${esc(teamName)} 유저</h3>
       <button class="more-btn" data-close aria-label="닫기">×</button>
     </div>
     <div class="member-users-modal-list">
-      ${rows.length ? rows.map(profile => {
-        const nickname = String(profile?.nickname || profile?.googleName || '캠핑 멤버');
-        const googleName = String(profile?.googleName || '').trim();
-        const email = String(profile?.email || '').trim();
-        const mine = Boolean(me?.uid && profile?.uid === me.uid);
-        return `
-          <div class="member-users-modal-row">
-            <div class="member-users-modal-main">
-              <strong>${esc(nickname)}${mine ? '<em>나</em>' : ''}</strong>
-              ${googleName && googleName !== nickname ? `<span>${esc(googleName)}</span>` : ''}
-              ${email ? `<small>${esc(email)}</small>` : ''}
-            </div>
-          </div>`;
-      }).join('') : '<p class="member-users-modal-empty">아직 연결된 사용자가 없어.</p>'}
+      ${rows.length
+        ? rows.map(profile => `<div class="member-users-modal-row">${esc(String(profile?.nickname || '캠핑 멤버'))}</div>`).join('')
+        : '<p class="member-users-modal-empty">연결된 유저가 없어.</p>'}
     </div>`);
 }
 
 function decorateMemberCards() {
   const list = document.getElementById('memberList');
   if (!list) return;
+
+  list.querySelectorAll('.member-login-presence').forEach(node => node.remove());
 
   list.querySelectorAll('.member-card').forEach(card => {
     const edit = card.querySelector('[data-edit-member]');
@@ -80,13 +78,13 @@ function decorateMemberCards() {
       button.type = 'button';
       button.className = 'member-user-info-btn';
       button.dataset.memberUserInfo = memberId;
-      button.setAttribute('aria-label', '연결된 사용자 보기');
+      button.setAttribute('aria-label', '연결된 유저 보기');
       if (edit) card.insertBefore(button, edit);
       else card.appendChild(button);
     }
 
     button.dataset.memberUserInfo = memberId;
-    button.textContent = rows.length > 1 ? `사용자 ${rows.length}` : '사용자';
+    button.textContent = rows.length > 1 ? `유저 ${rows.length}` : '유저';
   });
 }
 
@@ -178,19 +176,13 @@ style.textContent = `
     font-size:10px; font-weight:800; white-space:nowrap;
   }
   .member-card > [data-edit-member] { margin-left:0; }
-  .member-users-modal-title > div p { margin:4px 0 0; color:rgba(234,217,196,.42); font-size:10px; }
   .member-users-modal-list { display:grid; gap:8px; margin-top:14px; }
   .member-users-modal-row {
-    padding:13px 14px; border:1px solid rgba(216,160,113,.10); border-radius:14px;
-    background:rgba(234,217,196,.035);
+    min-height:44px; display:flex; align-items:center; padding:0 14px;
+    border:1px solid rgba(216,160,113,.10); border-radius:14px;
+    background:rgba(234,217,196,.035); color:#ead9c4;
+    font-size:13px; font-weight:750;
   }
-  .member-users-modal-main strong { display:flex; align-items:center; gap:6px; color:#ead9c4; font-size:13px; }
-  .member-users-modal-main strong em {
-    padding:2px 5px; border-radius:999px; background:rgba(201,137,93,.13);
-    color:#dca77b; font-size:8px; font-style:normal; font-weight:800;
-  }
-  .member-users-modal-main span,
-  .member-users-modal-main small { display:block; margin-top:5px; color:rgba(234,217,196,.44); font-size:10px; }
   .member-users-modal-empty { margin:14px 0 4px; color:rgba(234,217,196,.42); font-size:11px; }
 `;
 document.head.appendChild(style);
