@@ -1,8 +1,8 @@
 import './bgm.js?v=5';
 
-// v1.0.7: approved poster is stored as six base64 JPEG text chunks.
-// This avoids the corrupted WebP asset path that showed a broken image on iPhone Safari.
-const COVER_PARTS = Array.from({ length:6 }, (_, i) => `./assets/cover-main-approved.part${i}?v=1`);
+// v1.0.7: use the already verified Safari-safe approved JPEG base64 asset.
+// Keep the image as text in GitHub, then hydrate it into a JPEG data URL in-browser.
+const COVER_TEXT_SRC = './assets/cover-approved-mobile.jpg.b64?v=2';
 
 let overlay = null;
 let closing = false;
@@ -14,20 +14,20 @@ function coverDataUrl() {
   }
   if (coverDataUrlPromise) return coverDataUrlPromise;
 
-  coverDataUrlPromise = Promise.all(
-    COVER_PARTS.map(src => fetch(src, { cache:'no-store' }).then(response => {
-      if (!response.ok) throw new Error(`cover part fetch ${response.status}`);
+  coverDataUrlPromise = fetch(COVER_TEXT_SRC, { cache:'no-store' })
+    .then(response => {
+      if (!response.ok) throw new Error(`cover fetch ${response.status}`);
       return response.text();
-    }))
-  ).then(parts => {
-    const base64 = parts.join('').replace(/\s+/g, '');
-    if (!base64.startsWith('/9j/') || base64.length < 50000) {
-      throw new Error('approved JPEG base64 is incomplete');
-    }
-    const src = `data:image/jpeg;base64,${base64}`;
-    window.CampingCoverDataUrl = src;
-    return src;
-  });
+    })
+    .then(text => {
+      const base64 = text.replace(/\s+/g, '');
+      if (!base64.startsWith('/9j/') || base64.length < 5000) {
+        throw new Error('approved JPEG base64 is invalid');
+      }
+      const src = `data:image/jpeg;base64,${base64}`;
+      window.CampingCoverDataUrl = src;
+      return src;
+    });
 
   return coverDataUrlPromise;
 }
