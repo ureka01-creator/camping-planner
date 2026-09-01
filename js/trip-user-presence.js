@@ -43,13 +43,13 @@ function openMemberUsers(memberId) {
 
   openModal(`
     <div class="modal-title member-users-modal-title">
-      <h3>${esc(teamName)} 유저</h3>
+      <h3>${esc(teamName)} 참여자</h3>
       <button class="more-btn" data-close aria-label="닫기">×</button>
     </div>
     <div class="member-users-modal-list">
       ${rows.length
         ? rows.map(profile => `<div class="member-users-modal-row">${esc(String(profile?.nickname || '캠핑 멤버'))}</div>`).join('')
-        : '<p class="member-users-modal-empty">연결된 유저가 없어.</p>'}
+        : '<p class="member-users-modal-empty">연결된 참여자가 없어.</p>'}
     </div>`);
 }
 
@@ -78,13 +78,13 @@ function decorateMemberCards() {
       button.type = 'button';
       button.className = 'member-user-info-btn';
       button.dataset.memberUserInfo = memberId;
-      button.setAttribute('aria-label', '연결된 유저 보기');
+      button.setAttribute('aria-label', '연결된 참여자 보기');
       if (edit) card.insertBefore(button, edit);
       else card.appendChild(button);
     }
 
     button.dataset.memberUserInfo = memberId;
-    button.textContent = rows.length > 1 ? `유저 ${rows.length}` : '유저';
+    button.textContent = rows.length > 1 ? `참여자 ${rows.length}` : '참여자';
   });
 }
 
