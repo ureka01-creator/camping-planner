@@ -1,4 +1,4 @@
-import './bgm.js?v=2';
+import './bgm.js?v=3';
 
 // QA marker: BGM v0.7.8 + quick-navigation landing fix.
 const COVER_CACHE_KEY = 'camp:landingCover:v9';

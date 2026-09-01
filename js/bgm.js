@@ -1,6 +1,6 @@
 // Midnight Dreaming / Lofi by LofCosmos
 // Source: Pixabay track 256436, used under the Pixabay Content License.
-const SOURCE = './assets/midnight-dreaming-lofi.mp3';
+const SOURCE = './assets/midnight-dreaming-lofi.mp3?v=2';
 const MUTED_KEY = 'camp:bgmMuted:v1';
 const VOLUME = 0.12;
 
