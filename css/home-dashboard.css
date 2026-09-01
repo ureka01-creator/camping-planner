@@ -252,3 +252,55 @@
     padding: 12px 0 14px;
   }
 }
+
+/* Header v0.7.9 — let lower metadata use the full row and give actions more air. */
+.home-theme .topbar {
+  position: relative;
+  display: block;
+}
+
+.home-theme .trip-heading {
+  width: 100%;
+}
+
+.home-theme .topbar-actions {
+  position: absolute;
+  top: 36px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.home-theme .topbar-actions .icon-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  font-size: 17px;
+}
+
+.home-theme .topbar-actions .icon-btn svg {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.home-theme .topbar-actions .settings-shortcut {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.home-theme .trip-address-row {
+  width: 100%;
+  max-width: 100%;
+}
+
+.home-theme .trip-address {
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .home-theme .topbar-actions {
+    top: 30px;
+    right: 4px;
+  }
+}
