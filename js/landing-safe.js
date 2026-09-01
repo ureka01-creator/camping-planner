@@ -1,3 +1,5 @@
+import './bgm.js?v=2';
+
 const COVER_CACHE_KEY = 'camp:landingCover:v9';
 const COVER_PARTS = [
   './assets/cover-v2.part0?v=2',
