@@ -1,10 +1,12 @@
+// Midnight Dreaming / Lofi by LofCosmos
+// Source: Pixabay track 256436, used under the Pixabay Content License.
 const SOURCE = './assets/midnight-dreaming-lofi.mp3';
 const MUTED_KEY = 'camp:bgmMuted:v1';
 const VOLUME = 0.12;
 
 let audio = null;
 let button = null;
-let available = false;
+let available = true;
 let activated = false;
 
 function readMuted() {
@@ -35,14 +37,15 @@ function syncButton() {
 
 async function startPlayback() {
   activated = true;
-  if (!audio || !available || readMuted()) return;
+  if (!audio || readMuted()) return;
   audio.muted = false;
   audio.volume = VOLUME;
   try {
+    // Call play() directly inside the user's first gesture. On iOS this also
+    // grants playback permission while the MP3 is still loading.
     await audio.play();
   } catch (_) {
-    // iOS may reject a resume that is no longer inside a user gesture.
-    // The next user interaction will try again.
+    // If Safari still defers playback, the next real user gesture retries it.
   }
 }
 
@@ -57,7 +60,6 @@ function ensureButton() {
   button.id = 'bgmToggleBtn';
   button.type = 'button';
   button.className = 'icon-btn bgm-toggle-btn';
-  button.hidden = true;
 
   const settings = document.getElementById('settingsShortcut');
   actions.insertBefore(button, settings || null);
@@ -85,7 +87,8 @@ function ensureButton() {
 }
 
 function tryFromGesture() {
-  if (!activated || audio?.paused) startPlayback();
+  if (!audio || readMuted()) return;
+  if (!activated || audio.paused) startPlayback();
 }
 
 const style = document.createElement('style');
@@ -101,27 +104,26 @@ document.head.appendChild(style);
 
 audio = new Audio(SOURCE);
 audio.loop = true;
-audio.preload = 'auto';
+audio.preload = 'metadata';
 audio.volume = VOLUME;
 audio.muted = readMuted();
 audio.setAttribute('playsinline', '');
 
-audio.addEventListener('canplay', () => {
+audio.addEventListener('loadedmetadata', () => {
   available = true;
-  ensureButton();
   syncButton();
 });
 
 audio.addEventListener('error', () => {
   available = false;
   syncButton();
-  console.warn('Camping BGM asset is not available yet.');
+  console.warn('Camping BGM asset is not available.');
 });
 
 ensureButton();
 
-// Capture the very first real user gesture at window level. This happens
-// before the landing cover consumes its tap and satisfies iOS autoplay rules.
+// Window capture fires before the landing cover consumes its touch, so the
+// very first tap on the cover can unlock audio playback on iPhone Safari.
 window.addEventListener('pointerdown', tryFromGesture, { capture:true });
 window.addEventListener('touchstart', tryFromGesture, { capture:true, passive:true });
 window.addEventListener('keydown', tryFromGesture, { capture:true });
