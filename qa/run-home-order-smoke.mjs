@@ -52,10 +52,13 @@ try {
   await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:25000 });
   await ensureTeam();
   await page.waitForSelector('#myPrepQuickCard', { timeout:10000 });
-  await page.waitForFunction(() => document.querySelectorAll('#view-home > [data-home-order-card]').length===4, null, { timeout:10000 });
+  await page.waitForFunction(() => {
+    const keys=[...document.querySelectorAll('#view-home > [data-home-order-card]')].map(node => node.dataset.homeOrderCard);
+    return ['prep','mine','members','meals','memo'].every(key => keys.includes(key));
+  }, null, { timeout:10000 });
 
   const initial=await homeOrder();
-  if(initial.join(',')!=='prep,mine,members,meals') throw new Error(`Unexpected default order: ${initial.join(',')}`);
+  if(initial.join(',')!=='prep,mine,members,meals,memo') throw new Error(`Unexpected default order: ${initial.join(',')}`);
 
   if(await page.locator('#homeOrderCard').count()) throw new Error('Legacy settings order card still exists');
   const lock=page.locator('#homeOrderLockBtn');
@@ -88,7 +91,7 @@ try {
   await page.mouse.up();
   await page.waitForTimeout(180);
 
-  const expected='meals,prep,mine,members';
+  const expected='meals,prep,mine,members,memo';
   const reordered=await homeOrder();
   const stored=await page.evaluate(key => JSON.parse(localStorage.getItem(key) || '[]'), `camp:homeOrder:${tripId}`);
   if(reordered.join(',')!==expected || stored.join(',')!==expected) throw new Error(`Drag order not saved: dom=${reordered.join(',')} stored=${stored.join(',')}`);
@@ -104,7 +107,10 @@ try {
   await page.reload({ waitUntil:'domcontentloaded', timeout:30000 });
   await passLanding();
   await page.waitForSelector('#myPrepQuickCard', { timeout:10000 });
-  await page.waitForFunction(() => document.querySelectorAll('#view-home > [data-home-order-card]').length===4, null, { timeout:10000 });
+  await page.waitForFunction(() => {
+    const keys=[...document.querySelectorAll('#view-home > [data-home-order-card]')].map(node => node.dataset.homeOrderCard);
+    return ['prep','mine','members','meals','memo'].every(key => keys.includes(key));
+  }, null, { timeout:10000 });
   await page.waitForTimeout(150);
 
   const persisted=await homeOrder();
