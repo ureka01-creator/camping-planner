@@ -1,4 +1,4 @@
-name: Fetch selected BGM
+name: Finalize BGM integration
 
 on:
   push:
@@ -10,174 +10,50 @@ permissions:
   contents: write
 
 jobs:
-  fetch-bgm:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Prepare browser
+      - name: Wire BGM and bump version
         shell: bash
         run: |
           set -euo pipefail
-          npm init -y >/dev/null 2>&1
-          npm install --no-save playwright@1.55.0
-          npx playwright install chromium --with-deps
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Capture official Pixabay MP3
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat > resolve-bgm.cjs <<'JS'
-          const { chromium } = require('playwright');
-          const fs = require('fs');
+          index = Path('index.html')
+          text = index.read_text()
+          assert 'Camping Planner v0.7.7' in text
+          assert './js/landing-safe.js?v=7' in text
+          text = text.replace('Camping Planner v0.7.7', 'Camping Planner v0.7.8')
+          text = text.replace('./js/landing-safe.js?v=7', './js/landing-safe.js?v=8')
+          index.write_text(text)
 
-          const PAGE_URL = 'https://pixabay.com/music/beats-midnight-dreaming-lofi-256436/';
-          const OUT = 'assets/midnight-dreaming-lofi.mp3';
-          const candidates = new Set();
-          let captured = false;
+          landing = Path('js/landing-safe.js')
+          text = landing.read_text()
+          if not text.startswith("import './bgm.js?v=2';"):
+              text = "import './bgm.js?v=2';\n\n" + text
+          landing.write_text(text)
 
-          function looksLikeAudio(url, contentType = '') {
-            return /audio\//i.test(contentType) || /\.mp3(?:$|[?#])/i.test(url) || /cdn\.pixabay\.com\/download\/audio/i.test(url);
-          }
+          bootstrap = Path('js/bootstrap.js')
+          text = bootstrap.read_text()
+          assert 'Camping Planner v0.7.7' in text
+          text = text.replace('Camping Planner v0.7.7', 'Camping Planner v0.7.8')
+          bootstrap.write_text(text)
+          PY
 
-          (async () => {
-            fs.mkdirSync('assets', { recursive: true });
-            const browser = await chromium.launch({ headless: true });
-            const context = await browser.newContext({
-              userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-              locale: 'en-US'
-            });
-            const page = await context.newPage();
+          test -s assets/midnight-dreaming-lofi.mp3
+          git rm .github/workflows/fetch-bgm.yml
 
-            page.on('request', request => {
-              const url = request.url();
-              if (looksLikeAudio(url)) candidates.add(url);
-            });
-
-            page.on('response', async response => {
-              if (captured) return;
-              const url = response.url();
-              const contentType = response.headers()['content-type'] || '';
-              if (!looksLikeAudio(url, contentType)) return;
-              candidates.add(url);
-              try {
-                const body = await response.body();
-                if (body.length > 100000) {
-                  fs.writeFileSync(OUT, body);
-                  captured = true;
-                  console.log(`Captured audio response: ${body.length} bytes`);
-                }
-              } catch (_) {}
-            });
-
-            const nav = await page.goto(PAGE_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-            console.log(`Pixabay page status: ${nav?.status()} title: ${await page.title()}`);
-            await page.waitForTimeout(3000);
-
-            const discovered = await page.evaluate(() => {
-              const urls = new Set();
-              document.querySelectorAll('audio, audio source').forEach(el => {
-                for (const value of [el.src, el.currentSrc, el.getAttribute?.('src')]) {
-                  if (value) urls.add(value);
-                }
-              });
-              document.querySelectorAll('a[href]').forEach(el => {
-                const href = el.href || '';
-                if (/\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(href)) urls.add(href);
-              });
-              performance.getEntriesByType('resource').forEach(entry => {
-                if (/\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(entry.name)) urls.add(entry.name);
-              });
-              const html = document.documentElement.innerHTML;
-              for (const match of html.matchAll(/https?:\\?\/\\?\/[^"'<>\s]+(?:\.mp3|download\/audio)[^"'<>\s]*/gi)) {
-                urls.add(match[0].replaceAll('\\u0026', '&').replaceAll('\\/', '/'));
-              }
-              return [...urls];
-            });
-            discovered.forEach(url => candidates.add(url));
-            console.log(`Discovered ${candidates.size} possible audio URLs before play.`);
-
-            if (!captured) {
-              try {
-                const playButton = page.getByRole('button', { name: /play/i }).first();
-                if (await playButton.count()) {
-                  await playButton.click({ timeout: 5000 });
-                  console.log('Clicked Pixabay play button.');
-                }
-              } catch (error) {
-                console.log(`Play button click skipped: ${error.message}`);
-              }
-
-              try {
-                await page.evaluate(() => {
-                  const audio = document.querySelector('audio');
-                  if (audio) return audio.play().catch(() => {});
-                });
-              } catch (_) {}
-              await page.waitForTimeout(6000);
-            }
-
-            const afterPlay = await page.evaluate(() => [
-              ...new Set([
-                ...[...document.querySelectorAll('audio, audio source')].flatMap(el => [el.src, el.currentSrc, el.getAttribute?.('src')]).filter(Boolean),
-                ...performance.getEntriesByType('resource').map(entry => entry.name).filter(name => /\.mp3(?:$|[?#])|cdn\.pixabay\.com\/download\/audio/i.test(name))
-              ])
-            ]);
-            afterPlay.forEach(url => candidates.add(url));
-            console.log(`Discovered ${candidates.size} possible audio URLs after play.`);
-
-            if (!captured) {
-              for (const url of candidates) {
-                if (!url || url.startsWith('blob:')) continue;
-                try {
-                  const response = await context.request.get(url, {
-                    headers: { Referer: PAGE_URL, Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' },
-                    timeout: 60000
-                  });
-                  const body = await response.body();
-                  const type = response.headers()['content-type'] || '';
-                  console.log(`Candidate fetch ${response.status()} ${type} ${body.length} bytes`);
-                  if (response.ok() && body.length > 100000 && looksLikeAudio(url, type)) {
-                    fs.writeFileSync(OUT, body);
-                    captured = true;
-                    break;
-                  }
-                } catch (error) {
-                  console.log(`Candidate fetch failed: ${error.message}`);
-                }
-              }
-            }
-
-            if (!captured) {
-              console.log('Body preview:', (await page.locator('body').innerText()).slice(0, 700).replace(/\s+/g, ' '));
-            }
-            await browser.close();
-
-            if (!captured || !fs.existsSync(OUT)) throw new Error('Could not capture the selected Pixabay MP3');
-            const size = fs.statSync(OUT).size;
-            if (size < 100000) throw new Error(`Captured file too small: ${size}`);
-            console.log(`Saved selected BGM: ${size} bytes`);
-          })().catch(error => {
-            console.error(error);
-            process.exit(1);
-          });
-          JS
-          node resolve-bgm.cjs
-          rm -f resolve-bgm.cjs
-          file assets/midnight-dreaming-lofi.mp3
-
-      - name: Commit BGM asset
+      - name: Commit final integration
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/midnight-dreaming-lofi.mp3
-          if git diff --cached --quiet; then
-            echo 'BGM asset already exists.'
-            exit 0
-          fi
-          git commit -m 'Add Midnight Dreaming Lofi BGM asset'
+          git add index.html js/landing-safe.js js/bootstrap.js js/bgm.js assets/midnight-dreaming-lofi.mp3
+          git commit -m 'Enable Midnight Dreaming BGM v0.7.8'
           git push
