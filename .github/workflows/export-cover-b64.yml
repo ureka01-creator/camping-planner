@@ -22,13 +22,41 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y ffmpeg
 
-      - name: Decode and convert cover to JPEG base64 text
+      - name: Normalize and convert cover to JPEG base64 text
         run: |
-          base64 -d assets/cover-main-v1.webp > /tmp/cover-main-v1.webp
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, re
+
+          src = Path('assets/cover-main-v1.webp').read_bytes()
+          print('source bytes:', len(src), 'head:', repr(src[:48]))
+
+          if src.startswith(b'RIFF') and src[8:12] == b'WEBP':
+              data = src
+              print('cover source: binary webp')
+          else:
+              text = src.decode('ascii', errors='ignore')
+              if 'base64,' in text:
+                  text = text.split('base64,', 1)[1]
+              # Some earlier uploads were wrapped text. Keep only base64 alphabet.
+              compact = re.sub(r'[^A-Za-z0-9+/=]', '', text)
+              compact += '=' * ((4 - len(compact) % 4) % 4)
+              data = base64.b64decode(compact, validate=False)
+              print('cover source: decoded text, bytes:', len(data), 'head:', repr(data[:16]))
+
+          if not (data.startswith(b'RIFF') and data[8:12] == b'WEBP'):
+              raise SystemExit('normalized cover is not a valid WEBP container')
+          Path('/tmp/cover-main-v1.webp').write_bytes(data)
+          PY
           file /tmp/cover-main-v1.webp
-          ffmpeg -y -i /tmp/cover-main-v1.webp -q:v 2 /tmp/cover-main-v1.jpg
+          ffmpeg -v error -y -i /tmp/cover-main-v1.webp -q:v 2 /tmp/cover-main-v1.jpg
           base64 -w0 /tmp/cover-main-v1.jpg > assets/cover-main-v1.jpg.b64
-          test -s assets/cover-main-v1.jpg.b64
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('assets/cover-main-v1.jpg.b64').read_text().strip()
+          assert text.startswith('/9j/'), text[:20]
+          print('jpeg base64 chars:', len(text))
+          PY
 
       - name: Commit generated text asset
         run: |
