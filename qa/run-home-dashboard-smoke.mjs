@@ -22,7 +22,18 @@ try {
     await landing.waitFor({ state:'detached', timeout:5000 });
   }
 
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  await page.waitForFunction(() => window.CampingGoogleAuthReady === true, null, { timeout:15000 });
+  await page.evaluate(() => {
+    const user={uid:'qa-home-dashboard-user',name:'QA 사용자',email:'qa@example.com',googleName:'QA 사용자'};
+    localStorage.setItem('camp:authUid', user.uid);
+    localStorage.setItem('camp:myName', user.name);
+    window.CampingGoogleUser=user;
+    document.querySelectorAll('.google-login-backdrop').forEach(node=>node.remove());
+    document.body.classList.remove('google-login-open');
+    window.dispatchEvent(new CustomEvent('camp:auth-ready',{detail:user}));
+  });
+
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:10000 });
 
   const ensureTeamSelected=async()=>{
     const selected=await page.evaluate(() => Boolean(localStorage.getItem('camp:myMemberId')));
