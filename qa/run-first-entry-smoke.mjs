@@ -48,9 +48,9 @@ async function simulateSignedIn() {
 try {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:30000 });
   await enterLanding();
+  await simulateSignedIn();
   await page.locator('#view-home.active').waitFor({ state:'attached', timeout:15000 });
   await waitForFirstEntryModule();
-  await simulateSignedIn();
   await page.locator('#firstEntryBackdrop').waitFor({ state:'visible', timeout:15000 });
 
   const teams=page.locator('.first-entry-team');
@@ -85,9 +85,9 @@ try {
 
   await page.reload({ waitUntil:'domcontentloaded', timeout:30000 });
   await enterLanding();
+  await simulateSignedIn();
   await page.locator('#view-home.active').waitFor({ state:'attached', timeout:15000 });
   await waitForFirstEntryModule();
-  await simulateSignedIn();
   await page.waitForTimeout(700);
   const pickerAfterReload=await page.locator('#firstEntryBackdrop').count();
   const retainedCardText=(await page.locator('#myPrepQuickCard').textContent()) || '';
