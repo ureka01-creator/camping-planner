@@ -1,10 +1,9 @@
 import { chromium } from 'playwright';
 
 const browser = await chromium.launch({ headless:true });
-const contextA = await browser.newContext({ viewport:{ width:390, height:844 }, deviceScaleFactor:2 });
-const contextB = await browser.newContext({ viewport:{ width:390, height:844 }, deviceScaleFactor:2 });
-const pageA = await contextA.newPage();
-const pageB = await contextB.newPage();
+const context = await browser.newContext({ viewport:{ width:390, height:844 }, deviceScaleFactor:2 });
+const pageA = await context.newPage();
+const pageB = await context.newPage();
 const errors=[];
 
 for (const [label, page] of [['A', pageA], ['B', pageB]]) {
@@ -89,7 +88,6 @@ try {
   console.error(errors.join('\n'));
   process.exitCode=1;
 } finally {
-  await contextA.close();
-  await contextB.close();
+  await context.close();
   await browser.close();
 }
