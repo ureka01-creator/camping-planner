@@ -20,10 +20,6 @@ function profiles() {
   return Array.isArray(latestData?.trip?.userProfiles) ? latestData.trip.userProfiles : [];
 }
 
-function memberById(memberId) {
-  return (latestData?.members || []).find(member => String(member?.id || '') === String(memberId || '')) || null;
-}
-
 function memberProfiles(memberId) {
   const seen = new Set();
   return profiles()
@@ -37,13 +33,11 @@ function memberProfiles(memberId) {
 }
 
 function openMemberUsers(memberId) {
-  const member = memberById(memberId);
   const rows = memberProfiles(memberId);
-  const teamName = String(member?.name || '참여자 / 팀');
 
   openModal(`
     <div class="modal-title member-users-modal-title">
-      <h3>${esc(teamName)} 참여자</h3>
+      <h3>참여자</h3>
       <button class="more-btn" data-close aria-label="닫기">×</button>
     </div>
     <div class="member-users-modal-list">
