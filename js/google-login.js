@@ -295,6 +295,16 @@ async function boot() {
   ensureStyle();
   ensureAccountControls();
 
+  const params = new URLSearchParams(location.search);
+  const localQa = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') && params.get('data') === 'local';
+  if (localQa) {
+    persistUser({ uid:'qa-local-google-user', displayName:'QA 사용자', email:'qa@example.com', isAnonymous:false });
+    closeGate();
+    window.CampingGoogleAuthReady = true;
+    window.dispatchEvent(new CustomEvent('camp:google-auth-module-ready'));
+    return;
+  }
+
   const [appMod, authMod] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js')
