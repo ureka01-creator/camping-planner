@@ -53,7 +53,7 @@ try {
   const unauthorized=/허용 도메인|unauthorized-domain/.test(authState.status + ' ' + errors.join(' '));
   const popupStarted = authState.started==='1';
   const googlePopup = !popupUrl || /accounts\.google\.com|firebaseapp\.com/.test(popupUrl);
-  if(landingState.imageWidth<=0 || landingState.imageHeight<=0 || !landingState.imageLoaded || !landingState.version.includes('v1.0.7') || !popupStarted || !googlePopup || unauthorized) process.exitCode=1;
+  if(landingState.imageWidth<=0 || landingState.imageHeight<=0 || !landingState.imageLoaded || !landingState.version.includes('v1.0.8') || !popupStarted || !googlePopup || unauthorized) process.exitCode=1;
 } catch(error) {
   console.error('LIVE_ENTRY_AUTH_SMOKE_FAILED', error);
   console.error(errors.join('\n'));
