@@ -19,7 +19,7 @@ function addDay(iso){
 }
 
 try {
-  await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout:30000 });
+  await page.goto('http://127.0.0.1:4173/?data=local', { waitUntil: 'domcontentloaded', timeout:30000 });
   const landing=page.locator('.camp-landing');
   if(await landing.count()){
     await landing.click();
@@ -27,7 +27,7 @@ try {
   }
 
   await page.waitForFunction(() => Boolean(document.querySelector('#tripDates')?.textContent.trim()), null, { timeout:15000 });
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:20000 });
   await page.waitForTimeout(250);
 
   await page.locator('[data-nav="meals"]').click();
@@ -101,7 +101,7 @@ try {
     const end=document.querySelector('#tripEndDateInput');
     return Boolean(start?.value && end?.value);
   }, null, { timeout:15000 });
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:15000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:15000 });
 
   const connectionText=await page.locator('#connectionText').textContent();
   const initial=await page.evaluate(() => ({
@@ -119,7 +119,7 @@ try {
     min: document.querySelector('#tripEndDateInput').min
   }));
 
-  const dbConnected=connectionText?.includes('Firebase 실시간 연결됨') === true;
+  const dbConnected=connectionText?.includes('로컬 데모 모드') === true;
   console.log(JSON.stringify({dates,allDefault,overviewDays,overviewRows,overviewDragHandles,emptyOverviewCount,emptyOverview100,cards,empty,toggles,detailDragHandles,visibleAddFormsBefore,addToggleOk,inlineEditOk,editFocusOk,allAfterReentry,itemSummary,packingViewOk,dbConnected,connectionText,overflowBefore,overflowAfter,initial,constrained,errors,networkWarnings},null,2));
   await page.screenshot({ path:'qa/app-smoke-result.png', fullPage:true });
 
