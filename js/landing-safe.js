@@ -3,9 +3,9 @@ import './bgm.js?v=5';
 // v1.0.8: rebuild the approved poster from verified text chunks.
 // Keeping the source as text avoids binary corruption in the upload path.
 const COVER_PARTS = Array.from({ length: 6 }, (_, index) =>
-  `./assets/cover-live-v2.part${index}?v=20260902b`
+  `./assets/cover-approved-hq-v3.part${index}?v=20260902c`
 );
-const COVER_BASE64_LENGTH = 24444;
+const COVER_BASE64_LENGTH = 698472;
 
 let overlay = null;
 let closing = false;
