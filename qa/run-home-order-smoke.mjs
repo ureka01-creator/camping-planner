@@ -5,7 +5,7 @@ const page = await browser.newPage({ viewport:{ width:390, height:844 }, deviceS
 const errors=[];
 const networkWarnings=[];
 const tripId=`qa-home-order-${Date.now()}`;
-const url=`http://127.0.0.1:4173/?trip=${tripId}`;
+const url=`http://127.0.0.1:4173/?trip=${tripId}&data=local`;
 
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 page.on('console', msg => {
@@ -49,7 +49,7 @@ async function cardGaps() {
 try {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:30000 });
   await passLanding();
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:25000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:25000 });
   await ensureTeam();
   await page.waitForSelector('#myPrepQuickCard', { timeout:10000 });
   await page.waitForFunction(() => {
