@@ -1,11 +1,48 @@
 import './bgm.js?v=5';
 
-// v1.0.8: HQ poster, full composition, iPhone Safari scroll lock.
-const COVER_SRC = './assets/cover-main-approved.jpg?v=8';
+// v1.0.8: rebuild the approved poster from verified text chunks.
+// Keeping the source as text avoids binary corruption in the upload path.
+const COVER_PARTS = Array.from({ length: 6 }, (_, index) =>
+  `./assets/cover-live-v2.part${index}?v=20260902b`
+);
+const COVER_BASE64_LENGTH = 24444;
 
 let overlay = null;
 let closing = false;
 let lockedScrollY = 0;
+let coverDataUrlPromise = null;
+
+async function loadCoverDataUrl() {
+  if (window.CampingCoverDataUrl?.startsWith('data:image/jpeg;base64,')) {
+    return window.CampingCoverDataUrl;
+  }
+  if (coverDataUrlPromise) return coverDataUrlPromise;
+
+  coverDataUrlPromise = Promise.all(COVER_PARTS.map(async url => {
+    const response = await fetch(url, { cache:'no-store' });
+    if (!response.ok) throw new Error(`cover chunk fetch failed: ${response.status}`);
+    return (await response.text()).replace(/\s+/g, '');
+  })).then(parts => {
+    const base64 = parts.join('');
+    if (
+      base64.length !== COVER_BASE64_LENGTH ||
+      !base64.startsWith('/9j/') ||
+      !base64.endsWith('/9k=')
+    ) {
+      throw new Error(`cover chunk validation failed: ${base64.length}`);
+    }
+
+    const src = `data:image/jpeg;base64,${base64}`;
+    window.CampingCoverDataUrl = src;
+    return src;
+  }).catch(error => {
+    coverDataUrlPromise = null;
+    window.CampingCoverDataUrl = null;
+    throw error;
+  });
+
+  return coverDataUrlPromise;
+}
 
 function lockViewport() {
   lockedScrollY = window.scrollY || window.pageYOffset || 0;
@@ -37,6 +74,7 @@ async function hydratePoster(root) {
   if (loading) loading.textContent = '메인 이미지를 불러오는 중…';
 
   try {
+    const src = await loadCoverDataUrl();
     await new Promise((resolve, reject) => {
       let settled = false;
       const done = ok => {
@@ -48,8 +86,8 @@ async function hydratePoster(root) {
       };
       image.onload = () => done(true);
       image.onerror = () => done(false);
-      image.src = COVER_SRC;
-      if (backdrop instanceof HTMLImageElement) backdrop.src = COVER_SRC;
+      image.src = src;
+      if (backdrop instanceof HTMLImageElement) backdrop.src = src;
       if (image.complete && image.naturalWidth > 0) done(true);
     });
 
