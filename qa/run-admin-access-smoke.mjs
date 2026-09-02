@@ -15,7 +15,7 @@ page.on('console', msg => {
 });
 
 try {
-  await page.goto(`http://127.0.0.1:4173/?trip=${tripId}&qaRole=user`, { waitUntil:'domcontentloaded', timeout:30000 });
+  await page.goto(`http://127.0.0.1:4173/?trip=${tripId}&data=local&qaRole=user`, { waitUntil:'domcontentloaded', timeout:30000 });
 
   const landing=page.locator('.camp-landing');
   if(await landing.count()) {
@@ -23,7 +23,7 @@ try {
     await landing.waitFor({ state:'detached', timeout:5000 });
   }
 
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:20000 });
 
   const picker=page.locator('#firstEntryBackdrop');
   if(await picker.count()) {
