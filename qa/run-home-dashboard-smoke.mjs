@@ -14,7 +14,7 @@ page.on('console', msg => {
 });
 
 try {
-  await page.goto(`http://127.0.0.1:4173/?trip=${tripId}`, { waitUntil:'domcontentloaded', timeout:30000 });
+  await page.goto(`http://127.0.0.1:4173/?trip=${tripId}&data=local`, { waitUntil:'domcontentloaded', timeout:30000 });
 
   const landing=page.locator('.camp-landing');
   if(await landing.count()) {
