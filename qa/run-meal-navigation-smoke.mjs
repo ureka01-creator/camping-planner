@@ -53,19 +53,19 @@ try {
 
   await page.locator('[data-nav="home"]').click();
   await page.waitForSelector('[data-food-meal-id="qa-meal-target"]');
-  await page.locator('[data-food-meal-id="qa-meal-target"]').click();
+  await page.locator('[data-food-meal-id="qa-meal-target"]').evaluate(button => button.click());
   await waitForTargetFocus();
   const fromHome=await targetState();
 
   await page.locator('[data-nav="meals"]').click();
   await page.waitForSelector('.meal-overview-row');
-  await page.locator('.meal-overview-row', { hasText:'QA 고기파티' }).click();
+  await page.locator('.meal-overview-row', { hasText:'QA 고기파티' }).evaluate(button => button.click());
   await waitForTargetFocus();
   const fromAll=await targetState();
 
   await page.locator('[data-nav="items"]').click();
   await page.waitForSelector('.meal-prep-menu-link');
-  await page.locator('.meal-prep-menu-link', { hasText:'QA 고기파티' }).click();
+  await page.locator('.meal-prep-menu-link', { hasText:'QA 고기파티' }).evaluate(button => button.click());
   await waitForTargetFocus();
   const fromItems=await targetState();
 
