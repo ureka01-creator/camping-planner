@@ -7,14 +7,14 @@ page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 page.on('console', msg => { if (msg.type()==='error') errors.push(`console: ${msg.text()}`); });
 
 try {
-  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded', timeout:30000 });
+  await page.goto('http://127.0.0.1:4173/?data=local', { waitUntil:'domcontentloaded', timeout:30000 });
   const landing=page.locator('.camp-landing');
   if(await landing.count()) {
     await landing.click();
     await landing.waitFor({ state:'detached', timeout:5000 });
   }
 
-  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'), null, { timeout:20000 });
+  await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:20000 });
   await page.waitForTimeout(120);
 
   await page.locator('[data-nav="items"]').click();
