@@ -15,6 +15,19 @@ try {
   }
 
   await page.waitForFunction(() => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'), null, { timeout:20000 });
+  const picker=page.locator('#firstEntryBackdrop');
+  if(await picker.count()) {
+    await page.locator('[data-first-entry-member]').first().click();
+    await picker.waitFor({ state:'detached', timeout:5000 });
+  }
+  await page.evaluate(async () => {
+    const { dataAdapter } = await import('./js/firebase.js?v=064');
+    await dataAdapter.mutate(data => {
+      const memberId=data.members?.[0]?.id || '';
+      data.items=[...(data.items || []), { id:'qa-liquor', name:'QA 음료', category:'주류', quantity:'1병', assigneeId:memberId, isDone:false, note:'' }];
+      if(data.meals?.[0]) data.meals[0].items=[{ id:'qa-meal-prep', name:'QA 식사 준비', quantity:'1개', assigneeId:memberId, isDone:false, note:'' }];
+    });
+  });
   await page.waitForTimeout(120);
 
   await page.locator('[data-nav="items"]').click();
