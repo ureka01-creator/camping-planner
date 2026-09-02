@@ -12,9 +12,12 @@ export const FIREBASE_CONFIG = {
   measurementId: "G-HEZ3M975RX"
 };
 
+const pageParams = new URLSearchParams(location.search);
+const localTestHost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
 export const DATA_MODE = {
-  useFirebase: true,
-  tripId: new URLSearchParams(location.search).get('trip') || 'camp-2026-09-demo'
+  useFirebase: !(localTestHost && pageParams.get('data') === 'local'),
+  tripId: pageParams.get('trip') || 'camp-2026-09-demo'
 };
 
 const STORE_KEY = `camping-planner:${DATA_MODE.tripId}`;
