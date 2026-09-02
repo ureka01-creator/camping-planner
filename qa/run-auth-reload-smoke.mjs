@@ -34,11 +34,11 @@ async function waitConnected() {
 }
 
 async function currentUid() {
-  return page.evaluate(async () => {
-    const mod = await import('./js/firebase.js?v=064');
-    if (typeof mod.dataAdapter?.auth?.authStateReady === 'function') await mod.dataAdapter.auth.authStateReady();
-    return mod.dataAdapter?.auth?.currentUser?.uid || null;
-  });
+  await page.waitForFunction(() => window.CampingGoogleAuthReady === true && Boolean(window.CampingGoogleUser?.uid), null, { timeout:10000 });
+  return page.evaluate(() => ({
+    runtime:window.CampingGoogleUser?.uid || null,
+    stored:localStorage.getItem('camp:authUid') || null
+  }));
 }
 
 try {
@@ -57,13 +57,13 @@ try {
     }
 
     const uid = await currentUid();
-    const mode = await page.evaluate(async () => (await import('./js/firebase.js?v=064')).dataAdapter?.authPersistence || null);
+    const mode = await page.locator('#connectionText').textContent();
     uids.push(uid);
     persistence.push(mode);
   }
 
-  const stableUid = Boolean(uids[0]) && uids.every(uid => uid === uids[0]);
-  const connectedEveryTime = persistence.every(mode => ['local','session','memory'].includes(mode));
+  const stableUid = Boolean(uids[0]?.runtime) && uids.every(uid => uid.runtime === uids[0].runtime && uid.stored === uid.runtime);
+  const connectedEveryTime = persistence.every(mode => mode?.includes('로컬 데모 모드'));
 
   console.log(JSON.stringify({ tripId, uids, persistence, stableUid, connectedEveryTime, errors }, null, 2));
   if (!stableUid || !connectedEveryTime || errors.length) process.exitCode=1;
