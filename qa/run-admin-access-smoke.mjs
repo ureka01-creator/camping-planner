@@ -42,7 +42,7 @@ try {
     saveHidden: document.getElementById('saveTripDatesBtn')?.hidden === true,
     addMemberHidden: document.getElementById('addMemberBtn')?.hidden === true,
     editMembersVisible: [...document.querySelectorAll('[data-edit-member]')].some(button => getComputedStyle(button).display !== 'none' && !button.hidden),
-    badge: document.getElementById('adminAccessBadge')?.textContent.trim() || ''
+    buttonText: document.getElementById('adminAccessBtn')?.textContent.trim() || ''
   }));
 
   const guardResult=await page.evaluate(async () => {
@@ -59,7 +59,7 @@ try {
 
   page.once('dialog', dialog => dialog.accept('qa-admin'));
   await page.locator('#adminAccessBtn').click();
-  await page.waitForFunction(() => document.getElementById('adminAccessBadge')?.textContent.trim() === '관리자', null, { timeout:5000 });
+  await page.waitForFunction(() => document.documentElement.classList.contains('admin-mode'), null, { timeout:5000 });
 
   const adminState=await page.evaluate(() => ({
     startEnabled: document.getElementById('tripStartDateInput')?.disabled === false,
@@ -67,16 +67,15 @@ try {
     saveVisible: document.getElementById('saveTripDatesBtn')?.hidden === false,
     addMemberVisible: document.getElementById('addMemberBtn')?.hidden === false,
     editMemberVisible: [...document.querySelectorAll('[data-edit-member]')].some(button => getComputedStyle(button).display !== 'none' && !button.hidden),
-    badge: document.getElementById('adminAccessBadge')?.textContent.trim() || '',
     buttonText: document.getElementById('adminAccessBtn')?.textContent.trim() || ''
   }));
 
   await page.screenshot({ path:'qa/admin-access-smoke-result.png', fullPage:true });
   console.log(JSON.stringify({tripId,userState,guardResult,adminState,errors,networkWarnings},null,2));
 
-  const userLocked=userState.shareHidden && userState.startDisabled && userState.endDisabled && userState.saveHidden && userState.addMemberHidden && !userState.editMembersVisible && userState.badge==='읽기 전용';
+  const userLocked=userState.shareHidden && userState.startDisabled && userState.endDisabled && userState.saveHidden && userState.addMemberHidden && !userState.editMembersVisible && userState.buttonText==='관리자 인증';
   const guardBlocked=guardResult==='ADMIN_REQUIRED';
-  const adminUnlocked=adminState.startEnabled && adminState.endEnabled && adminState.saveVisible && adminState.addMemberVisible && adminState.editMemberVisible && adminState.badge==='관리자' && adminState.buttonText==='관리자 모드 종료';
+  const adminUnlocked=adminState.startEnabled && adminState.endEnabled && adminState.saveVisible && adminState.addMemberVisible && adminState.editMemberVisible && adminState.buttonText==='관리자 해제';
 
   if(errors.length || !userLocked || !guardBlocked || !adminUnlocked) process.exitCode=1;
 } catch(error) {
