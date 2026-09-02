@@ -9,7 +9,7 @@ page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 page.on('console', msg => { if (msg.type()==='error') errors.push(`console: ${msg.text()}`); });
 
 const tripId = 'qa-auth-reload-smoke';
-const url = `http://127.0.0.1:4173/?trip=${tripId}`;
+const url = `http://127.0.0.1:4173/?trip=${tripId}&data=local`;
 
 async function dismissLandingAndPicker() {
   const landing = page.locator('.camp-landing');
@@ -27,7 +27,7 @@ async function dismissLandingAndPicker() {
 
 async function waitConnected() {
   await page.waitForFunction(
-    () => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'),
+    () => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'),
     null,
     { timeout:25000 }
   );
