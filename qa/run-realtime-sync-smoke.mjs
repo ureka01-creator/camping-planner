@@ -13,7 +13,7 @@ for (const [label, page] of [['A', pageA], ['B', pageB]]) {
 }
 
 const tripId = 'qa-realtime-smoke';
-const url = `http://127.0.0.1:4173/?trip=${tripId}`;
+const url = `http://127.0.0.1:4173/?trip=${tripId}&data=local`;
 
 async function dismissFirstEntryIfShown(page) {
   await page.waitForTimeout(80);
@@ -32,7 +32,7 @@ async function enterApp(page) {
     await landing.waitFor({ state:'detached', timeout:5000 });
   }
   await page.waitForFunction(
-    () => document.querySelector('#connectionText')?.textContent.includes('Firebase 실시간 연결됨'),
+    () => document.querySelector('#connectionText')?.textContent.includes('로컬 데모 모드'),
     null,
     { timeout:20000 }
   );
