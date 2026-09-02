@@ -19,7 +19,7 @@ page.on('console', msg => {
   else errors.push(`console: ${text}`);
 });
 
-const url='http://127.0.0.1:4173/?trip=qa-first-entry-smoke-v1';
+const url='http://127.0.0.1:4173/?trip=qa-first-entry-smoke-v1&data=local';
 
 async function enterLanding() {
   const landing=page.locator('.camp-landing');
