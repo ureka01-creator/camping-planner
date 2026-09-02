@@ -88,7 +88,7 @@ for (const path of [
   './admin-access.js?v=085',
   './home-order.js?v=096',
   './google-board-identity.js?v=101',
-  './trip-user-presence.js?v=104',
+  './trip-user-presence.js?v=105',
   './home-memo.js?v=101',
   './admin-board-delete.js?v=099',
   './home-board-order.js?v=100',
