@@ -14,7 +14,6 @@ const AUTH_EMAIL_KEY = 'camp:authEmail';
 const MEMBER_KEY = 'camp:myMemberId';
 const AUTHOR_ID_KEY = 'camp:boardAuthorId';
 const LEGACY_AUTHOR_ID_KEY = 'camp:legacyBoardAuthorId';
-const NICKNAME_PREFIX = 'camp:nickname:';
 
 let gate = null;
 let busy = false;
@@ -30,72 +29,40 @@ function googleProfileName(user) {
   return email ? email.split('@')[0] : '캠핑 멤버';
 }
 
-function nicknameKey(uid) {
-  return `${NICKNAME_PREFIX}${uid}`;
-}
-
-function savedNickname(uid) {
-  if (!uid) return '';
-  try { return String(localStorage.getItem(nicknameKey(uid)) || '').trim(); }
-  catch (_) { return ''; }
-}
-
-function effectiveName(user) {
-  return savedNickname(user?.uid) || googleProfileName(user);
-}
-
 function ensureAccountControls() {
   const card = document.getElementById('googleAccountCard');
-  if (!card || document.getElementById('googleNicknameInput')) return;
+  if (!card || document.getElementById('googleLogoutBtn')) return;
 
   const accountLine = document.getElementById('googleAccountName');
   accountLine?.insertAdjacentHTML('afterend', `
-    <div class="google-account-nickname">
-      <label for="googleNicknameInput">앱에서 사용할 닉네임</label>
-      <div class="google-nickname-row">
-        <input id="googleNicknameInput" maxlength="20" autocomplete="off" placeholder="예: 민지" />
-        <button id="saveGoogleNicknameBtn" type="button">저장</button>
-      </div>
-      <small>한줄 게시판에는 이 이름으로 표시돼.</small>
-    </div>
+    <small class="google-account-help">Google 계정 이름이 게시판 표시 이름으로 사용돼.</small>
     <button id="googleLogoutBtn" type="button" class="google-logout-button">로그아웃</button>`);
 }
 
 function renderAccountSettings(user) {
   ensureAccountControls();
   const label = document.getElementById('googleAccountName');
-  const nickname = document.getElementById('googleNicknameInput');
-  const save = document.getElementById('saveGoogleNicknameBtn');
   const logout = document.getElementById('googleLogoutBtn');
 
   if (!user || user.isAnonymous) {
     if (label) label.textContent = 'Google 로그인이 필요해.';
-    if (nickname instanceof HTMLInputElement) {
-      nickname.value = '';
-      nickname.disabled = true;
-    }
-    if (save instanceof HTMLButtonElement) save.disabled = true;
     if (logout instanceof HTMLButtonElement) logout.disabled = true;
     return;
   }
 
   const profileName = googleProfileName(user);
   if (label) label.textContent = user.email ? `${profileName} · ${user.email}` : profileName;
-  if (nickname instanceof HTMLInputElement) {
-    nickname.disabled = false;
-    nickname.value = effectiveName(user);
-  }
-  if (save instanceof HTMLButtonElement) save.disabled = false;
   if (logout instanceof HTMLButtonElement) logout.disabled = false;
 }
 
 function persistUser(user) {
   if (!user || user.isAnonymous) return false;
-  const name = effectiveName(user);
+  const name = googleProfileName(user);
   try {
     localStorage.setItem(AUTH_UID_KEY, user.uid);
     localStorage.setItem(AUTH_NAME_KEY, name);
     localStorage.setItem(AUTH_EMAIL_KEY, String(user.email || ''));
+    localStorage.removeItem(`camp:nickname:${user.uid}`);
   } catch (_) {}
 
   const legacyInput = document.getElementById('myNameInput');
@@ -180,24 +147,11 @@ function ensureStyle() {
     .google-login-g { width:20px; height:20px; display:grid; place-items:center; border-radius:50%; font-size:18px; font-weight:900; color:#4285f4; }
     .google-login-status { min-height:18px; margin-top:12px; color:rgba(234,217,196,.58); font-size:10px; line-height:1.45; }
     .google-account-line { margin:8px 0 0 !important; overflow-wrap:anywhere; }
-    .google-account-nickname { margin-top:16px; padding-top:15px; border-top:1px solid rgba(216,160,113,.10); }
-    .google-account-nickname label { display:block; margin-bottom:7px; color:rgba(234,217,196,.72); font-size:11px; font-weight:750; }
-    .google-nickname-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
-    .google-nickname-row input {
-      width:100%; min-width:0; box-sizing:border-box; min-height:42px; padding:0 12px;
-      border:1px solid rgba(216,160,113,.16); border-radius:12px;
-      background:rgba(8,12,18,.42); color:#ead9c4; font-size:16px;
-    }
-    .google-nickname-row button {
-      min-width:64px; padding:0 13px; border:1px solid rgba(201,137,93,.24); border-radius:12px;
-      background:rgba(201,137,93,.10); color:#e2b181; font-size:12px; font-weight:800;
-    }
-    .google-account-nickname small { display:block; margin-top:6px; color:rgba(234,217,196,.38); font-size:9px; }
+    .google-account-help { display:block; margin-top:7px; color:rgba(234,217,196,.38); font-size:9px; }
     .google-logout-button {
       width:100%; min-height:40px; margin-top:14px; border:1px solid rgba(234,217,196,.12); border-radius:12px;
       background:transparent; color:rgba(234,217,196,.52); font-size:11px; font-weight:750;
     }
-    .google-nickname-row button:disabled,
     .google-logout-button:disabled { opacity:.4; }
   `;
   document.head.appendChild(style);
@@ -313,25 +267,6 @@ async function showLoginGate() {
   if (!authRef?.currentUser || authRef.currentUser.isAnonymous) openGate();
 }
 
-function saveNickname() {
-  const user = authRef?.currentUser;
-  const input = document.getElementById('googleNicknameInput');
-  if (!user || user.isAnonymous || !(input instanceof HTMLInputElement)) return;
-
-  const nickname = input.value.trim().slice(0, 20);
-  if (!nickname) {
-    input.focus();
-    return;
-  }
-
-  try { localStorage.setItem(nicknameKey(user.uid), nickname); } catch (_) {}
-  persistUser(user);
-
-  const legacyInput = document.getElementById('myNameInput');
-  if (legacyInput instanceof HTMLInputElement) legacyInput.value = nickname;
-  document.getElementById('saveMyNameBtn')?.click();
-}
-
 async function logoutGoogle() {
   const user = authRef?.currentUser;
   if (!user || !authModRef || !authRef) return;
@@ -385,19 +320,8 @@ async function boot() {
 
   document.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
-    if (event.target.closest('#saveGoogleNicknameBtn')) {
-      saveNickname();
-      return;
-    }
     if (event.target.closest('#googleLogoutBtn')) logoutGoogle();
   }, true);
-
-  document.addEventListener('keydown', event => {
-    if (event.key !== 'Enter') return;
-    if (!(event.target instanceof Element) || !event.target.closest('#googleNicknameInput')) return;
-    event.preventDefault();
-    saveNickname();
-  });
 
   window.addEventListener('pageshow', () => recoverAfterSafariReturn(300));
   window.addEventListener('focus', () => recoverAfterSafariReturn(800));
