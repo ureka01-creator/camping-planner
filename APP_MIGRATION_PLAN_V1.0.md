@@ -8,7 +8,7 @@
 - Native runtime: Capacitor v8
 - Backend: existing Firebase project / Firestore
 - UI stack: existing HTML / CSS / Vanilla JS 유지
-- Status: PLANNING DONE → APP SHELL IMPLEMENTATION READY
+- Status: APP-0 IMPLEMENTATION IN PROGRESS
 
 ## 1. 목표
 
@@ -83,10 +83,10 @@ js/auth/
 
 - [x] `app-migration` branch 생성
 - [x] Migration Plan v1.0 작성
-- [ ] Node/npm project scaffold
-- [ ] Capacitor v8 설치
-- [ ] `capacitor.config.*` 작성
-- [ ] Web asset staging/build script 작성
+- [x] Node/npm project scaffold
+- [x] Capacitor v8 dependency scaffold
+- [x] `capacitor.config.*` 작성
+- [x] Web asset staging/build script 작성
 - [ ] 기존 GitHub Pages smoke test가 그대로 통과하는지 확인
 
 **완료 조건**
@@ -112,7 +112,7 @@ js/auth/
 ### Phase C — 로그인
 목표: iOS 앱에서 같은 Firebase 사용자/데이터 사용.
 
-- [ ] platform detection 추가
+- [x] platform detection 추가
 - [ ] Web Google login 기존 동작 보존
 - [ ] Native Google authentication 구현
 - [ ] Google ID token → Firebase credential
@@ -259,4 +259,4 @@ Native QA가 실패하면 `main`에는 merge하지 않는다.
 
 다음 모드는 **구현자 모드 / Sprint APP-0**.
 
-첫 커밋에서는 live 코드를 수정하지 않고 앱 빌드 기반 파일만 추가한다.
+앱 빌드 기반 파일 추가 완료. 다음은 CI build 확인 후 iOS shell 생성으로 넘어간다.
