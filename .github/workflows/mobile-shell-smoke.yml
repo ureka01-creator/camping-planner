@@ -1,0 +1,37 @@
+name: Mobile shell smoke
+
+on:
+  push:
+    branches:
+      - app-migration
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'capacitor.config.json'
+      - 'scripts/**'
+      - 'js/platform.js'
+      - 'index.html'
+      - 'css/**'
+      - 'js/**'
+      - 'assets/**'
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build:mobile
+      - name: Verify staged app shell
+        run: |
+          test -f dist-mobile/index.html
+          test -f dist-mobile/js/firebase.js
+          test -f dist-mobile/js/google-login.js
+          test -f dist-mobile/js/settlement.js
+          test -d dist-mobile/css
+          test -d dist-mobile/assets
