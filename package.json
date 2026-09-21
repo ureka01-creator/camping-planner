@@ -1,0 +1,19 @@
+{
+  "name": "camping-planner",
+  "version": "1.0.8",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:mobile": "node scripts/build-mobile.mjs",
+    "cap:sync": "npm run build:mobile && npx cap sync",
+    "cap:add:ios": "npm run build:mobile && npx cap add ios",
+    "cap:open:ios": "npm run build:mobile && npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}
