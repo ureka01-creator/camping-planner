@@ -1,0 +1,66 @@
+name: iOS shell smoke
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'capacitor.config.json'
+      - 'scripts/**'
+      - 'index.html'
+      - 'css/**'
+      - 'js/**'
+      - 'assets/**'
+      - '.github/workflows/ios-shell-smoke.yml'
+
+jobs:
+  ios-shell:
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Stage web assets
+        run: npm run build:mobile
+
+      - name: Generate iOS native project
+        run: npx cap add ios
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Inspect generated project
+        run: |
+          test -d ios/App/App.xcodeproj
+          test -f ios/App/App/Info.plist
+          test -d ios/App/App/public
+          xcodebuild -project ios/App/App.xcodeproj -list
+
+      - name: Build unsigned simulator app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty
+
+      - name: Upload generated iOS project
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: camping-planner-ios-shell
+          path: ios
+          if-no-files-found: error
+          retention-days: 7
